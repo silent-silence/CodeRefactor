@@ -9,11 +9,7 @@ RandomAccess::RandomAccess(std::shared_ptr <Expression> expression, std::shared_
 	: m_expression{expression}, m_accessPoint{accessPoint}
 {}
 
-void RandomAccess::print()
+std::string RandomAccess::print()
 {
-	std::cout << "(Random access)";
-	m_expression->print();
-	std::cout << "[";
-	m_accessPoint->print();
-	std::cout << "]";
+	return "(Random access)" + m_expression->print() + "[" + m_accessPoint->print() + "]";
 }

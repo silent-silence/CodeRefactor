@@ -9,8 +9,7 @@ CastExpression::CastExpression(std::string castType, std::shared_ptr <Expression
 	: m_castType{castType}, m_expression{expression}
 {}
 
-void CastExpression::print()
+std::string CastExpression::print()
 {
-	std::cout << "(Cast expression)(" << m_castType << ")";
-	m_expression->print();
+	return "(Cast expression)(" + m_castType + ")" + m_expression->print();
 }

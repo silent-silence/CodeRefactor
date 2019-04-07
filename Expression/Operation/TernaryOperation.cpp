@@ -11,12 +11,7 @@ TernaryOperation::TernaryOperation(std::shared_ptr <Expression> firstExpression,
 	: m_firstExpression{firstExpression}, m_secondExpression{secondExpression}, m_thirdExpression{thirdExpression}
 {}
 
-void TernaryOperation::print()
+std::string TernaryOperation::print()
 {
-	std::cout << "(Ternary)";
-	m_firstExpression->print();
-	std::cout << " ? ";
-	m_secondExpression->print();
-	std::cout << " : ";
-	m_thirdExpression->print();
+	return "(Ternary)" + m_firstExpression->print() + " ? "	+ m_secondExpression->print() + " : " + m_thirdExpression->print();
 }

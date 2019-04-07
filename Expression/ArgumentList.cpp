@@ -9,8 +9,7 @@ ArgumentList::ArgumentList(std::shared_ptr<ArgumentList> argumentList, std::shar
 	: m_argumentList{argumentList}, m_expression{expression}
 {}
 
-void ArgumentList::print()
+std::string ArgumentList::print()
 {
-	std::cout << "(Argument list)";
-	m_expression->print();
+	return "(Argument list)" + (m_argumentList ? m_argumentList->print() : "") + m_expression->print();
 }

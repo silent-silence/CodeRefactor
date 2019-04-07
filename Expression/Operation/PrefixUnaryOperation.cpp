@@ -5,19 +5,20 @@ PrefixUnaryOperation::PrefixUnaryOperation(PrefixUnary operatorType, std::shared
 	: m_operatorType{operatorType}, m_expression{expression}
 {}
 
-void PrefixUnaryOperation::print()
+std::string PrefixUnaryOperation::print()
 {
-	std::cout << "(Prefix unary operation)";
+	std::string ret("(Prefix unary operation)");
 	switch(m_operatorType)
 	{
-		case Increment:		std::cout << "++";		m_expression->print();	break;
-		case Decrement:		std::cout << "--";		m_expression->print();	break;
-		case Sizeof:		std::cout << "sizeof";	m_expression->print();	break;
-		case AddressOf:		std::cout << "&";		m_expression->print();	break;
-		case Indirection:	std::cout << "*";		m_expression->print();	break;
-		case UnaryPlus:		std::cout << "+";		m_expression->print();	break;
-		case UnaryMinus:	std::cout << "-";		m_expression->print();	break;
-		case BitwiseNot:	std::cout << "~";		m_expression->print();	break;
-		case Not:			std::cout << "!";		m_expression->print();	break;
+		case Increment:		ret += "++" + m_expression->print();		break;
+		case Decrement:		ret += "--" + m_expression->print();		break;
+		case Sizeof:		ret += "sizeof" + m_expression->print();	break;
+		case AddressOf:		ret += "&" + m_expression->print();			break;
+		case Indirection:	ret += "*" + m_expression->print();			break;
+		case UnaryPlus:		ret += "+" + m_expression->print();			break;
+		case UnaryMinus:	ret += "-" + m_expression->print();			break;
+		case BitwiseNot:	ret += "~" + m_expression->print();			break;
+		case Not:			ret += "!" + m_expression->print();			break;
 	}
+	return ret;
 }

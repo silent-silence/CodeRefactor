@@ -9,7 +9,7 @@ public:
 	Constant(std::string name);
 	~Constant() override = default;
 
-	void print() override;
+	std::string print() override;
 
 private:
 	std::string m_name;

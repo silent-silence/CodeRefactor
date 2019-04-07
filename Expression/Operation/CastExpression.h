@@ -14,7 +14,7 @@ public:
 	CastExpression(std::string castType, std::shared_ptr<Expression> expression);
 	~CastExpression() override = default;
 
-	void print() override;
+	std::string print() override;
 
 private:
 	std::string m_castType;

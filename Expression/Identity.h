@@ -9,7 +9,7 @@ public:
 	Identity(std::string id);
 	~Identity() override = default;
 
-	void print() override;
+	std::string print() override;
 
 private:
 	std::string m_id;

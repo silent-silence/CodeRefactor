@@ -2,6 +2,7 @@
 #define LITERAL_H
 
 #include <iostream>
+#include <sstream>
 #include "Expression.h"
 
 template<typename T>
@@ -12,8 +13,10 @@ public:
 
 	~Literal() override = default;
 
-	void print() override {
-		std::cout << "(Literal)" << m_value;
+	std::string print() override {
+		std::ostringstream os;
+		os << "(Literal)" << m_value;
+		return os.str();
 	}
 
 private:

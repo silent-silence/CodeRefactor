@@ -5,7 +5,7 @@ Identity::Identity(std::string id)
 	: m_id{id}
 {}
 
-void Identity::print()
+std::string Identity::print()
 {
-	std::cout << "(Identity)" << m_id;
+	return "(Identity)" + m_id;
 }

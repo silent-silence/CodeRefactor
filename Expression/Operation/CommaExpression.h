@@ -13,7 +13,7 @@ public:
 	CommaExpression(std::shared_ptr<Expression> firstExpression, std::shared_ptr<Expression> secondExpression);
 	~CommaExpression() override = default;
 
-	void print() override;
+	std::string print() override;
 
 private:
 	std::shared_ptr<Expression> m_preExpression;

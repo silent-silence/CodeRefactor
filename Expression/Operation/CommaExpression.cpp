@@ -10,10 +10,7 @@ CommaExpression::CommaExpression(std::shared_ptr <Expression> firstExpression,
 	: m_preExpression{firstExpression}, m_lastExpression{secondExpression}
 {}
 
-void CommaExpression::print()
+std::string CommaExpression::print()
 {
-	std::cout << "(Comma expression)";
-	m_preExpression->print();
-	std::cout << ", ";
-	m_lastExpression->print();
+	return "(Comma expression)" + m_preExpression->print() + ", " + m_lastExpression->print();
 }

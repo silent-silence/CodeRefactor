@@ -42,7 +42,7 @@ public:
 	BinaryOperation(std::shared_ptr<Expression> firstExpression, BinaryOperator operatorType, std::shared_ptr<Expression> secondExpression);
 	~BinaryOperation() override = default;
 
-	void print() override;
+	std::string print() override;
 
 private:
 	std::shared_ptr<Expression> m_firstExpression;

@@ -4,7 +4,6 @@
 
 #include <cmake-build-debug/parser.hpp>
 #include "ExpressionFactory.h"
-#include "Parser/yylval.h"
 #include "parser.hpp"
 #include "ExpressionFactory.h"
 #include "Expression/Expression.h"
@@ -46,35 +45,35 @@ std::shared_ptr<Expression> ExpressionFactory::makeBinaryOperation(std::shared_p
 	BinaryOperation::BinaryOperator op;
 	switch(assignmentOpType)
 	{
-		case '=':					op = BinaryOperation::BinaryOperator::BasicAssignment;	break;
-		case token::TOK_MUL_ASSIGN:			op = BinaryOperation::BinaryOperator::MultiplicationAssignment;	break;
-		case token::TOK_DIV_ASSIGN:			op = BinaryOperation::BinaryOperator::DivisionAssignment;	break;
-		case token::TOK_MOD_ASSIGN:			op = BinaryOperation::BinaryOperator::ModuloAssignment;	break;
-		case token::TOK_ADD_ASSIGN:			op = BinaryOperation::BinaryOperator::AdditionAssignment;	break;
-		case token::TOK_SUB_ASSIGN:			op = BinaryOperation::BinaryOperator::SubtractionAssignment;	break;
-		case token::TOK_LEFT_SHIFT_ASSIGN:		op = BinaryOperation::BinaryOperator::BitwiseLeftShiftAssignment;	break;
-		case token::TOK_RIGHT_SHIFT_ASSIGN:	op = BinaryOperation::BinaryOperator::BitwiseRightShifAssignment; break;
-		case token::TOK_AND_ASSIGN:			op = BinaryOperation::BinaryOperator::BitwiseAndAssignment;	break;
-		case token::TOK_XOR_ASSIGN:			op = BinaryOperation::BinaryOperator::BitwiseXorAssignment;	break;
-		case token::TOK_OR_ASSIGN:				op = BinaryOperation::BinaryOperator::BitwiseOrAssignment;	break;
-		case token::TOK_OR_OP:					op = BinaryOperation::BinaryOperator::LogicalOr;	break;
-		case token::TOK_AND_OP:				op = BinaryOperation::BinaryOperator::LogicalAnd;	break;
-		case '|':					op = BinaryOperation::BinaryOperator::BitwiseOr;	break;
-		case '^':					op = BinaryOperation::BinaryOperator::BitwiseXor;	break;
-		case '&':					op = BinaryOperation::BinaryOperator::BitwiseAnd;	break;
-		case token::TOK_EQ_OP:					op = BinaryOperation::BinaryOperator::EqualTo;	break;
-		case token::TOK_NE_OP:					op = BinaryOperation::BinaryOperator::NotEqualTo;	break;
-		case '<':					op = BinaryOperation::BinaryOperator::LessThan;	break;
-		case '>':					op = BinaryOperation::BinaryOperator::GreaterThan;	break;
-		case token::TOK_LE_OP:					op = BinaryOperation::BinaryOperator::LessThanOrEqualTo;	break;
-		case token::TOK_GE_OP:					op = BinaryOperation::BinaryOperator::GreaterThanOrEqualTo;	break;
-		case token::TOK_LEFT_SHIFT_OP:			op = BinaryOperation::BinaryOperator::BitwiseLeftShift;	break;
-		case token::TOK_RIGHT_SHIFT_OP:		op = BinaryOperation::BinaryOperator::BitwiseRightShift;	break;
-		case '+':					op = BinaryOperation::BinaryOperator::Addition;	break;
-		case '-':					op = BinaryOperation::BinaryOperator::Subtraction;	break;
-		case '*':					op = BinaryOperation::BinaryOperator::Multiplication;	break;
-		case '/':					op = BinaryOperation::BinaryOperator::Division;	break;
-		case '%':					op = BinaryOperation::BinaryOperator::Modulo;	break;
+		case '=':							op = BinaryOperation::BinaryOperator::BasicAssignment;				break;
+		case token::TOK_MUL_ASSIGN:			op = BinaryOperation::BinaryOperator::MultiplicationAssignment;		break;
+		case token::TOK_DIV_ASSIGN:			op = BinaryOperation::BinaryOperator::DivisionAssignment;			break;
+		case token::TOK_MOD_ASSIGN:			op = BinaryOperation::BinaryOperator::ModuloAssignment;				break;
+		case token::TOK_ADD_ASSIGN:			op = BinaryOperation::BinaryOperator::AdditionAssignment;			break;
+		case token::TOK_SUB_ASSIGN:			op = BinaryOperation::BinaryOperator::SubtractionAssignment;		break;
+		case token::TOK_LEFT_SHIFT_ASSIGN:	op = BinaryOperation::BinaryOperator::BitwiseLeftShiftAssignment;	break;
+		case token::TOK_RIGHT_SHIFT_ASSIGN:	op = BinaryOperation::BinaryOperator::BitwiseRightShifAssignment; 	break;
+		case token::TOK_AND_ASSIGN:			op = BinaryOperation::BinaryOperator::BitwiseAndAssignment;			break;
+		case token::TOK_XOR_ASSIGN:			op = BinaryOperation::BinaryOperator::BitwiseXorAssignment;			break;
+		case token::TOK_OR_ASSIGN:			op = BinaryOperation::BinaryOperator::BitwiseOrAssignment;			break;
+		case token::TOK_OR_OP:				op = BinaryOperation::BinaryOperator::LogicalOr;					break;
+		case token::TOK_AND_OP:				op = BinaryOperation::BinaryOperator::LogicalAnd;					break;
+		case '|':							op = BinaryOperation::BinaryOperator::BitwiseOr;					break;
+		case '^':							op = BinaryOperation::BinaryOperator::BitwiseXor;					break;
+		case '&':							op = BinaryOperation::BinaryOperator::BitwiseAnd;					break;
+		case token::TOK_EQ_OP:				op = BinaryOperation::BinaryOperator::EqualTo;						break;
+		case token::TOK_NE_OP:				op = BinaryOperation::BinaryOperator::NotEqualTo;					break;
+		case '<':							op = BinaryOperation::BinaryOperator::LessThan;						break;
+		case '>':							op = BinaryOperation::BinaryOperator::GreaterThan;					break;
+		case token::TOK_LE_OP:				op = BinaryOperation::BinaryOperator::LessThanOrEqualTo;			break;
+		case token::TOK_GE_OP:				op = BinaryOperation::BinaryOperator::GreaterThanOrEqualTo;			break;
+		case token::TOK_LEFT_SHIFT_OP:		op = BinaryOperation::BinaryOperator::BitwiseLeftShift;				break;
+		case token::TOK_RIGHT_SHIFT_OP:		op = BinaryOperation::BinaryOperator::BitwiseRightShift;			break;
+		case '+':							op = BinaryOperation::BinaryOperator::Addition;						break;
+		case '-':							op = BinaryOperation::BinaryOperator::Subtraction;					break;
+		case '*':							op = BinaryOperation::BinaryOperator::Multiplication;				break;
+		case '/':							op = BinaryOperation::BinaryOperator::Division;						break;
+		case '%':							op = BinaryOperation::BinaryOperator::Modulo;						break;
 	}
 
 	return make_shared<BinaryOperation>(firstExpression, op, secondExpression);
@@ -88,12 +87,12 @@ std::shared_ptr<Expression> ExpressionFactory::makePrefixUnaryOperation(int unar
 		case token::TOK_INC_OP:	op = PrefixUnaryOperation::PrefixUnary::Increment;	break;
 		case token::TOK_DEC_OP:	op = PrefixUnaryOperation::PrefixUnary::Decrement;	break;
 		case token::TOK_SIZEOF:	op = PrefixUnaryOperation::PrefixUnary::Sizeof;		break;
-		case '&':		op = PrefixUnaryOperation::PrefixUnary::AddressOf;	break;
-		case '*':		op = PrefixUnaryOperation::PrefixUnary::Indirection;	break;
-		case '+':		op = PrefixUnaryOperation::PrefixUnary::UnaryPlus;	break;
-		case '-':		op = PrefixUnaryOperation::PrefixUnary::UnaryMinus;	break;
-		case '~':		op = PrefixUnaryOperation::PrefixUnary::BitwiseNot;	break;
-		case '!':		op = PrefixUnaryOperation::PrefixUnary::Not;			break;
+		case '&':				op = PrefixUnaryOperation::PrefixUnary::AddressOf;	break;
+		case '*':				op = PrefixUnaryOperation::PrefixUnary::Indirection;break;
+		case '+':				op = PrefixUnaryOperation::PrefixUnary::UnaryPlus;	break;
+		case '-':				op = PrefixUnaryOperation::PrefixUnary::UnaryMinus;	break;
+		case '~':				op = PrefixUnaryOperation::PrefixUnary::BitwiseNot;	break;
+		case '!':				op = PrefixUnaryOperation::PrefixUnary::Not;		break;
 	}
 
 	return make_shared<PrefixUnaryOperation>(op, expression);
@@ -125,7 +124,7 @@ std::shared_ptr<Expression> ExpressionFactory::makeMemberAccessExpression(std::s
 
 	switch(accessMethod)
 	{
-		case '.':		op = MemberAccess::MemberOperator::StructureReference;	break;
+		case '.':					op = MemberAccess::MemberOperator::StructureReference;		break;
 		case token::TOK_POINT_OP:	op = MemberAccess::MemberOperator::StructureDereference;	break;
 	}
 

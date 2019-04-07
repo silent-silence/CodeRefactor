@@ -22,7 +22,7 @@
 %initial-action
 {
     // Initialize the initial location.
-    @$.begin.filename = @$.end.filename = &driver.file;
+    @$.begin.filename = @$.end.filename = &driver.getOpenedFrom();
 };
 
 // Enable tracing and verbose errors (which may be wrong!)
@@ -33,23 +33,34 @@
 %code
 {
 	#include "Parser/Driver.h"
-	#define yylex driver.scanner.yylex
+	#include "Opener/Opener.h"
+	#define yylex driver.getSacnner().yylex
 }
 
 %define api.token.prefix {TOK_}
-%token ELLIPSIS	"..."	RIGHT_SHIFT_ASSIGN ">>="	LEFT_SHIFT_ASSIGN "<<="
-%token POINT_OP	"->"	INC_OP	"++"			DEC_OP	"--"			LEFT_SHIFT_OP "<<"	RIGHT_SHIFT_OP ">>"
-%token LE_OP "<="		GE_OP ">="				EQ_OP "=="				NE_OP "!="
-%token AND_OP "&&"		OR_OP "||"
-%token MUL_ASSIGN "*="	DIV_ASSIGN "/="		MOD_ASSIGN	"%="		ADD_ASSIGN	"+="	SUB_ASSIGN "-="
-%token AND_ASSIGN "&="	XOR_ASSIGN	"^="		OR_ASSIGN "|="
-%token DOUBLE_POUND "##"
-%token OPEN_PARENTHESE "("	CLOSE_PARENTHESE ")"	OPEN_BRACKET "["	CLOSE_BRACKET "]"	OPEN_CURLY "{"	CLOSE_CURLY "}"
-%token OPEN_BRACKET_UNUSUAL "<:"	CLOSE_BRACKET_UNUSUAL ":>"		OPEN_CURLY_UNUSUAL "<%"			CLOSE_CURLY_UNUSUAL "%>"
-%token DOT "."	START "*"	PLUS "+"	SUBTRACTION "-"	DIVISION "/"	MODULO "%"	NOT "!"	GREATER_THAN ">"	LESS_THAN "<"
-%token BITWISE_AND "&"	BITWISE_XOR "^"	BITWISE_OR "|"	BITWISE_NOT "~"
-%token QUESTION_MARK "?"	COLON ":"	SEMICOLON ";"	ASSIGN_OP "="	COMMA ","	POUND "#"
-%token SIZEOF "sizeof"
+
+%token  ELLIPSIS                "..."
+%token  RIGHT_SHIFT_ASSIGN      ">>="   LEFT_SHIFT_ASSIGN       "<<="
+%token  LEFT_SHIFT_OP           "<<"    RIGHT_SHIFT_OP          ">>"
+%token  INC_OP                  "++"    DEC_OP                  "--"
+%token  POINT_OP                "->"
+%token  LE_OP                   "<="    GE_OP                   ">="    EQ_OP               "=="    NE_OP               "!="
+%token  NOT                     "!"     GREATER_THAN            ">"     LESS_THAN           "<"
+%token  AND_OP                  "&&"    OR_OP                   "||"
+%token  MUL_ASSIGN              "*="    DIV_ASSIGN              "/="    MOD_ASSIGN          "%="
+%token  ADD_ASSIGN              "+="    SUB_ASSIGN              "-="
+%token  AND_ASSIGN              "&="    XOR_ASSIGN              "^="    OR_ASSIGN           "|="    ASSIGN_OP           "="
+%token  DOUBLE_POUND            "##"    POUND "#"
+%token  OPEN_PARENTHESE         "("     CLOSE_PARENTHESE        ")"     OPEN_BRACKET        "["     CLOSE_BRACKET       "]"
+%token  OPEN_CURLY              "{"     CLOSE_CURLY             "}"
+%token  OPEN_BRACKET_UNUSUAL    "<:"    CLOSE_BRACKET_UNUSUAL   ":>"    OPEN_CURLY_UNUSUAL  "<%"    CLOSE_CURLY_UNUSUAL "%>"
+%token  DOT                     "."
+%token  START                   "*"     PLUS                    "+"     SUBTRACTION         "-"     DIVISION            "/"     MODULO "%"
+%token  BITWISE_AND             "&"     BITWISE_XOR             "^"     BITWISE_OR          "|"     BITWISE_NOT         "~"
+%token  QUESTION_MARK           "?"     COLON                   ":"     SEMICOLON           ";"     COMMA               ","
+%token  SIZEOF                  "sizeof"
+
+%token STATMENT_FOR "for"   STATMENT_SWITCH "switch"    CASE "case"
 
 %token TYPE_INT "int"	TYPE_DOUBLE	"double" TYPE_FLOAT "float"	TYPE_CHAR "char"	TYPE_BOOL "bool"
 
@@ -82,10 +93,33 @@
 %printer { yyoutput << $$; }<*>
 %%
 
+start: | start statement;
+
 statement: ";"
-    | type_name expression ";"  { std::cout << $1 << " "; $2->print(); }
-	| expression ";"            { $1->print(); }
+    | type_name expression ";"  { yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2->print(); }
+	| expression ";"            { yy::Parser::driver.getOpener().getOutputStream() << $1->print(); }
+	| for			            {}
 	;
+
+for:
+	for_loop_control statement {} |
+	for_loop_control "{" for_loop "}" {}
+	;
+for_loop_control:
+	STATMENT_FOR "(" ";" ";" ")" {} |
+	STATMENT_FOR "(" expression ";" ";" ")" {} |
+	STATMENT_FOR "(" expression ";" expression ";" ")" {} |
+	STATMENT_FOR "(" expression ";" expression ";" expression")" {} |
+	STATMENT_FOR "(" ";" expression ";" ")" {} |
+	STATMENT_FOR "(" ";" expression ";" expression")" {} |
+	STATMENT_FOR "(" ";" ";" expression")" {} |
+	STATMENT_FOR "(" expression ";" ";" expression")" {}
+	;
+for_loop: |
+	for_loop statement {}
+	;
+
+
 primary_expression: IDENTIFIER				{ $$ = ExpressionFactory::makeIdentity($1); }
 	| INTEGER								{ $$ = ExpressionFactory::makeLiteral($1); }
 	| FLOAT									{ $$ = ExpressionFactory::makeLiteral($1); }

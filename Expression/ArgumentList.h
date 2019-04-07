@@ -13,7 +13,7 @@ public:
 	ArgumentList(std::shared_ptr<ArgumentList> argumentList, std::shared_ptr<Expression> expression);
 	~ArgumentList() override = default;
 
-	void print() override;
+	std::string print() override;
 
 private:
 	std::shared_ptr<ArgumentList> m_argumentList;

@@ -34,6 +34,9 @@ identifier	([_a-zA-Z][_0-9a-zA-Z]*)
 "float"			{ return yy::Parser::make_TYPE_FLOAT(loc); }
 "char"			{ return yy::Parser::make_TYPE_CHAR(loc); }
 "bool"			{ return yy::Parser::make_TYPE_BOOL(loc); }
+"for"           { return yy::Parser::make_STATMENT_FOR(loc); }
+"switch"        { return yy::Parser::make_STATMENT_SWITCH(loc); }
+"case"          { return yy::Parser::make_CASE(loc); }
 
 "sizeof"		{ return yy::Parser::make_SIZEOF(loc); }
 

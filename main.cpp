@@ -1,9 +1,6 @@
-#include <iostream>
-#include <memory>
-#include "parser.hpp"
+#include <Opener/StringOpener.h>
 #include "Parser/Driver.h"
 
-using std::make_shared;				using std::shared_ptr;
 using std::string;
 
 #ifdef ENV_TEST
@@ -16,8 +13,15 @@ int main(int argc, char *argv[])
 #else
 int main()
 {
-	Driver driver;
-	driver.parse("a");
+	StringOpener opener;
+	opener << string("int a;\n");
+	opener << string("1 + 2;\n");
+	Driver driver(opener);
+	driver.parse();
+
+	std::string output;
+	opener >> output;
+	std::cout << output;
 
 	return 0;
 }

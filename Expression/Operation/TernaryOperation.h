@@ -9,7 +9,7 @@ public:
 	TernaryOperation(std::shared_ptr<Expression> firstExpression, std::shared_ptr<Expression> secondExpression, std::shared_ptr<Expression> thirdExpression);
 	~TernaryOperation() override = default;
 
-	void print() override;
+	std::string print() override;
 
 private:
 	std::shared_ptr<Expression> m_firstExpression;

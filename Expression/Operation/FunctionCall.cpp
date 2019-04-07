@@ -10,11 +10,7 @@ FunctionCall::FunctionCall(std::shared_ptr <Expression> expression, std::shared_
 	: m_expression{expression}, m_argumentList{argumentList}
 {}
 
-void FunctionCall::print()
+std::string FunctionCall::print()
 {
-	std::cout << "(Function call)";
-	m_expression->print();
-	std::cout << "(";
-	m_argumentList->print();
-	std::cout << ")";
+	return "(Function call)" + m_expression->print() + "(" + m_argumentList->print() + ")";
 }

@@ -11,12 +11,13 @@ MemberAccess::MemberAccess(std::shared_ptr<Expression> expression, MemberOperato
 	: m_expression{expression}, m_accessOperator{accessOperator}, m_identity{identity}
 {}
 
-void MemberAccess::print()
+std::string MemberAccess::print()
 {
-	std::cout << "(Member access)";
+	std::string ret("(Member access)");
 	switch(m_accessOperator)
 	{
-		case StructureDereference:	m_expression->print(); std::cout << "->"; m_identity->print();	break;
-		case StructureReference:	m_expression->print(); std::cout << "."; m_identity->print();	break;
+		case StructureDereference:	ret += m_expression->print() + "->" + m_identity->print();	break;
+		case StructureReference:	ret += m_expression->print() + "." + m_identity->print();	break;
 	}
+	return ret;
 }

@@ -9,12 +9,13 @@ PostfixUnaryOperation::PostfixUnaryOperation(std::shared_ptr <Expression> expres
 	: m_expression{expression}, m_operatorType{operatorType}
 {}
 
-void PostfixUnaryOperation::print()
+std::string PostfixUnaryOperation::print()
 {
-	std::cout << "(Postfix unary operation)";
+	std::string ret("(Postfix unary operation)");
 	switch(m_operatorType)
 	{
-		case Increment:	m_expression->print(); std::cout << "++";	break;
-		case Decrement:	m_expression->print(); std::cout << "++";	break;
+		case Increment:	ret += m_expression->print() + "++";	break;
+		case Decrement:	ret += m_expression->print() + "++";	break;
 	}
+	return ret;
 }

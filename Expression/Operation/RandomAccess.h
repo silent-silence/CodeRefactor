@@ -13,7 +13,7 @@ public:
 	RandomAccess(std::shared_ptr<Expression> expression, std::shared_ptr<Expression> accessPoint);
 	~RandomAccess() override = default;
 
-	void print() override;
+	std::string print() override;
 
 private:
 	std::shared_ptr<Expression> m_expression;

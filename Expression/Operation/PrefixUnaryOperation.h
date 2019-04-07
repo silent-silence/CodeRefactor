@@ -23,7 +23,7 @@ public:
 	PrefixUnaryOperation(PrefixUnary operatorType, std::shared_ptr<Expression> expression);
 	~PrefixUnaryOperation() override = default;
 
-	void print() override;
+	std::string print() override;
 
 private:
 	PrefixUnary m_operatorType;
