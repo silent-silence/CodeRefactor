@@ -14,8 +14,8 @@ int main(int argc, char *argv[])
 int main()
 {
 	StringOpener opener;
-	opener << string("int a;\n");
-	opener << string("1 + 2;\n");
+	opener << string("int a[1];\n");
+	//opener << string("a[1];\n");
 	Driver driver(opener);
 	driver.parse();
 

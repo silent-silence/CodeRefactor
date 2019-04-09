@@ -61,8 +61,10 @@
 %token  SIZEOF                  "sizeof"
 
 %token STATMENT_FOR "for"   STATMENT_SWITCH "switch"    CASE "case"
+%token KEYWORD_CONTINUE "continue"	KEYWORK_BREAK "break"	KEYWORD_RETURN "return"
 
-%token TYPE_INT "int"	TYPE_DOUBLE	"double" TYPE_FLOAT "float"	TYPE_CHAR "char"	TYPE_BOOL "bool"
+%token TYPE_INT "int"			TYPE_INT_POINT "int *"
+%token TYPE_DOUBLE	"double"	TYPE_FLOAT "float"	TYPE_CHAR "char"	TYPE_BOOL "bool"
 
 %token <std::string>IDENTIFIER <int>INTEGER	<double>FLOAT
 
@@ -95,28 +97,65 @@
 
 start: | start statement;
 
-statement: ";"
-    | type_name expression ";"  { yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2->print(); }
-	| expression ";"            { yy::Parser::driver.getOpener().getOutputStream() << $1->print(); }
-	| for			            {}
+statement: 
+	null_statement | 
+	compound_statement | 
+	execution_statement | 
+	declaration_statement
 	;
-
-for:
-	for_loop_control statement {} |
-	for_loop_control "{" for_loop "}" {}
+null_statement:
+	";"												{ yy::Parser::driver.getOpener().getOutputStream() << ";"; }
 	;
-for_loop_control:
-	STATMENT_FOR "(" ";" ";" ")" {} |
-	STATMENT_FOR "(" expression ";" ";" ")" {} |
-	STATMENT_FOR "(" expression ";" expression ";" ")" {} |
-	STATMENT_FOR "(" expression ";" expression ";" expression")" {} |
-	STATMENT_FOR "(" ";" expression ";" ")" {} |
-	STATMENT_FOR "(" ";" expression ";" expression")" {} |
-	STATMENT_FOR "(" ";" ";" expression")" {} |
-	STATMENT_FOR "(" expression ";" ";" expression")" {}
+compound_statement: 
+	"{" statement "}" {}
 	;
-for_loop: |
-	for_loop statement {}
+execution_statement:
+	control_statment |
+	expression_statement 
+	;
+declaration_statement:
+	type_name IDENTIFIER ";" 						{ yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << ";"; } |
+	type_name IDENTIFIER "=" expression ";" 		{ yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "=" << $4->print() << ";"; } |
+	type_name IDENTIFIER "[" expression "]" ";"		{ yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "[" << $4->print() << "];"; } |
+	type_name IDENTIFIER "(" argument_list ")" ";" 	{ yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "(" << ");"; } |
+	;
+control_statment:
+	if_statement |
+	for_statement |
+	while_statement |
+	do_while_statement |
+	continue_statement |
+	break_statement |
+	switch_statement |
+	goto_statement |
+	return_statement 
+	;
+expression_statement:
+	expression ";" 									{ yy::Parser::driver.getOpener().getOutputStream() << $1->print(); }
+	;
+argument_list: |
+	argument_list "," type_name IDENTIFIER			{}
+	;
+if_statement:
+	;
+for_statement:
+	;
+while_statement:
+	;
+do_while_statement:
+	;
+continue_statement:
+	"continue" ";"
+	;
+break_statement:
+	"break" ";"
+	;
+switch_statement:
+	;
+goto_statement:
+	;
+return_statement:
+	"return" expression ";"
 	;
 
 
@@ -213,7 +252,10 @@ multiplicative_expression: cast_expression					{ $$ = $1; }
 	| multiplicative_expression "/" cast_expression			{ $$ = ExpressionFactory::makeBinaryOperation($1, '/', $3); }
 	| multiplicative_expression "%" cast_expression			{ $$ = ExpressionFactory::makeBinaryOperation($1, '%', $3); }
 	;
+
+
 type_name: "int"	{ $$ = "int"; }
+	| "int *"		{ $$ = "int *"; }
 	| "double"		{ $$ = "double"; }
 	| "float"		{ $$ = "float"; }
 	| "char"		{ $$ = "char"; }

@@ -30,6 +30,7 @@ identifier	([_a-zA-Z][_0-9a-zA-Z]*)
 %}
 
 "int"			{ return yy::Parser::make_TYPE_INT(loc); }
+"int *"			{ return yy::Parser::make_TYPE_INT_POINT(loc); }
 "double"		{ return yy::Parser::make_TYPE_DOUBLE(loc); }
 "float"			{ return yy::Parser::make_TYPE_FLOAT(loc); }
 "char"			{ return yy::Parser::make_TYPE_CHAR(loc); }
@@ -37,6 +38,10 @@ identifier	([_a-zA-Z][_0-9a-zA-Z]*)
 "for"           { return yy::Parser::make_STATMENT_FOR(loc); }
 "switch"        { return yy::Parser::make_STATMENT_SWITCH(loc); }
 "case"          { return yy::Parser::make_CASE(loc); }
+
+"continue"		{ return yy::Parser::make_KEYWORD_CONTINUE(loc); }
+"break"			{ return yy::Parser::make_KEYWORK_BREAK(loc); }
+"return"		{ return yy::Parser::make_KEYWORD_RETURN(loc); }
 
 "sizeof"		{ return yy::Parser::make_SIZEOF(loc); }
 
