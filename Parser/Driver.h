@@ -33,27 +33,34 @@ public:
     std::string &getOpenedFrom() const;
 
     /// @brief Make statements
-	void makeCompoundStmt(yy::location &l, yy::location &r);
+	void makeCompoundStmt(unsigned stmtNumInBlock, yy::location &l, yy::location &r);
 	void makeIfStmt(yy::location &l, yy::location &r);
-	void makeStmtExpr(yy::location &l, yy::location &r);
-	void makeSimpleStmt();
+	void makeNullStmt(yy::location &l);
+	void makeContinueStmt(yy::location &l);
+	void makeBreakStmt(yy::location &l);
+	void makeReturnStmt(yy::location &l, bool haveExpr = false);
 
 	/// @brief Make expressions
-	void makeIntegerLiteral(int val);
-	void makeCharactorLiteral(unsigned val);
-	void makeFloatingLiteral(const float &val);
+	//void makeStmtExpr(yy::location &l, yy::location &r);
+	void makeIntegerLiteral(int val, yy::location &l);
+	void makeCharactorLiteral(unsigned val, yy::location &l);
+	void makeFloatingLiteral(const float &val, yy::location &l);
 	void makeStringLiteral(std::string str, yy::location &location);
-	void makeUnaryOperator(int opc);
+	void makeUnaryOperator(int opc, yy::location &l);
 	void makeBinaryOperator(int opc, yy::location &location);
 	void makeCompoundAssignOperator(int opc, yy::location &location);
 	void makeConditionalOperator();
+	void makeParenExpr(yy::location &l, yy::location &r);
+	/*void makeSizeofExpr(yy::location &l, yy::location &r, std::string typeName);
+	void makeArraySubscripExpr(yy::location &l);
+	void makeCallExpr(unsigned parameterNum, yy::location &l);
+	void makeMemberExpr(int opc, yy::location &l);*/
 
 private:
 	/// @brief Start scan
 	void scan_begin();
 
 	SourceLocation toSourceLocation(yy::location &location);
-	unsigned m_stmtNumInBlock;
 	ASTContext &m_context;
 
 	bool trace_parsing;

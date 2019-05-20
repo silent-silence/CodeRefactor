@@ -29,24 +29,30 @@ identifier	([_a-zA-Z][_0-9a-zA-Z]*)
 	loc.step();
 %}
 
-"int"			{ return yy::Parser::make_TYPE_INT(loc); }
-"int *"			{ return yy::Parser::make_TYPE_INT_POINT(loc); }
-"double"		{ return yy::Parser::make_TYPE_DOUBLE(loc); }
-"float"			{ return yy::Parser::make_TYPE_FLOAT(loc); }
-"char"			{ return yy::Parser::make_TYPE_CHAR(loc); }
 "bool"			{ return yy::Parser::make_TYPE_BOOL(loc); }
-"for"           { return yy::Parser::make_STATMENT_FOR(loc); }
-"switch"        { return yy::Parser::make_STATMENT_SWITCH(loc); }
-"case"          { return yy::Parser::make_CASE(loc); }
+"char"			{ return yy::Parser::make_TYPE_CHAR(loc); }
+"short"         { return yy::Parser::make_TYPE_SHORT(loc); }
+"int"			{ return yy::Parser::make_TYPE_INT(loc); }
+"long"          { return yy::Parser::make_TYPE_LONG(loc); }
+"long long"     { return yy::Parser::make_TYPE_LLONG(loc); }
+"float"			{ return yy::Parser::make_TYPE_FLOAT(loc); }
+"double"		{ return yy::Parser::make_TYPE_DOUBLE(loc); }
+"signed"        { return yy::Parser::make_TYPE_SIGNED(loc); }
+"unsigned"      { return yy::Parser::make_TYPE_UNSIGNED(loc); }
 
+"for"           { return yy::Parser::make_KEYWORD_FOR(loc); }
+"switch"        { return yy::Parser::make_KEYWORD_SWITCH(loc); }
+"case"          { return yy::Parser::make_KEYWORD_CASE(loc); }
 "continue"		{ return yy::Parser::make_KEYWORD_CONTINUE(loc); }
-"break"			{ return yy::Parser::make_KEYWORK_BREAK(loc); }
+"break"			{ return yy::Parser::make_KEYWORD_BREAK(loc); }
 "return"		{ return yy::Parser::make_KEYWORD_RETURN(loc); }
+"do"            { return yy::Parser::make_KEYWORD_DO(loc); }
+"while"         { return yy::Parser::make_KEYWORD_WHILE(loc); }
 
 "sizeof"		{ return yy::Parser::make_SIZEOF(loc); }
 
-{float}			{ return yy::Parser::make_FLOAT(atof(yytext), loc); }
-{integer}		{ return yy::Parser::make_INTEGER(atoi(yytext), loc); }
+{float}			{ return yy::Parser::make_FLOATING_LITERAL(atof(yytext), loc); }
+{integer}		{ return yy::Parser::make_INTEGER_LITERAL(atoi(yytext), loc); }
 {identifier}	{ return yy::Parser::make_IDENTIFIER(yytext, loc); }
 
 "..."   		{ return yy::Parser::make_ELLIPSIS(loc); }
@@ -104,7 +110,7 @@ identifier	([_a-zA-Z][_0-9a-zA-Z]*)
 ","				{ return  yy::Parser::make_COMMA(loc); }
 "#"				{ return  yy::Parser::make_POUND(loc); }
 
-{string}        { return yy::Parser::make_STRING(yytext, loc); }
+{string}        { return yy::Parser::make_STRING_LITERAL(yytext, loc); }
 
 <<EOF>>    { return yy::Parser::make_EOF(loc); }
 

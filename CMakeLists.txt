@@ -21,10 +21,9 @@ endif()
 add_executable(CodeRefactor
         main.cpp
         ${BISON_Parser_OUTPUTS} ${FLEX_Scanner_OUTPUTS}
-		Factory/ExpressionFactory.h Factory/ExpressionFactory.cpp
 		Parser/Scanner.h Parser/Driver.cpp Parser/Driver.h
-        Opener/OpenHelper.cpp Opener/OpenHelper.h Opener/StringStreamOpenHelper.cpp Opener/StringStreamOpenHelper.h Opener/StdioOpenHelper.cpp Opener/StdioOpenHelper.h Opener/FileOpenHelper.cpp Opener/FileOpenHelper.h
-		Declarations/Decl.h Declarations/DeclarationName.h Declarations/DeclBase.h Declarations/QualType.cpp Declarations/QualType.h Declarations/DeclBase.cpp
+		OpenHelper/OpenHelper.cpp OpenHelper/OpenHelper.h OpenHelper/StringStreamOpenHelper.cpp OpenHelper/StringStreamOpenHelper.h OpenHelper/StdioOpenHelper.cpp OpenHelper/StdioOpenHelper.h OpenHelper/FileOpenHelper.cpp OpenHelper/FileOpenHelper.h
+		Declarations/Decl.h Declarations/DeclarationName.h Declarations/DeclBase.h Declarations/DeclBase.cpp
 		AST/AST.hpp AST/Expr.cpp AST/Expr.h AST/Stmt.cpp AST/Stmt.h AST/StmtNodes.def AST/Type.cpp AST/Type.h AST/TypeNodes.def AST/ASTContext.h AST/ASTContext.cpp
 		Basic/SourceLocation.h Basic/SourceLocation.cpp
-		test/ParseTest.cpp test/OpenerTest.cpp test/DeclarationTest.cpp)
+		test/ParseTest.cpp test/OpenHelperTest.cpp test/DeclarationTest.cpp Declarations/DeclGroupRef.cpp Declarations/DeclGroupRef.h)

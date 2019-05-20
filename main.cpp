@@ -9,8 +9,9 @@ int main(int argc, char *argv[])
 }
 #else
 
-#include "Opener/StringOpener.h"
+#include "OpenHelper/StringStreamOpenHelper.h"
 #include "Parser/Driver.h"
+#include "AST/ASTContext.h"
 
 using std::string;
 
@@ -21,10 +22,11 @@ int main()
 	a[4] = 2;
 	std::cout << a[4] << typeid(a).name() << std::endl;
 
-	StringOpener opener;
+	StringStreamOpenHelper opener;
 	opener << string("a=4;\n");
 	//opener << string("a[1];\n");
-	Driver driver(opener);
+	ASTContext context;
+	Driver driver(opener, context);
 	driver.parse();
 
 	std::string output;

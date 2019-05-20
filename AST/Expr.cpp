@@ -1,5 +1,8 @@
 #include "Expr.h"
-//line 144 151
+
+using std::vector;
+using std::shared_ptr;
+
 Expr::Expr(StmtClass SC, QualType T)
     :Stmt (SC), TypeDependent(false), ValueDependent(false)
 {
@@ -47,46 +50,60 @@ void Expr::setValueDependent(bool value)
     ValueDependent = value;
 }
 
-DeclRefExpr::DeclRefExpr(QualType t):
-    Expr (DeclRefExprClass,t)
+DeclRefExpr::DeclRefExpr(std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l)
+    :Expr(DeclRefExprClass, t), D(d), Loc(l)
 {}
 
-DeclRefExpr::DeclRefExpr(QualType t, bool TD, bool VD):Expr(DeclRefExprClass,t,TD,VD)
+DeclRefExpr::DeclRefExpr(std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l, bool TD, bool VD)
+    :Expr(DeclRefExprClass, t, TD, VD), D(d), Loc(l)
+{}
+
+DeclRefExpr::DeclRefExpr(Stmt::EmptyShell Empty)
+    :Expr(DeclRefExprClass,Empty)
+{}
+
+DeclRefExpr::DeclRefExpr(Stmt::StmtClass SC,
+                         shared_ptr<NamedDecl> d,
+                         QualType t,
+                         SourceLocation l)
+    :Expr(SC, t), D(d), Loc(l)
+{}
+
+DeclRefExpr::DeclRefExpr(Stmt::StmtClass SC,
+                         shared_ptr<NamedDecl> d,
+                         QualType t,
+                         SourceLocation l, bool TD, bool VD)
+    :Expr(SC, t, TD, VD), D(d), Loc(l)
+{}
+
+PredefinedExpr::PredefinedExpr(SourceLocation l, QualType type, IdentType IT)
+    :Expr (PredefinedExprClass,type), Loc{l}, Type(IT)
+{}
+
+PredefinedExpr::PredefinedExpr(EmptyShell Empty)
+    :Expr (PredefinedExprClass, Empty)
+{}
+
+
+IntegerLiteral::IntegerLiteral(const int &V, QualType type, SourceLocation l)
+    :Expr (IntegerLiteralClass,type),Value(V), Loc(l)
 {
+
 }
-
-DeclRefExpr::DeclRefExpr(Stmt::EmptyShell Empty):Expr(DeclRefExprClass,Empty)
-{}
-
-DeclRefExpr::DeclRefExpr(StmtClass SC, QualType t):Expr (SC,t)
-{}
-
-DeclRefExpr::DeclRefExpr(StmtClass SC, QualType t, bool TD, bool VD):Expr (SC,t,TD,VD)
-{}
-
-PredefinedExpr::PredefinedExpr(QualType type, IdentType IT):Expr (PredefinedExprClass,type),Type(IT)
-{}
-
-PredefinedExpr::PredefinedExpr(EmptyShell Empty):Expr (PredefinedExprClass,Empty)
-{}
-
-IntegerLiteral::IntegerLiteral(const int &V, QualType type)
-    :Expr (IntegerLiteralClass,type),Value(V)
-{}
 
 IntegerLiteral::IntegerLiteral(EmptyShell Empty):Expr (IntegerLiteralClass,Empty)
 {}
 
-CharacterLiteral::CharacterLiteral(unsigned value, bool iswide, QualType type)
-    :Expr (CharacterLiteralClass,type),Value(value),IsWide(iswide)
+CharacterLiteral::CharacterLiteral(unsigned value, bool iswide, QualType type, SourceLocation l)
+    :Expr (CharacterLiteralClass,type), Value(value), Loc(l), IsWide(iswide)
 {}
 
 CharacterLiteral::CharacterLiteral(EmptyShell Empty)
     :Expr (CharacterLiteralClass,Empty)
 {}
 
-FloatingLiteral::FloatingLiteral(const float &V, bool isexact, QualType Type)
-    :Expr (FloatingLiteralClass,Type),Value(V),IsExact(isexact)
+FloatingLiteral::FloatingLiteral(const float &V, bool isexact, QualType Type, SourceLocation L)
+    :Expr (FloatingLiteralClass,Type), Value(V), IsExact(isexact), Loc(L)
 {}
 
 FloatingLiteral::FloatingLiteral(EmptyShell Empty)
@@ -102,19 +119,20 @@ ImaginaryLiteral::ImaginaryLiteral(EmptyShell Empty)
 
 std::shared_ptr<StringLiteral> StringLiteral::Create(const char *StrData, unsigned ByteLength, bool Wide, QualType Ty, const SourceLocation Loc, unsigned NumStrs)
 {
-	// TODO: move initialize into constructor
+	// TODO: maybe move this into constructor
 	struct PtrMaker : public StringLiteral {
 		PtrMaker(QualType Ty) : StringLiteral(Ty) {}
-		static std::shared_ptr<StringLiteral> make(QualType Ty)
-		{ return std::make_shared<PtrMaker>(Ty); }
+		static std::shared_ptr<StringLiteral> make(QualType Ty) {
+			return std::make_shared<PtrMaker>(Ty);
+		}
 	};
-	std::shared_ptr<StringLiteral> ret = PtrMaker::make(Ty);
-	ret->StrData = StrData;
-	ret->ByteLength = ByteLength;
-	ret->IsWide = Wide;
-	ret->NumConcatenated = NumStrs;
-	ret->TokLocs = Loc;
-	return ret;
+	auto stringLiteral = PtrMaker::make(Ty);
+	stringLiteral->StrData = StrData;
+	stringLiteral->ByteLength = ByteLength;
+	stringLiteral->IsWide = Wide;
+	stringLiteral->NumConcatenated = NumStrs;
+	stringLiteral->TokLocs = Loc;
+	return stringLiteral;
 }
 
 std::shared_ptr<StringLiteral> StringLiteral::Create(const char *StrData, unsigned ByteLength, bool Wide, QualType Ty, SourceLocation Loc)
@@ -126,35 +144,32 @@ StringLiteral::StringLiteral(QualType Ty)
     :Expr (StringLiteralClass,Ty)
 {}
 
-ParenExpr::ParenExpr(std::shared_ptr<Expr> val)
-    :Expr (ParenExprClass,val->getType(),val->isTypeDependent(),val->isValueDependent())
+ParenExpr::ParenExpr(SourceLocation l, SourceLocation r, std::shared_ptr<Expr> val)
+    :Expr (ParenExprClass,val->getType(),val->isTypeDependent(),val->isValueDependent()),
+      L(l), R(r),Val(val)
 {}
 
 ParenExpr::ParenExpr(EmptyShell Empty)
     :Expr (ParenExprClass,Empty)
 {}
 
-UnaryOperator::UnaryOperator(std::shared_ptr<Expr> input, Opcode opc, QualType type)
-    :Expr (UnaryOperatorClass,type,input->isTypeDependent()&&opc !=OffsetOf,input->isValueDependent())
+UnaryOperator::UnaryOperator(std::shared_ptr<Expr> input, Opcode opc, QualType type, SourceLocation l)
+    :Expr (UnaryOperatorClass,type,input->isTypeDependent()&&opc !=OffsetOf,input->isValueDependent()),
+      Val(input), Opc(opc), Loc(l)
 {}
 
 UnaryOperator::UnaryOperator(EmptyShell Empty)
     :Expr (UnaryOperatorClass,Empty)
 {}
 
-SizeOfAlignOfExpr::SizeOfAlignOfExpr(bool issizeof, QualType T, QualType resultType)
-    :Expr (SizeOfAlignOfExprClass,resultType,false,T->isDependentType()),isSizeof(issizeof),isType(true)
-{}
-
-SizeOfAlignOfExpr::SizeOfAlignOfExpr(bool issizeof, std::shared_ptr<Expr> E, QualType resultType)
-    :Expr (SizeOfAlignOfExprClass,resultType,false,E->isTypeDependent())
-{}
-SizeOfAlignOfExpr::SizeOfAlignOfExpr(EmptyShell Empty)
-    :Expr (SizeOfAlignOfExprClass,Empty)
-{}
-
-ArraySubscriptExpr::ArraySubscriptExpr(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, QualType t)
-    :Expr (ArraySubscriptExprClass,t,lhs->isTypeDependent()||rhs->isTypeDependent(),lhs->isValueDependent()||rhs->isValueDependent())
+ArraySubscriptExpr::ArraySubscriptExpr(shared_ptr<Expr> lhs,
+                                       shared_ptr<Expr> rhs,
+                                       QualType t,
+                                       SourceLocation rbracketloc)
+    :Expr (ArraySubscriptExprClass, t,
+           lhs->isTypeDependent()||rhs->isTypeDependent(),
+           lhs->isValueDependent()||rhs->isValueDependent()),
+      RBracketLoc(rbracketloc)
 {
     SubExprs[LHS] = lhs;
     SubExprs[RHS] = rhs;
@@ -164,28 +179,54 @@ ArraySubscriptExpr::ArraySubscriptExpr(EmptyShell Shell)
     :Expr (ArraySubscriptExprClass,Shell)
 {}
 
-CallExpr::CallExpr(std::shared_ptr<Expr> fn, std::shared_ptr<Expr> *args, unsigned numargs, QualType t)
-    :Expr (CallExprClass,t,fn->isTypeDependent(),fn->isValueDependent()),NumArgs(numargs)
-{}//资料里该部分没有写 ：之后的部分，看是否需要写，以及args赋值给谁
+CallExpr::CallExpr(shared_ptr<Expr> fn,
+                   vector<shared_ptr<Expr> > args,
+                   unsigned numargs,
+                   QualType t,
+                   SourceLocation rparenloc)
+    : Expr(CallExprClass, t), NumArgs(numargs)
+{
+    //SubExprs = new (C) Stmt*[numargs+1];
+    SubExprs[FN] = fn;
+    for (unsigned i = 0; i != numargs; ++i)
+        SubExprs[i+ARGS_START] = args[i];
+    RParenLoc = rparenloc;
+}
+
 
 CallExpr::CallExpr(StmtClass SC, EmptyShell Empty)
     :Expr (SC,Empty)
 {}
-CallExpr::CallExpr(StmtClass SC, std::shared_ptr<Expr> fn, std::shared_ptr<Expr> *args, unsigned numargs, QualType t)
-    :Expr (SC,t,fn->isTypeDependent(),fn->isValueDependent()),NumArgs(numargs)
-{}//同上
 
-MemberExpr::MemberExpr(std::shared_ptr<Expr> base, bool isarrow, QualType ty)
-    :Expr (MemberExprClass,ty,base->isTypeDependent(),base->isValueDependent()),IsArrow(isarrow)
+CallExpr::CallExpr(Stmt::StmtClass SC,
+                   shared_ptr<Expr> fn,
+                   vector<shared_ptr<Expr> > args,
+                   unsigned numargs,
+                   QualType t,
+                   SourceLocation rparenloc)
+    : Expr(SC, t), NumArgs(numargs)
+{
+    //SubExprs = new (C) Stmt*[numargs+1];
+    SubExprs[FN] = fn;
+    for (unsigned i = 0; i != numargs; ++i)
+        SubExprs[i+ARGS_START] = args[i];
+
+    RParenLoc = rparenloc;
+}
+
+MemberExpr::MemberExpr(std::shared_ptr<Expr> base, bool isarrow, std::shared_ptr<NamedDecl> memberdecl, SourceLocation l, QualType ty)
+    :Expr (MemberExprClass,ty,base->isTypeDependent(),base->isValueDependent()),
+      Base(base), MemberDecl(memberdecl), MemberLoc(l), IsArrow(isarrow)
 {}
 
 MemberExpr::MemberExpr(EmptyShell Empty)
     :Expr (MemberExprClass,Empty)
 {}
 
-CompoundLiteralExpr::CompoundLiteralExpr(QualType ty, std::shared_ptr<Expr> init, bool fileScope)
-    :Expr (CompoundLiteralExprClass,ty),Init(init),FileScope(fileScope)
+CompoundLiteralExpr::CompoundLiteralExpr(SourceLocation lparenloc, QualType ty, std::shared_ptr<Expr> init, bool fileScope)
+    :Expr (CompoundLiteralExprClass,ty), LParenLoc(lparenloc), Init(init), FileScope(fileScope)
 {}
+
 CompoundLiteralExpr::CompoundLiteralExpr(EmptyShell Empty)
     :Expr (CompoundLiteralExprClass,Empty)
 {}
@@ -195,7 +236,7 @@ CastExpr::CastExpr(StmtClass SC, QualType ty, const CastInfo &info, std::shared_
 {}
 
 CastExpr::CastExpr(StmtClass SC, EmptyShell Empty)
-  : Expr(SC, Empty)
+    : Expr(SC, Empty)
 { }
 
 ImplicitCastExpr::ImplicitCastExpr(QualType ty, const CastInfo &info, std::shared_ptr<Expr>op, bool Lvalue)
@@ -203,7 +244,7 @@ ImplicitCastExpr::ImplicitCastExpr(QualType ty, const CastInfo &info, std::share
 {}
 
 ImplicitCastExpr::ImplicitCastExpr(EmptyShell Shell)
-      : CastExpr(ImplicitCastExprClass, Shell) { }
+    : CastExpr(ImplicitCastExprClass, Shell) { }
 
 ExplicitCastExpr::ExplicitCastExpr(StmtClass SC, QualType exprTy, const CastInfo &info,
                                    std::shared_ptr<Expr>op, QualType writtenTy)
@@ -211,15 +252,16 @@ ExplicitCastExpr::ExplicitCastExpr(StmtClass SC, QualType exprTy, const CastInfo
 {}
 
 ExplicitCastExpr::ExplicitCastExpr(StmtClass SC, EmptyShell Shell)
-  : CastExpr(SC, Shell)
+    : CastExpr(SC, Shell)
 { }
 
-CStyleCastExpr::CStyleCastExpr(QualType exprTy, CastKind kind, std::shared_ptr<Expr> op, QualType writtenTy) :
-  ExplicitCastExpr(CStyleCastExprClass, exprTy, kind, op, writtenTy)
- {}
+CStyleCastExpr::CStyleCastExpr(QualType exprTy, CastKind kind, std::shared_ptr<Expr> op, QualType writtenTy, SourceLocation l, SourceLocation r) :
+    ExplicitCastExpr(CStyleCastExprClass, exprTy, kind, op, writtenTy),
+    LPLoc(l), RPLoc(r)
+{}
 
 CStyleCastExpr::CStyleCastExpr(EmptyShell Shell)
-      : ExplicitCastExpr(CStyleCastExprClass, Shell)
+    : ExplicitCastExpr(CStyleCastExprClass, Shell)
 { }
 
 BinaryOperator::BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, BinaryOperator::Opcode opc, QualType ResTy, SourceLocation opLoc)
@@ -340,3 +382,25 @@ ImplicitValueInitExpr::ImplicitValueInitExpr(Stmt::EmptyShell Empty)
 
 ExtVectorElementExpr::ExtVectorElementExpr(Stmt::EmptyShell Empty)
     : Expr(ExtVectorElementExprClass, Empty) { }
+
+SizeOfAlignOfExpr::SizeOfAlignOfExpr(bool issizeof,
+                                     QualType T,
+                                     QualType resultType,
+                                     SourceLocation op,
+                                     SourceLocation rp)
+    : Expr(SizeOfAlignOfExprClass, resultType, false, T->isDependentType()),
+      isSizeof(issizeof), isType(true), OpLoc(op), RParenLoc(rp)
+{
+    //Ty = T.ggetAsOpaquePtr();
+}
+
+SizeOfAlignOfExpr::SizeOfAlignOfExpr(bool issizeof,
+                                     shared_ptr<Expr> E,
+                                     QualType resultType,
+                                     SourceLocation op,
+                                     SourceLocation rp)
+    : Expr(SizeOfAlignOfExprClass, resultType, false, E->isTypeDependent()),
+      isSizeof(issizeof), isType(false), OpLoc(op), RParenLoc(rp)
+{
+    Ex = E;
+}

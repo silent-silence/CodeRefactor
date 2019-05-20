@@ -3,7 +3,7 @@
 
 #include "DeclBase.h"
 #include "DeclarationName.h"
-#include "QualType.h"
+#include "AST/Type.h"
 #include <vector>
 #include <memory>
 

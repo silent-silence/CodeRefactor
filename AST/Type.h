@@ -97,7 +97,7 @@ protected:
     enum { TypeClassBitSize = 6 };
     Type(TypeClass tc, QualType Canonical, bool dependent);
 private:
-    Type(const Type&);
+    Type(const Type &){}
 
     QualType CanonicalType;
     bool Dependent : 1;

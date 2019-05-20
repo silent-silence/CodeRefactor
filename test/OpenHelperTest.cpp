@@ -7,13 +7,13 @@
 #include <string>
 #include <sstream>
 #include <gtest/gtest.h>
-#include <Opener/FileOpenHelper.h>
-#include <Opener/StdioOpenHelper.h>
-#include <Opener/StringStreamOpenHelper.h>
+#include <OpenHelper/FileOpenHelper.h>
+#include <OpenHelper/StdioOpenHelper.h>
+#include <OpenHelper/StringStreamOpenHelper.h>
 
 using std::ofstream;			using std::fstream;
 
-class OpenerTest : public testing::Test {
+class OpenHelperTest : public testing::Test {
 protected:
 	static void SetUpTestCase() {
 		auto of = ofstream("a");
@@ -24,7 +24,7 @@ protected:
 	static void TearDownTestCase() {}
 };
 
-TEST_F(OpenerTest, fileOpenerReadonly)
+TEST_F(OpenHelperTest, fileOpenerReadonly)
 {
 	FileOpenHelper opener("a");
 	EXPECT_EQ("a", opener.getOpenedName());
@@ -44,7 +44,7 @@ TEST_F(OpenerTest, fileOpenerReadonly)
 	std::cout.rdbuf(backup);
 }
 
-TEST_F(OpenerTest, fileOpenerReadWrite)
+TEST_F(OpenHelperTest, fileOpenerReadWrite)
 {
 	FileOpenHelper opener("a", "b");
 	EXPECT_EQ("a", opener.getOpenedName());
@@ -62,7 +62,7 @@ TEST_F(OpenerTest, fileOpenerReadWrite)
 	EXPECT_EQ("output", readBuf);
 }
 
-TEST_F(OpenerTest, stdio)
+TEST_F(OpenHelperTest, stdio)
 {
 	StdioOpenHelper opener;
 
@@ -81,7 +81,7 @@ TEST_F(OpenerTest, stdio)
 	EXPECT_EQ("stdio", opener.getOpenedName());
 }
 
-TEST_F(OpenerTest, stringOpener)
+TEST_F(OpenHelperTest, stringOpener)
 {
 	StringStreamOpenHelper opener;
 

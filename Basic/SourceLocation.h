@@ -7,7 +7,7 @@ class SourceLocation
 {
 public:
     SourceLocation();
-    SourceLocation(std::string fileName, unsigned line, unsigned bytes);
+    SourceLocation(std::string fileName, unsigned line, unsigned byte);
 
     bool operator>(const SourceLocation &sourceLocation) const;
     bool operator<(const SourceLocation &sourceLocation) const;

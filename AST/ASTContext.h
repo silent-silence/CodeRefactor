@@ -9,142 +9,100 @@
 class ASTContext
 {
 public:
-    template<typename... Args>
-    void createStmt(Stmt::StmtClass type, Args... args){
-        typedef std::variant<
-                unsigned,
-                long unsigned,
-                int,
-                double,
-                float,
-                bool,
-                char *,
-                SourceLocation,
-                QualType,
-                UnaryOperator::Opcode,
-                BinaryOperator::Opcode
-                > VarType;
-        std::vector<VarType> value;
-        (value.push_back(VarType{args}), ...);
-        std::shared_ptr<Stmt> stmt;
-        switch (type) {
-        case Stmt::CompoundStmtClass:
-            stmt=createCompoundStmt(
-                        std::get<unsigned>(value[0]),
-                    std::get<SourceLocation>(value[1]),
-                    std::get<SourceLocation>(value[2]));
-            break;
-        case Stmt::IfStmtClass:
-            stmt=createIfStmt(
-                        std::get<SourceLocation>(value[0]),
-                    std::get<SourceLocation>(value[1]));
-            break;
-        case Stmt::IntegerLiteralClass:
-            stmt=createIntegerLiteral(
-                        std::get<int>(value[0]),
-                    std::get<QualType>(value[1]));
-            break;
-        case Stmt::CharacterLiteralClass:
-            stmt=createCharacterLiteral(
-                        std::get<unsigned>(value[0]),
-                    std::get<bool>(value[1]),
-                    std::get<QualType>(value[2]));
-            break;
-        case Stmt::FloatingLiteralClass:
-            stmt=createFloatingLiteral(
-                        std::get<float>(value[0]),
-                    std::get<bool>(value[1]),
-                    std::get<QualType>(value[2]));
-            break;
-        case Stmt::StringLiteralClass:
-            if(value.size()==5)
-                stmt=createStringLiteral(
-                            std::get<char *>(value[0]),
-                        std::get<long unsigned>(value[1]),
-                        std::get<bool>(value[2]),
-                        std::get<QualType>(value[3]),
-                        std::get<SourceLocation>(value[4]));
-            else
-                stmt=createStringLiteral(
-                            std::get<char *>(value[0]),
-                        std::get<unsigned>(value[1]),
-                        std::get<bool>(value[2]),
-                        std::get<QualType>(value[3]),
-                        std::get<SourceLocation>(value[4]),
-                        std::get<unsigned>(value[5]));
-            break;
-        case Stmt::UnaryOperatorClass:
-            stmt=createUnaryOperator(
-                        std::get<UnaryOperator::Opcode>(value[0]),
-                    std::get<QualType>(value[1]));
-            break;
-        case Stmt::BinaryOperatorClass:
-            stmt=createBinaryOperator(
-                        std::get<BinaryOperator::Opcode>(value[0]),
-                    std::get<QualType>(value[1]),
-                    std::get<SourceLocation>(value[2]));
-            break;
-        case Stmt::CompoundAssignOperatorClass:
-            stmt=createCompoundAssignOperator(
-                        std::get<CompoundAssignOperator::Opcode>(value[0]),
-                    std::get<QualType>(value[1]),
-                    std::get<QualType>(value[2]),
-                    std::get<QualType>(value[3]),
-                    std::get<SourceLocation>(value[4]));
-            break;
-        case Stmt::ConditionalOperatorClass:
-            stmt=createConditionalOperator(
-                        std::get<QualType>(value[0]));
-            break;
-        case Stmt::StmtExprClass:
-            stmt=createStmtExpr(
-                        std::get<QualType>(value[0]),
-                    std::get<SourceLocation>(value[1]),
-                    std::get<SourceLocation>(value[2]));
-            break;
-        case Stmt::ExprClass:
-        	stmt=createSimpleStmt(type);
-        	break;
-        default:break;
+    typedef std::variant<
+    unsigned,
+    unsigned long,
+    int,
+    double,
+    float,
+    bool,
+    char *,
+    SourceLocation,
+    QualType,
+    UnaryOperator::Opcode,
+    BinaryOperator::Opcode,
+    PredefinedExpr::IdentType,
+    std::string
+    > var_t;
+    template<auto type, typename... Args>
+    void create(Args... args){
+        std::vector<var_t> value;
+        (value.push_back(var_t{args}), ...);
+        if(typeid (type)==typeid (Stmt::StmtClass)){
+            createStmt(static_cast<Stmt::StmtClass>(type), value);
         }
-        queue.push(stmt);
+        else if(typeid (type)==typeid (Type::TypeClass)){
+            createType(static_cast<Type::TypeClass>(type), value);
+        }
+        else {
+            throw std::string("Unable to identify identifier!");
+        }
     }
 
+#ifdef ENV_TEST
     std::weak_ptr<Stmt> getTop() const;
-    void cleanQueue();
+    void cleanAST();
+#endif
 
 private:
-    std::shared_ptr<Stmt> createCompoundStmt(unsigned num, SourceLocation LB, SourceLocation RB);
-    std::shared_ptr<Stmt> createIfStmt(SourceLocation IL, SourceLocation EL = SourceLocation());
-    std::shared_ptr<Stmt> createIntegerLiteral(int val, QualType type);
-    std::shared_ptr<Stmt> createCharacterLiteral(unsigned val, bool iswide, QualType type);
-    std::shared_ptr<Stmt> createFloatingLiteral(const float &V, bool isexact, QualType type);
-    std::shared_ptr<Stmt> createStringLiteral(const char *StrData,
-                                              unsigned ByteLength, bool Wide, QualType Ty,
-                                              const SourceLocation Loc, unsigned NumStrs);
-    std::shared_ptr<Stmt> createStringLiteral(const char *StrData,
-                                              unsigned ByteLength,
-                                              bool Wide, QualType Ty, SourceLocation Loc);
-    std::shared_ptr<Stmt> createUnaryOperator(UnaryOperator::Opcode opc, QualType type);
-    std::shared_ptr<Stmt> createBinaryOperator(BinaryOperator::Opcode opc, QualType ResTy, SourceLocation opLoc);
-    std::shared_ptr<Stmt> createCompoundAssignOperator(CompoundAssignOperator::Opcode opc,
-                                                       QualType ResType, QualType CompLHSType,
-                                                       QualType CompResultType,
-                                                       SourceLocation OpLoc);
-    std::shared_ptr<Stmt> createConditionalOperator(QualType t);
-    std::shared_ptr<Stmt> createStmtExpr(QualType T, SourceLocation lp, SourceLocation rp);
-    std::shared_ptr<Stmt> createSimpleStmt(Stmt::StmtClass type);
+	void createStmt(Stmt::StmtClass type, std::vector<var_t> &value);
+	void createType(Type::TypeClass type, std::vector<var_t> value);
 
-    std::queue<std::shared_ptr<Stmt>> queue;
+	void createDeclStmt(std::vector<var_t> &value);
+	void createNullStmt(std::vector<var_t> &value);//done
+	void createCompoundStmt(std::vector<var_t> &value);//done
+	void createCaseStmt(std::vector<var_t> &value);
+	void createDefaultStmt(std::vector<var_t> &value);
+	void createLabelStmt(std::vector<var_t> &value);
+	void createIfStmt(std::vector<var_t> &value);
+	void createSwitchStmt(std::vector<var_t> &value);
+	void createWhileStmt(std::vector<var_t> &value);
+	void createDoStmt(std::vector<var_t> &value);
+	void createForStmt(std::vector<var_t> &value);
+	void createGotoStmt(std::vector<var_t> &value);
+	void createIndirectGotoStmt(std::vector<var_t> &value);
+	void createContinueStmt(std::vector<var_t> &value);//done
+	void createBreakStmt(std::vector<var_t> &value);//done
+	void createReturnStmt(std::vector<var_t> &value);//done
 
-    template<typename T=Stmt>
-    std::shared_ptr<T> pop_back(){
-        if(queue.empty())
-            return nullptr;
-        std::shared_ptr<Stmt> ptr=queue.front();
-        queue.pop();
-        return std::dynamic_pointer_cast<T>(ptr);
-    }
+	void createDeclRefExpr(std::vector<var_t> &value);
+	void createPredefinedExpr(std::vector<var_t> &value);
+	void createIntegerLiteral(std::vector<var_t> &value);//done
+	void createCharacterLiteral(std::vector<var_t> &value);
+	void createFloatingLiteral(std::vector<var_t> &value);//done
+	void createImaginaryLiteral(std::vector<var_t> &value);
+	void createStringLiteral(std::vector<var_t> &value);//done
+	void createParenExpr(std::vector<var_t> &value);//done
+	void createUnaryOperator(std::vector<var_t> &value);//done
+	void createSizeOfAlignOfExpr(std::vector<var_t> &value);
+	void createArraySubscriptExpr(std::vector<var_t> &value);
+	void createCallExpr(std::vector<var_t> &value);
+	void createMemberExpr(std::vector<var_t> &value);
+	void createCompoundLiteralExpr(std::vector<var_t> &value);
+	void createImplicitCastExpr(std::vector<var_t> &value);
+	void createCStyleCastExpr(std::vector<var_t> &value);
+	void createBinaryOperator(std::vector<var_t> &value);//done
+	void createCompoundAssignOperator(std::vector<var_t> &value);//done
+	void createConditionalOperator(std::vector<var_t> &value);//done
+	void createAddrLabelExpr(std::vector<var_t> &value);
+	void createStmtExpr(std::vector<var_t> &value);
+	void createTypesCompatibleExpr(std::vector<var_t> &value);
+	void createShuffleVectorExpr(std::vector<var_t> &value);
+	void createChooseExpr(std::vector<var_t> &value);
+	void createGNUNullExpr(std::vector<var_t> &value);
+	void createVAArgExpr(std::vector<var_t> &value);
+	void createInitListExpr(std::vector<var_t> &value);
+	void createParenListExpr(std::vector<var_t> &value);
+
+	std::queue<std::shared_ptr<Stmt>> queue;
+	template<typename T=Stmt>
+	std::shared_ptr<T> pop_back(){
+		if(queue.empty())
+			return nullptr;
+		std::shared_ptr<Stmt> ptr=queue.front();
+		queue.pop();
+		return std::dynamic_pointer_cast<T>(ptr);
+	}
 };
 
 #endif // ASTCONTEXT_H

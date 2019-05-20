@@ -8,7 +8,7 @@
 #include <fstream>
 #include <string>
 #include <gtest/gtest.h>
-#include "Opener/StringStreamOpenHelper.h"
+#include "OpenHelper/StringStreamOpenHelper.h"
 #include "Parser/Driver.h"
 #include "AST/ASTContext.h"
 
@@ -31,11 +31,12 @@ TEST_F(ParseTest, LiteralExpression)
 	opener << "12;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<IntegerLiteral>(context.getTop().lock()));
-	context.cleanQueue();
+	context.cleanAST();
 
 	opener << "12.3;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<FloatingLiteral>(context.getTop().lock()));
+	context.cleanAST();
 }
 
 TEST_F(ParseTest, UnaryExpression)
@@ -43,12 +44,12 @@ TEST_F(ParseTest, UnaryExpression)
 	opener << "1++;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<UnaryOperator>(context.getTop().lock()));
-	context.cleanQueue();
+	context.cleanAST();
 
 	opener << "--1;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<UnaryOperator>(context.getTop().lock()));
-	context.cleanQueue();
+	context.cleanAST();
 
 	opener << "+1;";
 	driver.parse();
@@ -89,23 +90,62 @@ TEST_F(ParseTest, CompoundStmt)
 	opener << "{ 123; }";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<CompoundStmt>(context.getTop().lock()));
-	context.cleanQueue();
+	context.cleanAST();
 
 	opener << "{ 123; 1234; }";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<CompoundStmt>(context.getTop().lock()));
-	context.cleanQueue();
+	context.cleanAST();
 
 	opener << "1; { 123; 1234; }";
 	driver.parse();
-	// Compound stmt is the top?
-	EXPECT_TRUE(dynamic_pointer_cast<CompoundStmt>(context.getTop().lock()));
-	context.cleanQueue();
+	EXPECT_TRUE(dynamic_pointer_cast<IntegerLiteral>(context.getTop().lock()));
+	context.cleanAST();
 
 	opener << "{ 123; 1234; } 1;";
 	driver.parse();
-	// Integer literal is the top?
-	EXPECT_TRUE(dynamic_pointer_cast<IntegerLiteral>(context.getTop().lock()));
-	context.cleanQueue();
+	EXPECT_TRUE(dynamic_pointer_cast<CompoundStmt>(context.getTop().lock()));
+	context.cleanAST();
+
+	opener << "{ 123; 1234; 123; { 123; 123; } { 13; } {} } 1;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<CompoundStmt>(context.getTop().lock()));
+	context.cleanAST();
+}
+
+TEST_F(ParseTest, SimpleStmts)
+{
+	opener << ";";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<NullStmt>(context.getTop().lock()));
+	context.cleanAST();
+
+	opener << "continue;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<ContinueStmt>(context.getTop().lock()));
+	context.cleanAST();
+
+	opener << "break;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<BreakStmt>(context.getTop().lock()));
+	context.cleanAST();
+
+	opener << "return;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<ReturnStmt>(context.getTop().lock()));
+	context.cleanAST();
+
+	opener << "return 132;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<ReturnStmt>(context.getTop().lock()));
+	context.cleanAST();
+}
+
+TEST_F(ParseTest, ParenExprTest)
+{
+	opener << "(123);";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<ParenExpr>(context.getTop().lock()));
+	context.cleanAST();
 }
 #endif
