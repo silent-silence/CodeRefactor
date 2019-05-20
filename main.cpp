@@ -1,28 +1,19 @@
-#include <Opener/StringOpener.h>
-#include "Parser/Driver.h"
+#include <iostream>
+#include <memory>
+#include <vector>
+#include <array>
 
-using std::string;
+#include "AST/AST.hpp"
 
-#ifdef ENV_TEST
-#include <gtest/gtest.h>
-int main(int argc, char *argv[])
-{
-	testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
-}
-#else
+using std::cout;
+using std::endl;
+using std::array;
+using std::vector;
+using std::weak_ptr;
+using std::shared_ptr;
+using std::make_shared;
+
 int main()
 {
-	StringOpener opener;
-	opener << string("int a[1];\n");
-	//opener << string("a[1];\n");
-	Driver driver(opener);
-	driver.parse();
-
-	std::string output;
-	opener >> output;
-	std::cout << output;
-
-	return 0;
+    return 0;
 }
-#endif
