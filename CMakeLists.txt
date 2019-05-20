@@ -23,8 +23,8 @@ add_executable(CodeRefactor
         ${BISON_Parser_OUTPUTS} ${FLEX_Scanner_OUTPUTS}
 		Factory/ExpressionFactory.h Factory/ExpressionFactory.cpp
 		Parser/Scanner.h Parser/Driver.cpp Parser/Driver.h
-		Opener/Opener.cpp Opener/Opener.h Opener/StringOpener.cpp Opener/StringOpener.h Opener/StdioOpener.cpp Opener/StdioOpener.h Opener/FileOpener.cpp Opener/FileOpener.h
-		Declarations/Decl.h Declarations/DeclarationName.h Declarations/DeclBase.h Declarations/SourceLocation.h Declarations/QualType.cpp Declarations/QualType.h Declarations/DeclBase.cpp
-		AST/AST.hpp AST/Expr.cpp AST/Expr.h AST/Stmt.cpp AST/Stmt.h AST/StmtNodes.def AST/Type.cpp AST/Type.h AST/TypeNodes.def
+        Opener/OpenHelper.cpp Opener/OpenHelper.h Opener/StringStreamOpenHelper.cpp Opener/StringStreamOpenHelper.h Opener/StdioOpenHelper.cpp Opener/StdioOpenHelper.h Opener/FileOpenHelper.cpp Opener/FileOpenHelper.h
+		Declarations/Decl.h Declarations/DeclarationName.h Declarations/DeclBase.h Declarations/QualType.cpp Declarations/QualType.h Declarations/DeclBase.cpp
+		AST/AST.hpp AST/Expr.cpp AST/Expr.h AST/Stmt.cpp AST/Stmt.h AST/StmtNodes.def AST/Type.cpp AST/Type.h AST/TypeNodes.def AST/ASTContext.h AST/ASTContext.cpp
 		Basic/SourceLocation.h Basic/SourceLocation.cpp
-		test/ExpressionTest.cpp test/OpenerTest.cpp test/DeclarationTest.cpp)
+		test/ParseTest.cpp test/OpenerTest.cpp test/DeclarationTest.cpp)

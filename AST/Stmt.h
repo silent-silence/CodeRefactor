@@ -12,17 +12,17 @@ class StringLiteral;
 
 class DeclStmt;
 class NullStmt;
-class CompoundStmt;
+class CompoundStmt;//
 class SwitchCase;
 class CaseStmt;
 class DefaultStmt;
 class LabelStmt;
-class IfStmt;
+class IfStmt;//
 class SwitchStmt;
 
-class WhileStmt;
+class WhileStmt;//
 class DoStmt;
-class ForStmt;
+class ForStmt;//
 class GotoStmt;
 class IndirectGotoStmt;
 class ContinueStmt;
@@ -46,34 +46,42 @@ public:
     struct EmptyShell {};
     Stmt(StmtClass SC);
     explicit Stmt(StmtClass SC, EmptyShell);
+    virtual ~Stmt(){}
 protected:
 private:
     const unsigned sClass : 8;//The statement class.
     unsigned RefCount : 24;//The reference count for this statement.
 };
 
+/// DeclStmt - Adaptor class for mixing declarations with statements and expressions.
 class DeclStmt : public Stmt
 {
 public:
-    DeclStmt() : Stmt(DeclStmtClass){}
+    DeclStmt(SourceLocation startLoc, SourceLocation endLoc);
     explicit DeclStmt(EmptyShell Empty);
+private:
+    SourceLocation StartLoc, EndLoc;
 };
 
+/// NullStmt - This is the null statement ";": C99 6.8.3p3.
 class NullStmt : public Stmt
 {
 public:
-    NullStmt();
+    NullStmt(SourceLocation L);
     explicit NullStmt(EmptyShell Empty);
+private:
+    SourceLocation SemiLoc;
 };
 
 class CompoundStmt : public Stmt
 {
 public:
-    CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, unsigned numStmts);
+    CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, SourceLocation LB, SourceLocation RB);
     explicit CompoundStmt(EmptyShell Empty);
 private:
     std::vector<std::shared_ptr<Stmt>> Body;
     unsigned NumStmts;
+    SourceLocation LBracLoc, RBracLoc;
 };
 
 class SwitchCase : public Stmt
@@ -116,12 +124,14 @@ private:
 class IfStmt : public Stmt
 {
 public:
-    IfStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> then, std::shared_ptr<Stmt> elsev = nullptr);
-
+    IfStmt(SourceLocation IL, std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> then,
+           SourceLocation EL = SourceLocation(), std::shared_ptr<Stmt> elsev= nullptr);
     explicit IfStmt(EmptyShell Empty);
 private:
     enum { COND, THEN, ELSE, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
+    SourceLocation IfLoc;
+    SourceLocation ElseLoc;
 };
 
 class SwitchStmt : public Stmt

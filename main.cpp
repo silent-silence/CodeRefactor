@@ -1,16 +1,19 @@
-#include <Opener/StringOpener.h>
-#include "Parser/Driver.h"
-
-using std::string;
-
 #ifdef ENV_TEST
+
 #include <gtest/gtest.h>
+
 int main(int argc, char *argv[])
 {
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }
 #else
+
+#include "Opener/StringOpener.h"
+#include "Parser/Driver.h"
+
+using std::string;
+
 int main()
 {
 	int a[] = {1, 2};

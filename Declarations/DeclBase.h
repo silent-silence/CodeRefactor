@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "SourceLocation.h"
+#include "Basic/SourceLocation.h"
 #include "DeclarationName.h"
 
 class DeclContext;

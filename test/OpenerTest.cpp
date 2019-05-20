@@ -7,9 +7,9 @@
 #include <string>
 #include <sstream>
 #include <gtest/gtest.h>
-#include <Opener/FileOpener.h>
-#include <Opener/StdioOpener.h>
-#include <Opener/StringOpener.h>
+#include <Opener/FileOpenHelper.h>
+#include <Opener/StdioOpenHelper.h>
+#include <Opener/StringStreamOpenHelper.h>
 
 using std::ofstream;			using std::fstream;
 
@@ -26,7 +26,7 @@ protected:
 
 TEST_F(OpenerTest, fileOpenerReadonly)
 {
-	FileOpener opener("a");
+	FileOpenHelper opener("a");
 	EXPECT_EQ("a", opener.getOpenedName());
 
 	std::string readBuf;
@@ -46,7 +46,7 @@ TEST_F(OpenerTest, fileOpenerReadonly)
 
 TEST_F(OpenerTest, fileOpenerReadWrite)
 {
-	FileOpener opener("a", "b");
+	FileOpenHelper opener("a", "b");
 	EXPECT_EQ("a", opener.getOpenedName());
 
 	std::string readBuf;
@@ -64,7 +64,7 @@ TEST_F(OpenerTest, fileOpenerReadWrite)
 
 TEST_F(OpenerTest, stdio)
 {
-	StdioOpener opener;
+	StdioOpenHelper opener;
 
 	std::istringstream istringstream("input");
 	opener.getInputStream().rdbuf(istringstream.rdbuf());
@@ -83,7 +83,7 @@ TEST_F(OpenerTest, stdio)
 
 TEST_F(OpenerTest, stringOpener)
 {
-	StringOpener opener;
+	StringStreamOpenHelper opener;
 
 	std::string readBuf;
 	opener << std::string("input");

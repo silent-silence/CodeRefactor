@@ -94,8 +94,8 @@ identifier	([_a-zA-Z][_0-9a-zA-Z]*)
 ">"				{ return yy::Parser::make_GREATER_THAN(loc); }
 "<"				{ return yy::Parser::make_LESS_THAN(loc); }
 "&"				{ return  yy::Parser::make_BITWISE_AND(loc); }
-"^"				{ return  yy::Parser::make_BITWISE_AND(loc); }
-"|"				{ return  yy::Parser::make_BITWISE_AND(loc); }
+"^"				{ return  yy::Parser::make_BITWISE_XOR(loc); }
+"|"				{ return  yy::Parser::make_BITWISE_OR(loc); }
 "~"				{ return yy::Parser::make_BITWISE_NOT(loc); }
 "?"				{ return yy::Parser::make_QUESTION_MARK(loc); }
 ":"				{ return yy::Parser::make_COLON(loc); }
@@ -103,6 +103,8 @@ identifier	([_a-zA-Z][_0-9a-zA-Z]*)
 "="				{ return  yy::Parser::make_ASSIGN_OP(loc); }
 ","				{ return  yy::Parser::make_COMMA(loc); }
 "#"				{ return  yy::Parser::make_POUND(loc); }
+
+{string}        { return yy::Parser::make_STRING(yytext, loc); }
 
 <<EOF>>    { return yy::Parser::make_EOF(loc); }
 

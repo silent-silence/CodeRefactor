@@ -11,19 +11,19 @@ Stmt::Stmt(Stmt::StmtClass SC, Stmt::EmptyShell)
 {
 }
 
+DeclStmt::DeclStmt(SourceLocation startLoc, SourceLocation endLoc)
+    : Stmt(DeclStmtClass), StartLoc(startLoc), EndLoc(endLoc) {}
+
 DeclStmt::DeclStmt(EmptyShell Empty) : Stmt(DeclStmtClass, Empty) { }
 
-NullStmt::NullStmt()
-    :Stmt (NullStmtClass)
-{}
+NullStmt::NullStmt(SourceLocation L) : Stmt(NullStmtClass), SemiLoc(L) {}
 
 NullStmt::NullStmt(EmptyShell Empty) : Stmt(NullStmtClass, Empty) { }
 
-//CompoundStmt::CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, unsigned numStmts)
-//    :Stmt (CompoundStmtClass),NumStmts(numStmts)
-//{
-//    // 这部分
-//}
+CompoundStmt::CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, SourceLocation LB, SourceLocation RB)
+    :Stmt (CompoundStmtClass),LBracLoc(LB), RBracLoc(RB)
+{
+}
 
 
 CompoundStmt::CompoundStmt(EmptyShell Empty):Stmt(CompoundStmtClass, Empty)
@@ -56,20 +56,6 @@ LabelStmt::LabelStmt(std::shared_ptr<Stmt> substmt)
 
 LabelStmt::LabelStmt(EmptyShell Empty)
     :Stmt (LabelStmtClass,Empty)
-{}
-
-IfStmt::IfStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> then, std::shared_ptr<Stmt> elsev = nullptr)
-    :Stmt (IfStmtClass)
-{
-    SubExprs[COND]=cond;
-    SubExprs[THEN]=then;
-    SubExprs[ELSE]=elsev;
-
-
-}
-
-IfStmt::IfStmt(EmptyShell Empty)
-    :Stmt (IfStmtClass,Empty)
 {}
 
 SwitchStmt::SwitchStmt(std::shared_ptr<Expr> cond)
@@ -175,3 +161,17 @@ AsmStmt::AsmStmt(SourceLocation asmloc, bool issimple, bool isvolatile,
 
 AsmStmt::AsmStmt(Stmt::EmptyShell Empty)
     : Stmt(AsmStmtClass, Empty) { }
+
+IfStmt::IfStmt(SourceLocation IL, std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> then, SourceLocation EL, std::shared_ptr<Stmt> elsev)
+    : Stmt(IfStmtClass)
+{
+    SubExprs[COND] = cond;
+    SubExprs[THEN] = then;
+    SubExprs[ELSE] = elsev;
+    IfLoc = IL;
+    ElseLoc = EL;
+}
+
+IfStmt::IfStmt(Stmt::EmptyShell Empty)
+    : Stmt(IfStmtClass, Empty)
+{ }

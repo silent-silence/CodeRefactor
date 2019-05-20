@@ -2,11 +2,17 @@
 // Created by gaojian on 19-4-6.
 //
 
-#include <Opener/Opener.h>
+#include "Opener/OpenHelper.h"
 #include "Driver.h"
+#include "Basic/SourceLocation.h"
+#include "AST/ASTContext.h"
 
-Driver::Driver(Opener &opener)
-	: m_opener{opener}, trace_scanning{false}, trace_parsing{false}
+using std::make_shared;
+
+typedef yy::Parser::token::yytokentype token;
+
+Driver::Driver(OpenHelper &opener, ASTContext &context)
+	: m_opener{opener}, trace_scanning{false}, trace_parsing{false}, m_stmtNumInBlock{0}, m_context{context}
 {}
 
 int Driver::parse()
@@ -33,7 +39,7 @@ Scanner& Driver::getSacnner()
 	return m_scanner;
 }
 
-Opener& Driver::getOpener()
+OpenHelper& Driver::getOpener()
 {
 	return m_opener;
 }
@@ -47,4 +53,136 @@ void Driver::scan_begin()
 {
 	m_scanner.set_debug(trace_scanning);
 	m_scanner.switch_streams(&m_opener.getInputStream(), &m_opener.getOutputStream());
+}
+
+void Driver::makeCompoundStmt(yy::location &l, yy::location &r)
+{
+	SourceLocation lb = toSourceLocation(l);
+	SourceLocation rb = toSourceLocation(r);
+	m_context.createStmt(Stmt::CompoundStmtClass, m_stmtNumInBlock, lb, rb);
+	m_stmtNumInBlock = 0;
+}
+
+void Driver::makeIfStmt(yy::location &l, yy::location &r)
+{
+	SourceLocation lb = toSourceLocation(l);
+	SourceLocation rb = toSourceLocation(r);
+	m_context.createStmt(Stmt::IfStmtClass, lb, rb);
+	++m_stmtNumInBlock;
+}
+
+void Driver::makeStmtExpr(yy::location &l, yy::location &r)
+{
+	SourceLocation lp = toSourceLocation(l);
+	SourceLocation rp = toSourceLocation(r);
+	m_context.createStmt(Stmt::StmtExprClass, QualType(make_shared<Type>(), 0), lp, rp);
+	++m_stmtNumInBlock;
+}
+
+void Driver::makeSimpleStmt()
+{
+	m_context.createStmt(Stmt::StmtClass::ExprClass);
+	++m_stmtNumInBlock;
+}
+
+void Driver::makeIntegerLiteral(int val)
+{
+	m_context.createStmt(Stmt::IntegerLiteralClass, val, QualType(make_shared<Type>(), 0));
+}
+
+void Driver::makeCharactorLiteral(unsigned val)
+{
+	m_context.createStmt(Stmt::CharacterLiteralClass, val, false, QualType(make_shared<Type>(), 0));
+}
+
+void Driver::makeFloatingLiteral(const float &val)
+{
+	m_context.createStmt(Stmt::FloatingLiteralClass, val, false, QualType(make_shared<Type>(), 0));
+}
+
+void Driver::makeStringLiteral(std::string str, yy::location &location)
+{
+	SourceLocation l = toSourceLocation(location);
+	m_context.createStmt(Stmt::StringLiteralClass, str.data(), str.length(), false, QualType(make_shared<Type>(), 0), l);
+}
+
+void Driver::makeUnaryOperator(int opc)
+{
+	UnaryOperator::Opcode operatorCode;
+	switch (opc)
+	{
+		case token::TOK_POST_INC:	operatorCode = UnaryOperator::PostInc;	break;
+		case token::TOK_POST_DEC:	operatorCode = UnaryOperator::PostDec;	break;
+		case token::TOK_PRE_INC:	operatorCode = UnaryOperator::PreInc;	break;
+		case token::TOK_PRE_DEC:	operatorCode = UnaryOperator::PreDec;	break;
+		case '&':					operatorCode = UnaryOperator::AddrOf;	break;
+		case '*':					operatorCode = UnaryOperator::Deref;	break;
+		case '+':					operatorCode = UnaryOperator::Plus;		break;
+		case '-':					operatorCode = UnaryOperator::Minus;	break;
+		case '~':					operatorCode = UnaryOperator::Not;		break;
+		case '!':					operatorCode = UnaryOperator::LNot;		break;
+	}
+	m_context.createStmt(Stmt::UnaryOperatorClass, operatorCode, QualType(make_shared<Type>(), 0));
+}
+
+void Driver::makeBinaryOperator(int opc, yy::location &location)
+{
+	BinaryOperator::Opcode operatorCode;
+	switch(opc)
+	{
+
+		case token::TOK_OR_OP:				operatorCode = BinaryOperator::LOr;			break;
+		case token::TOK_AND_OP:				operatorCode = BinaryOperator::LAnd;		break;
+		case '|':							operatorCode = BinaryOperator::Or;			break;
+		case '^':							operatorCode = BinaryOperator::Xor;			break;
+		case '&':							operatorCode = BinaryOperator::And;			break;
+		case token::TOK_EQ_OP:				operatorCode = BinaryOperator::EQ;			break;
+		case token::TOK_NE_OP:				operatorCode = BinaryOperator::NE;			break;
+		case '<':							operatorCode = BinaryOperator::LT;			break;
+		case '>':							operatorCode = BinaryOperator::GT;			break;
+		case token::TOK_LE_OP:				operatorCode = BinaryOperator::LE;			break;
+		case token::TOK_GE_OP:				operatorCode = BinaryOperator::GE;			break;
+		case token::TOK_LEFT_SHIFT_OP:		operatorCode = BinaryOperator::Shl;			break;
+		case token::TOK_RIGHT_SHIFT_OP:		operatorCode = BinaryOperator::Shr;			break;
+		case '+':							operatorCode = BinaryOperator::Add;			break;
+		case '-':							operatorCode = BinaryOperator::Sub;			break;
+		case '*':							operatorCode = BinaryOperator::Mul;			break;
+		case '/':							operatorCode = BinaryOperator::Div;			break;
+		case '%':							operatorCode = BinaryOperator::Rem;			break;
+		case '.':							operatorCode = BinaryOperator::PtrMemD;		break;
+		case token::TOK_POINT_OP:			operatorCode = BinaryOperator::PtrMemI;		break;
+	}
+	SourceLocation l = toSourceLocation(location);
+	m_context.createStmt(Stmt::BinaryOperatorClass, operatorCode, QualType(make_shared<Type>(), 0), l);
+}
+
+void Driver::makeCompoundAssignOperator(int opc, yy::location &location)
+{
+	CompoundAssignOperator::Opcode operatorCode;
+	switch (opc)
+	{
+		case '=':							operatorCode = BinaryOperator::Assign;		break;
+		case token::TOK_MUL_ASSIGN:			operatorCode = BinaryOperator::MulAssign;	break;
+		case token::TOK_DIV_ASSIGN:			operatorCode = BinaryOperator::DivAssign;	break;
+		case token::TOK_MOD_ASSIGN:			operatorCode = BinaryOperator::RemAssign;	break;
+		case token::TOK_ADD_ASSIGN:			operatorCode = BinaryOperator::AddAssign;	break;
+		case token::TOK_SUB_ASSIGN:			operatorCode = BinaryOperator::SubAssign;	break;
+		case token::TOK_LEFT_SHIFT_ASSIGN:	operatorCode = BinaryOperator::ShlAssign;	break;
+		case token::TOK_RIGHT_SHIFT_ASSIGN:	operatorCode = BinaryOperator::ShrAssign;	break;
+		case token::TOK_AND_ASSIGN:			operatorCode = BinaryOperator::AndAssign;	break;
+		case token::TOK_XOR_ASSIGN:			operatorCode = BinaryOperator::XorAssign;	break;
+		case token::TOK_OR_ASSIGN:			operatorCode = BinaryOperator::OrAssign;	break;
+	}
+	SourceLocation l = toSourceLocation(location);
+	m_context.createStmt(Stmt::CompoundAssignOperatorClass, operatorCode, QualType(make_shared<Type>(), 0), QualType(make_shared<Type>(), 0), QualType(make_shared<Type>(), 0), l);
+}
+
+void Driver::makeConditionalOperator()
+{
+	m_context.createStmt(Stmt::ConditionalOperatorClass, QualType(make_shared<Type>(), 0));
+}
+
+SourceLocation Driver::toSourceLocation(yy::location &location)
+{
+	return SourceLocation(getOpenedFrom(), location.begin.line, location.begin.column);
 }

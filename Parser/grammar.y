@@ -21,7 +21,7 @@
 %initial-action
 {
     // Initialize the initial location.
-    @$.begin.filename = @$.end.filename = &driver.getOpenedFrom();
+    @$.initialize(&driver.getOpenedFrom());
 };
 
 // Enable tracing and verbose errors (which may be wrong!)
@@ -34,6 +34,7 @@
 	#include "Parser/Driver.h"
 	#include "Opener/Opener.h"
 	#define yylex driver.getSacnner().yylex
+	#define DRIVER yy::Parser::driver
 }
 
 %define api.token.prefix {TOK_}
@@ -42,6 +43,7 @@
 %token  RIGHT_SHIFT_ASSIGN      ">>="   LEFT_SHIFT_ASSIGN       "<<="
 %token  LEFT_SHIFT_OP           "<<"    RIGHT_SHIFT_OP          ">>"
 %token  INC_OP                  "++"    DEC_OP                  "--"
+%token  POST_INC POST_DEC PRE_INC PRE_DEC
 %token  POINT_OP                "->"
 %token  LE_OP                   "<="    GE_OP                   ">="    EQ_OP               "=="    NE_OP               "!="
 %token  NOT                     "!"     GREATER_THAN            ">"     LESS_THAN           "<"
@@ -66,7 +68,7 @@
 %token TYPE_DOUBLE          "double"	TYPE_FLOAT      "float"     TYPE_CHAR       "char"
 %token TYPE_BOOL            "bool"
 
-%token <std::string>IDENTIFIER  <int>INTEGER	<double>FLOAT
+%token <std::string>IDENTIFIER  <int>INTEGER	<double>FLOAT   <std::string>STRING
 
 %token  EOF  0  "eof"
 
@@ -86,20 +88,20 @@ statement:
 	declaration_statement
 	;
 null_statement:
-	";"												{ yy::Parser::driver.getOpener().getOutputStream() << ";"; }
+	";"												{ driver.getOpener().getOutputStream() << ";"; }
 	;
 compound_statement: 
-	"{" statement "}" {}
+	"{" statement statement "}"                   { DRIVER.makeCompoundStmt(@1, @4); }
 	;
 execution_statement:
 	control_statment |
 	expression_statement 
 	;
 declaration_statement:
-	type_name IDENTIFIER ";" 						{ yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << ";"; } |
-	type_name IDENTIFIER "=" expression ";" 		{ yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "=" << $4->print() << ";"; } |
-	type_name IDENTIFIER "[" expression "]" ";"		{ yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "[" << $4->print() << "];"; } |
-	type_name IDENTIFIER "(" argument_list ")" ";" 	{ yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "(" << ");"; } |
+	type_name IDENTIFIER ";" 						{ /*yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << ";";*/ } |
+	type_name IDENTIFIER "=" expression ";" 		{ /*yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "=" << $4->print() << ";";*/ } |
+	type_name IDENTIFIER "[" expression "]" ";"		{ /*yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "[" << $4->print() << "];";*/ } |
+	type_name IDENTIFIER "(" argument_list ")" ";" 	{ /*yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "(" << ");";*/ } |
 	;
 control_statment:
 	if_statement |
@@ -113,7 +115,7 @@ control_statment:
 	return_statement 
 	;
 expression_statement:
-	expression ";" 									{ yy::Parser::driver.getOpener().getOutputStream() << $1->print(); }
+	expression ";" 									{ DRIVER.makeSimpleStmt(); }
 	;
 argument_list: |
 	argument_list "," type_name IDENTIFIER			{}
@@ -141,32 +143,33 @@ return_statement:
 	;
 
 
-primary_expression: IDENTIFIER				{ $$ = ExpressionFactory::makeIdentity($1); }
-	| INTEGER								{ $$ = ExpressionFactory::makeLiteral($1); }
-	| FLOAT									{ $$ = ExpressionFactory::makeLiteral($1); }
-	| "(" expression ")"					{ $$ = $2; }
+primary_expression: IDENTIFIER				{ /*$$ = ExpressionFactory::makeIdentity($1);*/ }
+	| INTEGER								{ DRIVER.makeIntegerLiteral($1); }
+	| FLOAT									{ DRIVER.makeFloatingLiteral($1); }
+	| STRING                                { DRIVER.makeStringLiteral($1, @1); }
+	| "(" expression ")"					{  }
 	;
-expression: assignment_expression			{ $$ = $1; }
-	| expression "," assignment_expression	{ $$ = ExpressionFactory::makeCommaExpression($1, $3); }
+expression: assignment_expression			{  }
+	| expression "," assignment_expression	{ /*$$ = ExpressionFactory::makeCommaExpression($1, $3);*/ }
 	;
-assignment_expression: conditional_expression				{ $$ = $1; }
-	| unary_expression assignment_op assignment_expression	{ $$ = ExpressionFactory::makeBinaryOperation($1, $2, $3); }
+assignment_expression: conditional_expression				{  }
+	| unary_expression assignment_op assignment_expression	{ DRIVER.makeCompoundAssignOperator($2, @2); }
 	;
-unary_expression: postfix_expression	{ $$ = $1; }
-	| INC_OP unary_expression			{ $$ = ExpressionFactory::makePrefixUnaryOperation(yy::Parser::token::yytokentype::TOK_INC_OP, $2); }
-	| DEC_OP unary_expression			{ $$ = ExpressionFactory::makePrefixUnaryOperation(yy::Parser::token::yytokentype::TOK_DEC_OP, $2); }
-	| unary_op cast_expression			{ $$ = ExpressionFactory::makePrefixUnaryOperation($1, $2); }
-	| SIZEOF unary_expression			{ $$ = ExpressionFactory::makePrefixUnaryOperation(yy::Parser::token::yytokentype::TOK_SIZEOF, $2); }
-	| SIZEOF "(" type_name ")"			{ $$ = ExpressionFactory::makeSizeofTypeOperation($3); }
+unary_expression: postfix_expression	{  }
+	| INC_OP unary_expression			{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_PRE_INC); }
+	| DEC_OP unary_expression			{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_PRE_DEC); }
+	| unary_op cast_expression			{ DRIVER.makeUnaryOperator($1); }
+	| SIZEOF unary_expression			{ /*$$ = ExpressionFactory::makePrefixUnaryOperation(yy::Parser::token::yytokentype::TOK_SIZEOF, $2);*/ }
+	| SIZEOF "(" type_name ")"			{ /*$$ = ExpressionFactory::makeSizeofTypeOperation($3);*/ }
 	;
-postfix_expression: primary_expression						{ $$ = $1; }
-	| postfix_expression "[" expression "]"					{ $$ = ExpressionFactory::makeRandomAccessExpression($1, $3); }
-	| postfix_expression "(" ")"							{ $$ = ExpressionFactory::makeFunctionCallExpression($1); }
-	| postfix_expression "(" argument_expression_list ")"	{ $$ = ExpressionFactory::makeFunctionCallExpression($1, $3); }
-	| postfix_expression "." IDENTIFIER						{ $$ = ExpressionFactory::makeMemberAccessExpression($1, '.', ExpressionFactory::makeIdentity($3)); }
-	| postfix_expression POINT_OP IDENTIFIER				{ $$ = ExpressionFactory::makeMemberAccessExpression($1, yy::Parser::token::yytokentype::TOK_POINT_OP, ExpressionFactory::makeIdentity($3)); }
-	| postfix_expression INC_OP								{ $$ = ExpressionFactory::makePostfixUnaryOperation($1, yy::Parser::token::yytokentype::TOK_INC_OP); }
-	| postfix_expression DEC_OP								{ $$ = ExpressionFactory::makePostfixUnaryOperation($1, yy::Parser::token::yytokentype::TOK_DEC_OP); }
+postfix_expression: primary_expression						{  }
+	| postfix_expression "[" expression "]"					{ /*$$ = ExpressionFactory::makeRandomAccessExpression($1, $3);*/ }
+	| postfix_expression "(" ")"							{ /*$$ = ExpressionFactory::makeFunctionCallExpression($1);*/ }
+	| postfix_expression "(" argument_expression_list ")"	{ /*$$ = ExpressionFactory::makeFunctionCallExpression($1, $3);*/ }
+	| postfix_expression "." IDENTIFIER						{ DRIVER.makeBinaryOperator('.', @2); }
+	| postfix_expression POINT_OP IDENTIFIER				{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_POINT_OP, @2); }
+	| postfix_expression INC_OP								{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_POST_INC); }
+	| postfix_expression DEC_OP								{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_POST_DEC); }
 	;
 unary_op: "&"	{ $$ = '&'; }
 	| "*"		{ $$ = '*'; }
@@ -175,11 +178,11 @@ unary_op: "&"	{ $$ = '&'; }
 	| "~"		{ $$ = '~'; }
 	| "!"		{ $$ = '!'; }
 	;
-cast_expression: unary_expression							{ $$ = $1; }
-	| "(" type_name ")" cast_expression						{ $$ = ExpressionFactory::makeCastExpression($2, $4); }
+cast_expression: unary_expression							{  }
+	| "(" type_name ")" cast_expression						{ /*$$ = ExpressionFactory::makeCastExpression($2, $4);*/ }
 	;
-argument_expression_list: assignment_expression				{ $$ = $1; }
-	| argument_expression_list "," assignment_expression	{ $$ = ExpressionFactory::makeCommaExpression($1, $3); }
+argument_expression_list: assignment_expression				{  }
+	| argument_expression_list "," assignment_expression	{ /*$$ = ExpressionFactory::makeCommaExpression($1, $3);*/ }
 	;
 assignment_op: "="	{ $$ = '='; }
 	| "*="			{ $$ = yy::Parser::token::yytokentype::TOK_MUL_ASSIGN; }
@@ -193,48 +196,47 @@ assignment_op: "="	{ $$ = '='; }
 	| "^="			{ $$ = yy::Parser::token::yytokentype::TOK_XOR_ASSIGN; }
 	| "|="			{ $$ = yy::Parser::token::yytokentype::TOK_OR_ASSIGN; }
 	;
-conditional_expression: logical_or_expression							{ $$ = $1; }
-	| logical_or_expression "?" expression ":" conditional_expression	{ $$ = ExpressionFactory::makeTernaryOperation($1, $3, $5); }
+conditional_expression: logical_or_expression							{  }
+	| logical_or_expression "?" expression ":" conditional_expression	{ DRIVER.makeConditionalOperator(); }
 	;
-logical_or_expression: logical_and_expression				{ $$ = $1; }
-	| logical_or_expression "||" logical_and_expression	    { $$ = ExpressionFactory::makeBinaryOperation($1, yy::Parser::token::yytokentype::TOK_OR_OP, $3); }
+logical_or_expression: logical_and_expression				{  }
+	| logical_or_expression "||" logical_and_expression	    { DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_OR_OP, @2); }
 	;
-logical_and_expression: inclusive_or_expression				{ $$ = $1; }
-	| logical_and_expression "&&" inclusive_or_expression	{ $$ = ExpressionFactory::makeBinaryOperation($1, yy::Parser::token::yytokentype::TOK_AND_OP, $3); }
+logical_and_expression: inclusive_or_expression				{  }
+	| logical_and_expression "&&" inclusive_or_expression	{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_AND_OP, @2); }
 	;
-inclusive_or_expression: exclusive_or_expression			{ $$ = $1; }
-	| inclusive_or_expression "|" exclusive_or_expression	{ $$ = ExpressionFactory::makeBinaryOperation($1, '|', $3); }
+inclusive_or_expression: exclusive_or_expression			{  }
+	| inclusive_or_expression "|" exclusive_or_expression	{ DRIVER.makeBinaryOperator('|', @2); }
 	;
-exclusive_or_expression: and_expression						{ $$ = $1; }
-	| exclusive_or_expression "^" and_expression			{ $$ = ExpressionFactory::makeBinaryOperation($1, '^', $3); }
+exclusive_or_expression: and_expression						{  }
+	| exclusive_or_expression "^" and_expression			{ DRIVER.makeBinaryOperator('^', @2); }
 	;
-and_expression: equality_expression							{ $$ = $1; }
-	| and_expression "&" equality_expression				{ $$ = ExpressionFactory::makeBinaryOperation($1, '&', $3); }
+and_expression: equality_expression							{  }
+	| and_expression "&" equality_expression				{ DRIVER.makeBinaryOperator('&', @2); }
 	;
-equality_expression: relational_expression					{ $$ = $1; }
-	| equality_expression "==" relational_expression		{ $$ = ExpressionFactory::makeBinaryOperation($1, yy::Parser::token::yytokentype::TOK_EQ_OP, $3); }
-	| equality_expression "!=" relational_expression		{ $$ = ExpressionFactory::makeBinaryOperation($1, yy::Parser::token::yytokentype::TOK_NE_OP, $3); }
+equality_expression: relational_expression					{  }
+	| equality_expression "==" relational_expression		{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_EQ_OP, @2); }
+	| equality_expression "!=" relational_expression		{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_NE_OP, @2); }
 	;
-relational_expression: shift_expression						{ $$ = $1; }
-	| relational_expression "<" shift_expression			{ $$ = ExpressionFactory::makeBinaryOperation($1, '<', $3); }
-	| relational_expression ">" shift_expression			{ $$ = ExpressionFactory::makeBinaryOperation($1, '>', $3); }
-	| relational_expression "<=" shift_expression			{ $$ = ExpressionFactory::makeBinaryOperation($1, yy::Parser::token::yytokentype::TOK_LE_OP, $3); }
-	| relational_expression ">=" shift_expression			{ $$ = ExpressionFactory::makeBinaryOperation($1, yy::Parser::token::yytokentype::TOK_GE_OP, $3); }
+relational_expression: shift_expression						{  }
+	| relational_expression "<" shift_expression			{ DRIVER.makeBinaryOperator('<', @2); }
+	| relational_expression ">" shift_expression			{ DRIVER.makeBinaryOperator('>', @2); }
+	| relational_expression "<=" shift_expression			{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_LE_OP, @2); }
+	| relational_expression ">=" shift_expression			{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_GE_OP, @2); }
 	;
-shift_expression: additive_expression						{ $$ = $1; }
-	| shift_expression "<<" additive_expression	            { $$ = ExpressionFactory::makeBinaryOperation($1, yy::Parser::token::yytokentype::TOK_LEFT_SHIFT_OP, $3); }
-	| shift_expression ">>" additive_expression	            { $$ = ExpressionFactory::makeBinaryOperation($1, yy::Parser::token::yytokentype::TOK_RIGHT_SHIFT_OP, $3); }
+shift_expression: additive_expression						{  }
+	| shift_expression "<<" additive_expression	            { DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_LEFT_SHIFT_OP, @2); }
+	| shift_expression ">>" additive_expression	            { DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_RIGHT_SHIFT_OP, @2); }
 	;
-additive_expression: multiplicative_expression				{ $$ = $1; }
-	| additive_expression "+" multiplicative_expression		{ $$ = ExpressionFactory::makeBinaryOperation($1, '+', $3); }
-	| additive_expression "-" multiplicative_expression		{ $$ = ExpressionFactory::makeBinaryOperation($1, '-', $3); }
+additive_expression: multiplicative_expression				{  }
+	| additive_expression "+" multiplicative_expression		{ DRIVER.makeBinaryOperator('+', @2); }
+	| additive_expression "-" multiplicative_expression		{ DRIVER.makeBinaryOperator('-', @2); }
 	;
-multiplicative_expression: cast_expression					{ $$ = $1; }
-	| multiplicative_expression "*" cast_expression			{ $$ = ExpressionFactory::makeBinaryOperation($1, '*', $3); }
-	| multiplicative_expression "/" cast_expression			{ $$ = ExpressionFactory::makeBinaryOperation($1, '/', $3); }
-	| multiplicative_expression "%" cast_expression			{ $$ = ExpressionFactory::makeBinaryOperation($1, '%', $3); }
+multiplicative_expression: cast_expression					{  }
+	| multiplicative_expression "*" cast_expression			{ DRIVER.makeBinaryOperator('*', @2); }
+	| multiplicative_expression "/" cast_expression			{ DRIVER.makeBinaryOperator('/', @2); }
+	| multiplicative_expression "%" cast_expression			{ DRIVER.makeBinaryOperator('%', @2); }
 	;
-
 
 type_name: "int"	{ $$ = "int"; }
 	| "int *"		{ $$ = "int *"; }

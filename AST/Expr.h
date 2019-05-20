@@ -7,15 +7,15 @@
 class Expr;
 class Stmt;
 
-class DeclRefExpr;
+class DeclRefExpr;//
 class PredefinedExpr;
-class IntegerLiteral;
-class CharacterLiteral;
-class FloatingLiteral;
+class IntegerLiteral;//
+class CharacterLiteral;//
+class FloatingLiteral;//
 class ImaginaryLiteral;
-class StringLiteral;
+class StringLiteral;//
 class ParenExpr;
-class UnaryOperator;
+class UnaryOperator;//
 class SizeOfAlignOfExpr;
 class ArraySubscriptExpr;
 class CallExpr;
@@ -26,11 +26,11 @@ class ImplicitCastExpr;
 class ExplicitCastExpr;
 class CStyleCastExpr;
 
-class BinaryOperator;
-class CompoundAssignOperator;
-class ConditionalOperator;
+class BinaryOperator;//
+class CompoundAssignOperator;//
+class ConditionalOperator;//
 class AddrLabelExpr;
-class StmtExpr;
+class StmtExpr;//
 class TypesCompatibleExpr;
 class ShuffleVectorExpr;
 class ChooseExpr;
@@ -140,14 +140,11 @@ class StringLiteral : public Expr
 {
 public:
     static std::shared_ptr<StringLiteral> Create(const char *StrData,
-                                                 unsigned ByteLength,
-                                                 bool Wide,
-                                                 QualType Ty,
-                                                 unsigned NumStrs);
+                                                 unsigned ByteLength, bool Wide, QualType Ty,
+                                                 const SourceLocation Loc, unsigned NumStrs);
     static std::shared_ptr<StringLiteral> Create(const char *StrData,
                                                  unsigned ByteLength,
-                                                 bool Wide,
-                                                 QualType Ty);
+                                                 bool Wide, QualType Ty, SourceLocation Loc);
 private:
     StringLiteral(QualType Ty);
 
@@ -155,6 +152,7 @@ private:
     unsigned ByteLength;
     bool IsWide;
     unsigned NumConcatenated;
+    SourceLocation TokLocs;
 };
 
 class ParenExpr : public Expr

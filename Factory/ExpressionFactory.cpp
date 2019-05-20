@@ -2,6 +2,8 @@
 // Created by 17271 on 2019/4/2.
 //
 
+#if 0
+
 #include "ExpressionFactory.h"
 #include "parser.hpp"
 #include "ExpressionFactory.h"
@@ -144,3 +146,5 @@ std::shared_ptr<Expression> ExpressionFactory::makeCommaExpression(std::shared_p
 {
 	return make_shared<CommaExpression>(firstExpression, secondExpression);
 }
+
+#endif
