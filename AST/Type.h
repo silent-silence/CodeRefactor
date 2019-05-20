@@ -168,7 +168,7 @@ public:
         ObjCId,    // This represents the ObjC 'id' type.
         ObjCClass  // This represents the ObjC 'Class' type.
     };
-    BuiltinType();
+    BuiltinType(Kind k);
 private:
     Kind TypeKind;
 };
@@ -176,7 +176,7 @@ private:
 class FixedWidthIntType : public Type
 {
 public:
-    FixedWidthIntType();
+    FixedWidthIntType(unsigned W,bool S);
 private:
     unsigned Width;
     bool Signed;
@@ -185,7 +185,7 @@ private:
 class ComplexType : public Type
 {
 public:
-    ComplexType();
+    ComplexType(QualType Element, QualType CanonicalPtr);
 private:
     QualType ElementType;
 };
@@ -193,7 +193,7 @@ private:
 class PointerType : public Type
 {
 public:
-    PointerType();
+    PointerType(QualType Pointee, QualType CanonicalPtr);
 private:
     QualType PointeeType;
 };
@@ -201,7 +201,7 @@ private:
 class BlockPointerType : public Type
 {
 public:
-    BlockPointerType();
+    BlockPointerType(QualType Pointee, QualType CanonicalCls);
 private:
     QualType PointeeType;
 };
@@ -209,7 +209,7 @@ private:
 class ReferenceType : public Type
 {
 public:
-    ReferenceType();
+    ReferenceType(TypeClass tc, QualType Referencee, QualType CanonicalRef);
 protected:
 private:
     QualType PointeeType;
@@ -218,19 +218,19 @@ private:
 class LValueReferenceType : public ReferenceType
 {
 public:
-    LValueReferenceType();
+    LValueReferenceType(QualType Referencee, QualType CanonicalRef);
 };
 
 class RValueReferenceType : public ReferenceType
 {
 public:
-    RValueReferenceType();
+    RValueReferenceType(QualType Referencee, QualType CanonicalRef);
 };
 
 class MemberPointerType : public Type
 {
 public:
-    MemberPointerType();
+    MemberPointerType(QualType Pointee, const std::shared_ptr<Type>Cls, QualType CanonicalPtr);
 private:
     QualType PointeeType;
     const std::shared_ptr<Type> Class;
@@ -243,6 +243,9 @@ public:
         Normal, Static, Star
     };
 protected:
+    ArrayType(TypeClass tc, QualType et, QualType can,
+              ArraySizeModifier sm, unsigned tq);
+
 private:
     QualType ElementType;
     unsigned SizeModifier : 2;
@@ -252,7 +255,12 @@ private:
 class ConstantArrayType : public ArrayType
 {
 public:
-    ConstantArrayType();
+    ConstantArrayType(QualType et, QualType can,int size,
+                      ArraySizeModifier sm, unsigned tq);
+
+protected:
+    ConstantArrayType(TypeClass tc, QualType et, QualType can,
+int size, ArraySizeModifier sm, unsigned tq);
 private:
     int Size;
 };
@@ -260,7 +268,9 @@ private:
 class ConstantArrayWithExprType : public ConstantArrayType
 {
 public:
-    ConstantArrayWithExprType();
+    ConstantArrayWithExprType(QualType et, QualType can,
+                              int size,std::shared_ptr<Expr>e,
+                              ArraySizeModifier sm, unsigned tq);
 private:
     std::shared_ptr<Expr> SizeExpr;
 };
@@ -268,19 +278,23 @@ private:
 class ConstantArrayWithoutExprType : public ConstantArrayType
 {
 public:
-    ConstantArrayWithoutExprType();
+    ConstantArrayWithoutExprType(QualType et, QualType can,
+                                 int size,
+                                 ArraySizeModifier sm, unsigned tq);
 };
 
 class IncompleteArrayType : public ArrayType
 {
 public:
-    IncompleteArrayType();
+    IncompleteArrayType(QualType et, QualType can,
+                        ArraySizeModifier sm, unsigned tq);
 };
 
 class VariableArrayType : public ArrayType
 {
 public:
-    VariableArrayType();
+    VariableArrayType(QualType et, QualType can, std::shared_ptr<Expr>e,
+                      ArraySizeModifier sm, unsigned tq);
 private:
     std::shared_ptr<Stmt> SizeExpr;
 };
@@ -288,7 +302,8 @@ private:
 class DependentSizedArrayType : public ArrayType
 {
 public:
-    DependentSizedArrayType();
+    DependentSizedArrayType( QualType et, QualType can,
+                            std::shared_ptr<Expr>e, ArraySizeModifier sm, unsigned tq);
 private:
     std::shared_ptr<Stmt> SizeExpr;
     QualType ElementType;
