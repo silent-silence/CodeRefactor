@@ -4,6 +4,7 @@
 #include <queue>
 #include <memory>
 #include <variant>
+#include <stack>
 #include "AST/AST.hpp"
 
 class ASTContext
@@ -74,32 +75,32 @@ private:
 	void createStringLiteral(std::vector<var_t> &value);//done
 	void createParenExpr(std::vector<var_t> &value);//done
 	void createUnaryOperator(std::vector<var_t> &value);//done
-	void createSizeOfAlignOfExpr(std::vector<var_t> &value);
-	void createArraySubscriptExpr(std::vector<var_t> &value);
+	void createSizeOfAlignOfExpr(std::vector<var_t> &value);//done
+	void createArraySubscriptExpr(std::vector<var_t> &value);//done
 	void createCallExpr(std::vector<var_t> &value);
 	void createMemberExpr(std::vector<var_t> &value);
 	void createCompoundLiteralExpr(std::vector<var_t> &value);
 	void createImplicitCastExpr(std::vector<var_t> &value);
-	void createCStyleCastExpr(std::vector<var_t> &value);
+	void createCStyleCastExpr(std::vector<var_t> &value);//done
 	void createBinaryOperator(std::vector<var_t> &value);//done
 	void createCompoundAssignOperator(std::vector<var_t> &value);//done
 	void createConditionalOperator(std::vector<var_t> &value);//done
-	void createAddrLabelExpr(std::vector<var_t> &value);
-	void createStmtExpr(std::vector<var_t> &value);
-	void createTypesCompatibleExpr(std::vector<var_t> &value);
-	void createShuffleVectorExpr(std::vector<var_t> &value);
-	void createChooseExpr(std::vector<var_t> &value);
-	void createGNUNullExpr(std::vector<var_t> &value);
+	void createAddrLabelExpr(std::vector<var_t> &value);///gun extension
+	void createStmtExpr(std::vector<var_t> &value);///gun extension
+	void createTypesCompatibleExpr(std::vector<var_t> &value);///gun extension
+	void createShuffleVectorExpr(std::vector<var_t> &value);///clang extension
+	void createChooseExpr(std::vector<var_t> &value);///gun extension
+	void createGNUNullExpr(std::vector<var_t> &value);///gun extension
 	void createVAArgExpr(std::vector<var_t> &value);
 	void createInitListExpr(std::vector<var_t> &value);
 	void createParenListExpr(std::vector<var_t> &value);
 
-	std::queue<std::shared_ptr<Stmt>> queue;
+	std::stack<std::shared_ptr<Stmt>> queue;
 	template<typename T=Stmt>
 	std::shared_ptr<T> pop_back(){
 		if(queue.empty())
-			return nullptr;
-		std::shared_ptr<Stmt> ptr=queue.front();
+			throw std::range_error("Queue empty");
+		std::shared_ptr<Stmt> ptr=queue.top();
 		queue.pop();
 		return std::dynamic_pointer_cast<T>(ptr);
 	}

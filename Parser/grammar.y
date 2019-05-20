@@ -63,12 +63,21 @@
 
 %token KEYWORD_FOR	"for"		KEYWORD_SWITCH	"switch"	KEYWORD_CASE	"case"
 %token KEYWORD_CONTINUE	"continue"	KEYWORD_BREAK	"break"		KEYWORD_RETURN	"return"
-%token KEYWORD_DO	"do"		KEYWORD_WHILE	"while"
+%token KEYWORD_DO	"do"		KEYWORD_WHILE	"while"		KEYWORD_IF	"if"
+%token KEYWORD_ELSE	"else"
 
 %token TYPE_BOOL	"bool"		TYPE_CHAR	"char"		TYPE_SHORT	"short"
-%token TYPE_INT		"int"		TYPE_LONG	"long"		TYPE_LLONG	"long long"
+%token TYPE_INT		"int"		TYPE_LONG	"long"		TYPE_VOID	"void"
 %token TYPE_FLOAT	"float"		TYPE_DOUBLE	"double"
 %token TYPE_SIGNED	"signed"	TYPE_UNSIGNED	"unsigned"
+
+%token KEYWORD_STRUCT	"struct"	KEYWORD_UNION	"union"
+
+%token KEYWORD_TYPEDEF	"typedef"	KEYWORD_EXTERN	"extern"
+%token KEYWORD_STATIC	"static"	KEYWORD_AUTO	"auto"
+%token KEYWORD_REGISTER	"register"
+
+%token KEYWORD_CONST	"const"		KEYWORD_VOLATILE	"volatile"
 
 %token <std::string>IDENTIFIER
 %token <int>INTEGER_LITERAL	<double>FLOATING_LITERAL	<std::string>STRING_LITERAL	<char>CHARACTER_LITERAL
@@ -77,139 +86,308 @@
 
 %type <int>unary_op
 %type <int>assignment_op
-%type <std::string>type_name
 %type <int>block_stmt
+%type <int>argument_expression_list
 
 %printer { yyoutput << $$; }<*>
 %%
 
 start: | start statement;
 
-statement:
-	null_stmt |
-	compound_stmt |
-	execution_statement |
-	decl_stmt
-	;
-null_stmt:
-	";"				{ DRIVER.makeNullStmt(@1); }
-	;
 
-block_stmt:			{ $$ = 0; }
-	| block_stmt statement	{ $$ = $1 + 1; }
+/* Statements */
+statement
+	: null_stmt
+	| compound_stmt
+	| expr_stmt
+	| if_stmt
+	| for_stmt
+	| while_stmt
+	| do_stmt
+	| continue_stmt
+	| break_stmt
+	| switch_stmt
+	| case_stmt
+	| default_stmt
+	| label_stmt
+	| goto_stmt
+	| return_stmt
+	| decl_stmt
 	;
-compound_stmt:
-	"{" block_stmt "}"	{ DRIVER.makeCompoundStmt($2, @1, @3); }
+null_stmt
+	: ";"							{ DRIVER.makeNullStmt(@1); }
 	;
-
-execution_statement:
-	control_statment |
-	expr_stmt 
+compound_stmt
+	: "{" block_stmt "}"					{ DRIVER.makeCompoundStmt($2, @1, @3); }
 	;
-decl_stmt:
-	type_name identifier_list ";" 			{ /*yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << ";";*/ } |
-	type_name IDENTIFIER "[" expression "]" ";"	{ /*yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "[" << $4->print() << "];";*/ } |
-	type_name IDENTIFIER "(" argument_list ")" ";" 	{ /*yy::Parser::driver.getOpener().getOutputStream() << $1 << " " << $2 << "(" << ");";*/ } |
+block_stmt
+	:							{ $$ = 0; }
+	| block_stmt statement					{ $$ = $1 + 1; }
 	;
-identifier_list:
-	identifier_initial				{ }
-	| identifier_initial "," identifier_list	{ }
+expr_stmt
+	: expression ";" 					{ /* Do nothing */ }
 	;
-identifier_initial:
-	IDENTIFIER					{ }
-	| IDENTIFIER "=" expression			{ }
+if_stmt
+	: "if" "(" expression ")" statement			{ /*DRIVER.makeIfStmt();*/ }
+	| "if" "(" expression ")" statement "else" statement	{ /*DRIVER.makeIfStmt();*/ }
 	;
-
-control_statment:
-	if_stmt |
-	for_stmt |
-	while_stmt |
-	do_stmt |
-	continue_stmt |
-	break_stmt |
-	switch_stmt |
-	goto_stmt |
-	return_stmt 
+for_stmt
+	: "for" "(" expr_or_null_expr expr_or_null_expr ")" statement			{ /*DIRVER.makeForStmt();*/ }
+	| "for" "(" expr_or_null_expr expr_or_null_expr expression ")" statement	{ /*DIRVER.makeForStmt();*/ }
 	;
-expr_stmt:
-	expression ";" 					{ /*DRIVER.makeExprStmt(@2);*/ }
+expr_or_null_expr
+	: expr_stmt
+	| null_stmt
 	;
-argument_list: |
-	argument_list "," type_name IDENTIFIER		{}
+while_stmt
+	: "while" "(" expression ")" statement			{ DRIVER.makeWhileStmt(@1); }
 	;
-if_stmt:
+do_stmt
+	: "do" statement "while" "(" expression ")"		{ DRIVER.makeDoStmt(@1, @3, @4); }
 	;
-for_stmt:
+continue_stmt
+	: "continue" ";"					{ DRIVER.makeContinueStmt(@1); }
 	;
-while_stmt:
+break_stmt
+	: "break" ";"						{ DRIVER.makeBreakStmt(@1); }
 	;
-do_stmt:
+switch_stmt
+	: "switch" "(" expression ")" statement			{ DRIVER.makeSwitchStmt(@1); }
 	;
-continue_stmt:
-	"continue" ";"					{ DRIVER.makeContinueStmt(@1); }
+case_stmt
+	: "case" integer_constant_expression ":" statement	{ DRIVER.makeCaseStmt(@1, @2, @3); }
 	;
-break_stmt:
-	"break" ";"					{ DRIVER.makeBreakStmt(@1); }
+default_stmt
+	: "default" ":" statement				{ DRIVER.makeDefaultStmt(@1, @2); }
 	;
-switch_stmt:
+label_stmt
+	: IDENTIFIER ":" statement				{ /*DRIVER.makeLabelStmt(@1, @2);*/ }
 	;
-case_stmt:
+goto_stmt
+	: "goto" IDENTIFIER					{ /*DRIVER.makeGotoStmt(@1, @2);*/ }
 	;
-default_stmt:
-	;
-label_stmt:
-	;
-goto_stmt:
-	;
-return_stmt:
-	"return" ";"					{ DRIVER.makeReturnStmt(@1, false); }
-	| "return" expression ";"			{ DRIVER.makeReturnStmt(@1, true); }
+return_stmt
+	: "return" ";"						{ DRIVER.makeReturnStmt(@1, false); }
+	| "return" expression ";"				{ DRIVER.makeReturnStmt(@1, true); }
 	;
 
 
-primary_expression: IDENTIFIER			{ /*$$ = ExpressionFactory::makeIdentity($1);*/ }
-	| INTEGER_LITERAL			{ DRIVER.makeIntegerLiteral($1, @1); }
+/* Declarations */
+decl_stmt
+	: declaration_specifiers ";"
+	| declaration_specifiers init_declarator_list ";"
+	;
+declaration_specifiers
+	: storage_class_specifier
+	| storage_class_specifier declaration_specifiers
+	| type_specifier
+	| type_specifier declaration_specifiers
+	| type_qualifier
+	| type_qualifier declaration_specifiers
+	;
+init_declarator_list
+	: init_declarator
+	| init_declarator_list "," init_declarator
+	;
+init_declarator
+	: declarator
+	| declarator "=" initializer
+	;
+storage_class_specifier
+	: "typedef"
+	| "extern"
+	| "static"
+	| "auto"
+	| "register"
+	;
+type_specifier
+	: "void"
+	| "char"
+	| "short"
+	| "int"
+	| "long"
+	| "float"
+	| "double"
+	| "signed"
+	| "unsigned"
+	| struct_or_union_specifier
+	| enum_specifier
+	//| TYPE_NAME
+	;
+struct_or_union_specifier
+	: struct_or_union IDENTIFIER "{" struct_declaration_list "}"
+	| struct_or_union "{" struct_declaration_list "}"
+	| struct_or_union IDENTIFIER
+	;
+struct_or_union
+	: "struct"
+	| "union"
+	;
+struct_declaration_list
+	: struct_declaration
+	| struct_declaration_list struct_declaration
+	;
+struct_declaration
+	: specifier_qualifier_list struct_declarator_list ";"
+	;
+specifier_qualifier_list
+	: type_specifier specifier_qualifier_list
+	| type_specifier
+	| type_qualifier specifier_qualifier_list
+	| type_qualifier
+	;
+struct_declarator_list
+	: struct_declarator
+	| struct_declarator_list "," struct_declarator
+	;
+struct_declarator
+	: declarator
+	| ":" integer_constant_expression
+	| declarator ":" integer_constant_expression
+	;
+enum_specifier
+	: "enum" "{" enumerator_list "}"
+	| "enum" IDENTIFIER "{" enumerator_list "}"
+	| "enum" IDENTIFIER
+	;
+enumerator_list
+	: enumerator
+	| enumerator_list "," enumerator
+	;
+enumerator
+	: IDENTIFIER
+	| IDENTIFIER "=" integer_constant_expression
+	;
+type_qualifier
+	: "const"
+	| "volatile"
+	;
+declarator
+	: pointer direct_declarator
+	| direct_declarator
+	;
+direct_declarator
+	: IDENTIFIER
+	| "(" declarator ")"
+	| direct_declarator "[" integer_constant_expression "]"
+	| direct_declarator "[" "]"
+	| direct_declarator "(" parameter_type_list ")"
+	| direct_declarator "(" identifier_list ")"
+	| direct_declarator "(" ")"
+	;
+pointer
+	: "*"
+	| "*" type_qualifier_list
+	| "*" pointer
+	| "*" type_qualifier_list pointer
+	;
+type_qualifier_list
+	: type_qualifier
+	| type_qualifier_list type_qualifier
+	;
+parameter_type_list
+	: parameter_list
+	| parameter_list "," ELLIPSIS
+	;
+parameter_list
+	: parameter_declaration
+	| parameter_list "," parameter_declaration
+	;
+parameter_declaration
+	: declaration_specifiers declarator
+	| declaration_specifiers abstract_declarator
+	| declaration_specifiers
+	;
+identifier_list
+	: IDENTIFIER
+	| identifier_list "," IDENTIFIER
+	;
+type_name
+	: specifier_qualifier_list
+	| specifier_qualifier_list abstract_declarator
+	;
+abstract_declarator
+	: pointer
+	| direct_abstract_declarator
+	| pointer direct_abstract_declarator
+	;
+direct_abstract_declarator
+	: "(" abstract_declarator ")"
+	| "[" "]"
+	| "[" integer_constant_expression "]"
+	| direct_abstract_declarator "[" "]"
+	| direct_abstract_declarator "[" integer_constant_expression "]"
+	| "(" ")"
+	| "(" parameter_type_list ")"
+	| direct_abstract_declarator "(" ")"
+	| direct_abstract_declarator "(" parameter_type_list ")"
+	;
+initializer
+	: assignment_expression
+	| "{" initializer_list "}"
+	| "{" initializer_list "," "}"
+	;
+initializer_list
+	: initializer
+	| initializer_list "," initializer
+	;
+
+/* Expressions */
+primary_expression
+	: IDENTIFIER				{ /*$$ = ExpressionFactory::makeIdentity($1);*/ }
 	| FLOATING_LITERAL			{ DRIVER.makeFloatingLiteral($1, @1); }
 	| STRING_LITERAL			{ DRIVER.makeStringLiteral($1, @1); }
-	| CHARACTER_LITERAL			{ DRIVER.makeCharactorLiteral($1, @1); }
+	| integer_constant_expression		{ }
 	| "(" expression ")"			{ DRIVER.makeParenExpr(@1, @3); }
 	;
-expression: assignment_expression		{  }
-	| expression "," assignment_expression	{ /*$$ = ExpressionFactory::makeCommaExpression($1, $3);*/ }
+integer_constant_expression
+	: INTEGER_LITERAL			{ DRIVER.makeIntegerLiteral($1, @1); }
+	| CHARACTER_LITERAL			{ DRIVER.makeCharacterLiteral($1, @1); }
 	;
-assignment_expression: conditional_expression	{  }
+expression
+	: assignment_expression			{  }
+	| expression "," assignment_expression	{ DRIVER.makeBinaryOperator(',', @2); }
+	;
+assignment_expression
+	: conditional_expression				{  }
 	| unary_expression assignment_op assignment_expression	{ DRIVER.makeCompoundAssignOperator($2, @2); }
 	;
-unary_expression: postfix_expression		{  }
-	| INC_OP unary_expression		{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_PRE_INC, @1); }
-	| DEC_OP unary_expression		{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_PRE_DEC, @1); }
+unary_expression
+	: postfix_expression			{  }
+	| "++" unary_expression			{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_PRE_INC, @1); }
+	| "--" unary_expression			{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_PRE_DEC, @1); }
 	| unary_op cast_expression		{ DRIVER.makeUnaryOperator($1, @1); }
-	| SIZEOF unary_expression		{ /*DRIVER.makeSizeofExpr(@1, @2);*/ }
-	| SIZEOF "(" type_name ")"		{ /*DRIVER.makeSizeofExpr(@1, @3, $3);*/ }
+	| "sizeof" "(" type_name ")"		{ DRIVER.makeSizeofExpr(@1, @3, true); }
+	| "sizeof" unary_expression		{ DRIVER.makeSizeofExpr(@1, @2, false); }
 	;
-postfix_expression: primary_expression				{  }
-	| postfix_expression "[" expression "]"			{ /*$$ = ExpressionFactory::makeRandomAccessExpression($1, $3);*/ }
-	| postfix_expression "(" ")"				{ /*$$ = ExpressionFactory::makeFunctionCallExpression($1);*/ }
-	| postfix_expression "(" argument_expression_list ")"	{ /*$$ = ExpressionFactory::makeFunctionCallExpression($1, $3);*/ }
-	| postfix_expression "." IDENTIFIER			{ DRIVER.makeBinaryOperator('.', @2); }
-	| postfix_expression POINT_OP IDENTIFIER		{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_POINT_OP, @2); }
-	| postfix_expression INC_OP				{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_POST_INC, @2); }
-	| postfix_expression DEC_OP				{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_POST_DEC, @2); }
+postfix_expression
+	: primary_expression					{  }
+	| postfix_expression "[" expression "]"			{ DRIVER.makeArraySubscripExpr(@2); }
+	| postfix_expression "(" argument_expression_list ")"	{ DRIVER.makeCallExpr($3, @2); }
+	| postfix_expression "." IDENTIFIER			{ DRIVER.makeMemberExpr('.', @2); }
+	| postfix_expression "->" IDENTIFIER			{ DRIVER.makeMemberExpr(yy::Parser::token::yytokentype::TOK_POINT_OP, @2); }
+	| postfix_expression "++"				{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_POST_INC, @2); }
+	| postfix_expression "--"				{ DRIVER.makeUnaryOperator(yy::Parser::token::yytokentype::TOK_POST_DEC, @2); }
 	;
-unary_op: "&"	{ $$ = '&'; }
+unary_op
+	: "&"	{ $$ = '&'; }
 	| "*"	{ $$ = '*'; }
 	| "+"	{ $$ = '+'; }
 	| "-"	{ $$ = '-'; }
 	| "~"	{ $$ = '~'; }
 	| "!"	{ $$ = '!'; }
 	;
-cast_expression: unary_expression				{  }
-	| "(" type_name ")" cast_expression			{ /*$$ = ExpressionFactory::makeCastExpression($2, $4);*/ }
+cast_expression
+	: unary_expression					{  }
+	| "(" type_name ")" cast_expression			{ DRIVER.makeCStyleCastExpr(@1, @3); }
 	;
-argument_expression_list: assignment_expression			{  }
-	| argument_expression_list "," assignment_expression	{ /*$$ = ExpressionFactory::makeCommaExpression($1, $3);*/ }
+argument_expression_list
+	:							{ $$ = 0; }
+	| assignment_expression					{ $$ = 1; }
+	| argument_expression_list "," assignment_expression	{ $$ = $1 + 1; }
 	;
-assignment_op: "="	{ $$ = '='; }
+assignment_op
+	: "="		{ $$ = '='; }
 	| "*="		{ $$ = yy::Parser::token::yytokentype::TOK_MUL_ASSIGN; }
 	| "/="		{ $$ = yy::Parser::token::yytokentype::TOK_DIV_ASSIGN; }
 	| "%="		{ $$ = yy::Parser::token::yytokentype::TOK_MOD_ASSIGN; }
@@ -221,54 +399,59 @@ assignment_op: "="	{ $$ = '='; }
 	| "^="		{ $$ = yy::Parser::token::yytokentype::TOK_XOR_ASSIGN; }
 	| "|="		{ $$ = yy::Parser::token::yytokentype::TOK_OR_ASSIGN; }
 	;
-conditional_expression: logical_or_expression					{  }
+conditional_expression
+	: logical_or_expression							{  }
 	| logical_or_expression "?" expression ":" conditional_expression	{ DRIVER.makeConditionalOperator(); }
 	;
-logical_or_expression: logical_and_expression			{  }
+logical_or_expression
+	: logical_and_expression				{  }
 	| logical_or_expression "||" logical_and_expression	{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_OR_OP, @2); }
 	;
-logical_and_expression: inclusive_or_expression			{  }
+logical_and_expression
+	: inclusive_or_expression				{  }
 	| logical_and_expression "&&" inclusive_or_expression	{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_AND_OP, @2); }
 	;
-inclusive_or_expression: exclusive_or_expression		{  }
+inclusive_or_expression
+	: exclusive_or_expression				{  }
 	| inclusive_or_expression "|" exclusive_or_expression	{ DRIVER.makeBinaryOperator('|', @2); }
 	;
-exclusive_or_expression: and_expression				{  }
+exclusive_or_expression
+	: and_expression					{  }
 	| exclusive_or_expression "^" and_expression		{ DRIVER.makeBinaryOperator('^', @2); }
 	;
-and_expression: equality_expression				{  }
+and_expression
+	: equality_expression					{  }
 	| and_expression "&" equality_expression		{ DRIVER.makeBinaryOperator('&', @2); }
 	;
-equality_expression: relational_expression			{  }
+equality_expression
+	: relational_expression					{  }
 	| equality_expression "==" relational_expression	{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_EQ_OP, @2); }
 	| equality_expression "!=" relational_expression	{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_NE_OP, @2); }
 	;
-relational_expression: shift_expression				{  }
+relational_expression
+	: shift_expression					{  }
 	| relational_expression "<" shift_expression		{ DRIVER.makeBinaryOperator('<', @2); }
 	| relational_expression ">" shift_expression		{ DRIVER.makeBinaryOperator('>', @2); }
 	| relational_expression "<=" shift_expression		{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_LE_OP, @2); }
 	| relational_expression ">=" shift_expression		{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_GE_OP, @2); }
 	;
-shift_expression: additive_expression				{  }
+shift_expression
+	: additive_expression					{  }
 	| shift_expression "<<" additive_expression		{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_LEFT_SHIFT_OP, @2); }
 	| shift_expression ">>" additive_expression		{ DRIVER.makeBinaryOperator(yy::Parser::token::yytokentype::TOK_RIGHT_SHIFT_OP, @2); }
 	;
-additive_expression: multiplicative_expression			{  }
+additive_expression
+	: multiplicative_expression				{  }
 	| additive_expression "+" multiplicative_expression	{ DRIVER.makeBinaryOperator('+', @2); }
 	| additive_expression "-" multiplicative_expression	{ DRIVER.makeBinaryOperator('-', @2); }
 	;
-multiplicative_expression: cast_expression			{  }
+multiplicative_expression
+	: cast_expression					{  }
 	| multiplicative_expression "*" cast_expression		{ DRIVER.makeBinaryOperator('*', @2); }
 	| multiplicative_expression "/" cast_expression		{ DRIVER.makeBinaryOperator('/', @2); }
 	| multiplicative_expression "%" cast_expression		{ DRIVER.makeBinaryOperator('%', @2); }
 	;
 
-type_name: "int"	{ $$ = "int"; }
-	| "double"	{ $$ = "double"; }
-	| "float"	{ $$ = "float"; }
-	| "char"	{ $$ = "char"; }
-	| "bool"	{ $$ = "bool"; }
-	;
 %%
 
 void yy::Parser::error(const location_type& l,  const std::string& m)

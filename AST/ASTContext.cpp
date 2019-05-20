@@ -1,7 +1,9 @@
 #include "ASTContext.h"
 #include "AST/Expr.h"
+#include <algorithm>
 
-using std::get;
+using std::reverse;
+using std::get;							using std::string;
 using std::queue;
 using std::vector;
 using std::shared_ptr;
@@ -151,12 +153,12 @@ void ASTContext::createStmt(Stmt::StmtClass type, std::vector<var_t> &value){
 
 std::weak_ptr<Stmt> ASTContext::getTop() const
 {
-	return queue.front();
+	return queue.top();
 }
 
 void ASTContext::cleanAST()
 {
-	queue = std::queue<std::shared_ptr<Stmt>>();
+	queue = std::stack<std::shared_ptr<Stmt>>();
 }
 
 void ASTContext::createType(Type::TypeClass type, vector<ASTContext::var_t> value)
@@ -185,6 +187,7 @@ void ASTContext::createCompoundStmt(std::vector<ASTContext::var_t> &value)
 	for(auto i = 0; i != get<unsigned>(value[0]); i++){
 		stmts.push_back(pop_back());
 	}
+	reverse(stmts.begin(), stmts.end());
 	queue.push(
 			make_shared<CompoundStmt>(
 					stmts,
@@ -409,50 +412,79 @@ void ASTContext::createUnaryOperator(std::vector<ASTContext::var_t> &value)
 
 void ASTContext::createSizeOfAlignOfExpr(std::vector<ASTContext::var_t> &value)
 {
-	//TODO: get types here
-	queue.push(
+	//TODO: get type here and set return type
+	QualType retType(make_shared<Type>(), 0);
+	if(value.size() == 3)
+	{
+		QualType sizeofType(make_shared<Type>(), 0);
+		queue.push(
+				make_shared<SizeOfAlignOfExpr>(
+						true,
+						sizeofType,
+						retType,
+						get<SourceLocation>(value[0]),
+						get<SourceLocation>(value[1])));
+	}
+	else
+	{
+		queue.push(
+				make_shared<SizeOfAlignOfExpr>(
+						true,
+						pop_back<Expr>(),
+						retType,
+						get<SourceLocation>(value[0]),
+						get<SourceLocation>(value[1])));
+	}
+	/*queue.push(
 			make_shared<SizeOfAlignOfExpr>(
 					get<bool>(value[0]),
 					get<QualType>(value[1]),
 					get<QualType>(value[2]),
 					get<SourceLocation>(value[3]),
-					get<SourceLocation>(value[4])));
+					get<SourceLocation>(value[4])))*/;
 }
 
 void ASTContext::createArraySubscriptExpr(std::vector<ASTContext::var_t> &value)
 {
+	// TODO: get array elements' type
+	QualType arrayType(make_shared<Type>(), 0);
 	queue.push(
 			make_shared<ArraySubscriptExpr>(
 					pop_back<Expr>(),
 					pop_back<Expr>(),
-					get<QualType>(value[0]),
-					get<SourceLocation>(value[1])));
+					arrayType,
+					get<SourceLocation>(value[0])));
 }
 
 void ASTContext::createCallExpr(std::vector<ASTContext::var_t> &value)
 {
 	vector<shared_ptr<Expr>> exprs;
-	for(auto i=get<unsigned>(value[0]);i!=0;i++){
+	for(auto i = 0; i != get<unsigned>(value[0]); i++){
 		exprs.push_back(pop_back<Expr>());
 	}
+	// TODO: get return type
+	// TODO: init CallExpr::SubExpr
+	QualType retType(make_shared<Type>(), 0);
 	queue.push(
 			make_shared<CallExpr>(
 					pop_back<Expr>(),
 					exprs,
-					get<unsigned>(value[1]),
-					get<QualType>(value[2]),
-					get<SourceLocation>(value[3])));
+					get<unsigned>(value[0]),
+					retType,
+					get<SourceLocation>(value[1])));
 }
 
 void ASTContext::createMemberExpr(std::vector<ASTContext::var_t> &value)
 {
+	// TODO Get type here
+	QualType memberType(make_shared<Type>(), 0);
 	queue.push(
 			make_shared<MemberExpr>(
 					pop_back<Expr>(),
 					get<bool>(value[0]),
 					pop_back<NamedDecl>(),
 					get<SourceLocation>(value[1]),
-					get<QualType>(value[2])));
+					memberType));
 }
 
 void ASTContext::createCompoundLiteralExpr(std::vector<ASTContext::var_t> &value)
@@ -477,14 +509,19 @@ void ASTContext::createImplicitCastExpr(std::vector<ASTContext::var_t> &value)
 
 void ASTContext::createCStyleCastExpr(std::vector<ASTContext::var_t> &value)
 {
+	// TODO Get types
+	// string typeName = get<string>(value[0]);
+	QualType toType(make_shared<Type>(), 0);
+	QualType exprType(make_shared<Type>(), 0);
+	// TODO Set cast kind
 	queue.push(
 			make_shared<CStyleCastExpr>(
-					get<QualType>(value[0]),
-					static_cast<CastExpr::CastKind>(get<int>(value[1])),
+					exprType,
+					CastExpr::CastKind::CK_Unknown,
 					pop_back<Expr>(),
-					get<QualType>(value[2]),
-					get<SourceLocation>(value[3]),
-					get<SourceLocation>(value[4])));
+					toType,
+					get<SourceLocation>(value[0]),
+					get<SourceLocation>(value[1])));
 }
 
 void ASTContext::createBinaryOperator(std::vector<ASTContext::var_t> &value)

@@ -39,7 +39,7 @@ Scanner& Driver::getSacnner()
 	return m_scanner;
 }
 
-OpenHelper& Driver::getOpener()
+OpenHelper& Driver::getOpenHelper()
 {
 	return m_opener;
 }
@@ -60,13 +60,6 @@ void Driver::makeCompoundStmt(unsigned stmtNumInBlock, yy::location &l, yy::loca
 	SourceLocation lb = toSourceLocation(l);
 	SourceLocation rb = toSourceLocation(r);
 	m_context.create<Stmt::CompoundStmtClass>(stmtNumInBlock, lb, rb);
-}
-
-void Driver::makeIfStmt(yy::location &l, yy::location &r)
-{
-	SourceLocation lb = toSourceLocation(l);
-	SourceLocation rb = toSourceLocation(r);
-	m_context.create<Stmt::IfStmtClass>(lb, rb);
 }
 
 void Driver::makeNullStmt(yy::location &l)
@@ -93,12 +86,40 @@ void Driver::makeReturnStmt(yy::location &l, bool haveExpr)
 	m_context.create<Stmt::ReturnStmtClass>(lp, haveExpr);
 }
 
-/*void Driver::makeStmtExpr(yy::location &l, yy::location &r)
+void Driver::makeWhileStmt(yy::location &l)
+{
+	SourceLocation lp = toSourceLocation(l);
+	m_context.create<Stmt::WhileStmtClass>(lp);
+}
+
+void Driver::makeDoStmt(yy::location &d, yy::location &w, yy::location &l)
+{
+	SourceLocation dp = toSourceLocation(d);
+	SourceLocation wp = toSourceLocation(w);
+	SourceLocation lp = toSourceLocation(l);
+	m_context.create<Stmt::DoStmtClass>(dp, wp, lp);
+}
+
+void Driver::makeSwitchStmt(yy::location &l)
+{
+	SourceLocation lp = toSourceLocation(l);
+	m_context.create<Stmt::SwitchStmtClass>(lp);
+}
+
+void Driver::makeCaseStmt(yy::location &l, yy::location &r, yy::location &c)
 {
 	SourceLocation lp = toSourceLocation(l);
 	SourceLocation rp = toSourceLocation(r);
-	m_context.create<Stmt::StmtExprClass>(QualType(make_shared<Type>(), 0), lp, rp);
-}*/
+	SourceLocation cp = toSourceLocation(c);
+	m_context.create<Stmt::CaseStmtClass>(lp, rp, cp);
+}
+
+void Driver::makeDefaultStmt(yy::location &l, yy::location &r)
+{
+	SourceLocation lp = toSourceLocation(l);
+	SourceLocation rp = toSourceLocation(r);
+	m_context.create<Stmt::DefaultStmtClass>(lp, rp);
+}
 
 void Driver::makeIntegerLiteral(int val, yy::location &l)
 {
@@ -106,7 +127,7 @@ void Driver::makeIntegerLiteral(int val, yy::location &l)
 	m_context.create<Stmt::IntegerLiteralClass>(val, QualType(make_shared<Type>(), 0), lp);
 }
 
-void Driver::makeCharactorLiteral(unsigned val, yy::location &l)
+void Driver::makeCharacterLiteral(unsigned val, yy::location &l)
 {
 	SourceLocation lp = toSourceLocation(l);
 	m_context.create<Stmt::CharacterLiteralClass>(val, false, QualType(make_shared<Type>(), 0), lp);
@@ -168,8 +189,7 @@ void Driver::makeBinaryOperator(int opc, yy::location &location)
 		case '*':							operatorCode = BinaryOperator::Mul;			break;
 		case '/':							operatorCode = BinaryOperator::Div;			break;
 		case '%':							operatorCode = BinaryOperator::Rem;			break;
-		case '.':							operatorCode = BinaryOperator::PtrMemD;		break;
-		case token::TOK_POINT_OP:			operatorCode = BinaryOperator::PtrMemI;		break;
+		case ',':							operatorCode = BinaryOperator::Comma;		break;
 	}
 	SourceLocation l = toSourceLocation(location);
 	m_context.create<Stmt::BinaryOperatorClass>(operatorCode, QualType(make_shared<Type>(), 0), l);
@@ -214,15 +234,43 @@ void Driver::makeParenExpr(yy::location &l, yy::location &r)
 	m_context.create<Stmt::ParenExprClass>(lp, rp);
 }
 
-/*void Driver::makeSizeofExpr(yy::location &l, yy::location &r, std::string typeName)
+void Driver::makeSizeofExpr(yy::location &l, yy::location &r, bool isSizeofType)
 {
 	SourceLocation lp = toSourceLocation(l);
 	SourceLocation rp = toSourceLocation(r);
-	if(typeName.empty())
-		m_context.create<Stmt::SizeOfAlignOfExprClass>(lp, rp);
-	else
-		m_context.create<Stmt::SizeOfAlignOfExprClass>(lp, rp, typeName);
-}*/
+	m_context.create<Stmt::SizeOfAlignOfExprClass>(lp, rp, isSizeofType);
+}
+
+void Driver::makeArraySubscripExpr(yy::location &l)
+{
+	SourceLocation lp = toSourceLocation(l);
+	m_context.create<Stmt::ArraySubscriptExprClass>(lp);
+}
+
+void Driver::makeCallExpr(unsigned parameterNum, yy::location &l)
+{
+	SourceLocation lp = toSourceLocation(l);
+	m_context.create<Stmt::CallExprClass>(parameterNum, lp);
+}
+
+void Driver::makeMemberExpr(int opc, yy::location &l)
+{
+	bool isArrow;
+	switch(opc)
+	{
+		case '.':					isArrow = false;	break;
+		case token::TOK_POINT_OP:	isArrow = true;		break;
+	}
+	SourceLocation lp = toSourceLocation(l);
+	m_context.create<Stmt::MemberExprClass>(isArrow, lp);
+}
+
+void Driver::makeCStyleCastExpr(yy::location &l, yy::location &r)
+{
+	SourceLocation lp = toSourceLocation(l);
+	SourceLocation rp = toSourceLocation(r);
+	m_context.create<Stmt::CStyleCastExprClass>(lp, rp);
+}
 
 SourceLocation Driver::toSourceLocation(yy::location &location)
 {
