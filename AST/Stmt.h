@@ -56,7 +56,7 @@ class DeclStmt : public Stmt
 {
 public:
     DeclStmt() : Stmt(DeclStmtClass){}
-    explicit DeclStmt(EmptyShell Empty) : Stmt(DeclStmtClass, Empty) { }
+    explicit DeclStmt(EmptyShell Empty);
 };
 
 class NullStmt : public Stmt
@@ -79,7 +79,7 @@ private:
 class SwitchCase : public Stmt
 {
 public:
-    SwitchCase(StmtClass SC) : Stmt(SC), NextSwitchCase(nullptr) {}
+    SwitchCase(StmtClass SC);
 private:
     std::shared_ptr<SwitchCase> NextSwitchCase;
 };
@@ -97,10 +97,9 @@ private:
 class DefaultStmt : public SwitchCase
 {
 public:
-    DefaultStmt(std::shared_ptr<Stmt> substmt) :
-        SwitchCase(DefaultStmtClass), SubStmt(substmt){}
+    DefaultStmt(std::shared_ptr<Stmt> substmt);
 
-    explicit DefaultStmt(EmptyShell) : SwitchCase(DefaultStmtClass) { }
+    explicit DefaultStmt(EmptyShell);
 private:
     std::shared_ptr<Stmt> SubStmt;
 };

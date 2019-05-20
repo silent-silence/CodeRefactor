@@ -1,4 +1,4 @@
-#ifndef AST_EXPR_H
+ #ifndef AST_EXPR_H
 #define AST_EXPR_H
 
 #include "AST/Type.h"
@@ -245,21 +245,63 @@ private:
 
 class CastExpr : public Expr
 {
+public:
+
+  enum CastKind {
+
+    CK_Unknown,
+    CK_BitCast,
+    CK_NoOp,
+    CK_DerivedToBase,
+    CK_Dynamic,
+    CK_ToUnion,
+    CK_ArrayToPointerDecay
+  };
+
+  struct CastInfo {
+    const CastKind Kind;
+
+    CastInfo(CastKind Kind)
+      : Kind(Kind) { }
+  };
+private:
+  CastKind Kind;
+  std::shared_ptr<Stmt> Op;
+protected:
+  CastExpr(StmtClass SC, QualType ty, const CastInfo &info, std::shared_ptr<Expr>op) ;
+  CastExpr(StmtClass SC, EmptyShell Empty);
 
 };
 
 class ImplicitCastExpr : public CastExpr
 {
+    bool LvalueCast;
+
+  public:
+    ImplicitCastExpr(QualType ty, const CastInfo &info, std::shared_ptr<Expr>op, bool Lvalue);
+    explicit ImplicitCastExpr(EmptyShell Shell);
 
 };
 
 class ExplicitCastExpr : public CastExpr
 {
+    QualType TypeAsWritten;
+
+  protected:
+    ExplicitCastExpr(StmtClass SC, QualType exprTy, const CastInfo &info,
+                  std::shared_ptr<Expr>op, QualType writtenTy)
+;
+
+    ExplicitCastExpr(StmtClass SC, EmptyShell Shell);
 
 };
 
 class CStyleCastExpr : public ExplicitCastExpr
 {
+  public:
+    CStyleCastExpr(QualType exprTy, CastKind kind, std::shared_ptr<Expr> op, QualType writtenTy);
+
+    explicit CStyleCastExpr(EmptyShell Shell);
 
 };
 
@@ -287,26 +329,28 @@ public:
         OrAssign,
         Comma             // [C99 6.5.17] Comma operator.
     };
-    BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc, QualType ResTy);
+    BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc, QualType ResTy, SourceLocation opLoc);
+
     explicit BinaryOperator(EmptyShell Empty);
 protected:
-    BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc, QualType ResTy, bool dead);
+    BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc, QualType ResTy, SourceLocation oploc, bool dead);
+
     BinaryOperator(StmtClass SC, EmptyShell Empty);
 private:
     enum { LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
     Opcode Opc;
+    SourceLocation OpLoc;
 };
 
 class CompoundAssignOperator : public BinaryOperator
 {
 public:
-    CompoundAssignOperator(std::shared_ptr<Expr> lhs,
-                           std::shared_ptr<Expr> rhs,
-                           Opcode opc,
-                           QualType ResType,
-                           QualType CompLHSType,
-                           QualType CompResultType);
+    CompoundAssignOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc,
+                           QualType ResType, QualType CompLHSType,
+                           QualType CompResultType,
+                           SourceLocation OpLoc);
+
     explicit CompoundAssignOperator(EmptyShell Empty);
 private:
     QualType ComputationLHSType;
@@ -316,9 +360,10 @@ private:
 class ConditionalOperator : public Expr
 {
 public:
-    ConditionalOperator(std::shared_ptr<Expr> cond,std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, QualType t);
-    explicit ConditionalOperator(EmptyShell Empty)
-        : Expr(ConditionalOperatorClass, Empty) { }
+    ConditionalOperator(std::shared_ptr<Expr> cond, std::shared_ptr<Expr> lhs,
+                        std::shared_ptr<Expr> rhs, QualType t);
+
+    explicit ConditionalOperator(EmptyShell Empty);
 private:
     enum { COND, LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -326,62 +371,170 @@ private:
 
 class AddrLabelExpr : public Expr
 {
+public:
+    AddrLabelExpr(SourceLocation AALoc, SourceLocation LLoc, std::shared_ptr<LabelStmt> L,
+                  QualType t);
 
+    explicit AddrLabelExpr(EmptyShell Empty);
+private:
+    SourceLocation AmpAmpLoc;
+    SourceLocation LabelLoc;
+    std::shared_ptr<LabelStmt> Label;
 };
 
 class StmtExpr : public Expr
 {
-
+public:
+    StmtExpr(std::shared_ptr<CompoundStmt> substmt, QualType T,
+             SourceLocation lp, SourceLocation rp);
+    explicit StmtExpr(EmptyShell Empty);
+private:
+    std::shared_ptr<Stmt> SubStmt;
+    SourceLocation LParenLoc;
+    SourceLocation RParenLoc;
 };
 
 class TypesCompatibleExpr : public Expr
 {
-
+public:
+    TypesCompatibleExpr(QualType ReturnType, SourceLocation BLoc,
+                        QualType t1, QualType t2, SourceLocation RP);
+    explicit TypesCompatibleExpr(EmptyShell Empty);
+private:
+    QualType Type1;
+    QualType Type2;
+    SourceLocation BuiltinLoc;
+    SourceLocation RParenLoc;
 };
 
 class ShuffleVectorExpr : public Expr
 {
+public:
+    ShuffleVectorExpr(std::vector<std::shared_ptr<Expr>> args, unsigned nexpr,
+                      QualType Type, SourceLocation BLoc,
+                      SourceLocation RP);
 
+    explicit ShuffleVectorExpr(EmptyShell Empty);
+private:
+    SourceLocation BuiltinLoc, RParenLoc;
+    std::vector<std::shared_ptr<Stmt>> SubExprs;
+    unsigned NumExprs;
 };
 
 class ChooseExpr : public Expr
 {
+public:
+    ChooseExpr(SourceLocation BLoc, std::shared_ptr<Expr> cond, std::shared_ptr<Expr> lhs,
+               std::shared_ptr<Expr> rhs, QualType t,
+               SourceLocation RP);
 
+    explicit ChooseExpr(EmptyShell Empty);
+private:
+    enum { COND, LHS, RHS, END_EXPR };
+    std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
+    SourceLocation BuiltinLoc;
+    SourceLocation RParenLoc;
 };
 
 class GNUNullExpr : public Expr
 {
+public:
+    GNUNullExpr(QualType Ty, SourceLocation Loc);
 
+    explicit GNUNullExpr(EmptyShell Empty);
+private:
+    SourceLocation TokenLoc;
 };
 
 class VAArgExpr : public Expr
 {
+public:
+    VAArgExpr(SourceLocation BLoc, std::shared_ptr<Expr> e, QualType t, SourceLocation RPLoc);
 
+    explicit VAArgExpr(EmptyShell Empty);
+private:
+    std::shared_ptr<Stmt> Val;
+    SourceLocation BuiltinLoc;
+    SourceLocation RParenLoc;
 };
 
 class InitListExpr : public Expr
 {
+public:
+    InitListExpr(SourceLocation lbraceloc,
+                 std::vector<std::shared_ptr<Expr>> initexprs, unsigned numinits,
+                 SourceLocation rbraceloc);
 
+    explicit InitListExpr(EmptyShell Empty);
+private:
+    std::vector<std::shared_ptr<Stmt>> InitExprs;
+    SourceLocation LBraceLoc;
+    SourceLocation RBraceLoc;
+
+    std::shared_ptr<InitListExpr> SyntacticForm;
+
+    //FieldDecl *UnionFieldInit;
+
+    bool HadArrayRangeDesignator;
 };
 
 class DesignatedInitExpr : public Expr
 {
+public:
+    class Designator;
+private:
+    SourceLocation EqualOrColonLoc;
+    bool GNUSyntax : 1;
+    unsigned NumDesignators : 15;
+    std::shared_ptr<Designator> Designators;
+    unsigned NumSubExprs : 16;
+
+
+    //    DesignatedInitExpr(QualType Ty, unsigned NumDesignators,
+    //                       const Designator *Designators,
+    //                       SourceLocation EqualOrColonLoc, bool GNUSyntax,
+    //                       Expr **IndexExprs, unsigned NumIndexExprs,
+    //                       Expr *Init);
+
+    //    explicit DesignatedInitExpr(unsigned NumSubExprs)
+    //        : Expr(DesignatedInitExprClass, EmptyShell()),
+    //          NumDesignators(0), Designators(0), NumSubExprs(NumSubExprs) { }
 
 };
 
 class ImplicitValueInitExpr : public Expr
 {
+public:
+    explicit ImplicitValueInitExpr(QualType ty);
 
+    explicit ImplicitValueInitExpr(EmptyShell Empty);
 };
 
 class ParenListExpr : public Expr
 {
-
+public:
+    ParenListExpr(SourceLocation lparenloc, std::vector<std::shared_ptr<Expr>> exprs,
+                  unsigned numexprs, SourceLocation rparenloc);
+private:
+    std::vector<std::shared_ptr<Stmt>> Exprs;
+    unsigned NumExprs;
+    SourceLocation LParenLoc;
+    SourceLocation RParenLoc;
 };
 
 class ExtVectorElementExpr : public Expr
 {
+public:
+    //    ExtVectorElementExpr(QualType ty, std::shared_ptr<Expr> base, IdentifierInfo &accessor,
+    //                           SourceLocation loc)
+    //        : Expr(ExtVectorElementExprClass, ty),
+    //          Base(base), Accessor(&accessor), AccessorLoc(loc) {}
 
+    explicit ExtVectorElementExpr(EmptyShell Empty);
+private:
+    std::shared_ptr<Stmt> Base;
+    //      IdentifierInfo *Accessor;
+    SourceLocation AccessorLoc;
 };
 
 class BlockExpr : public Expr

@@ -1,6 +1,6 @@
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
-
+//line 22 61
 Stmt::Stmt(Stmt::StmtClass SC)
     : sClass(SC), RefCount(1)
 {
@@ -11,6 +11,77 @@ Stmt::Stmt(Stmt::StmtClass SC, Stmt::EmptyShell)
 {
 }
 
+DeclStmt::DeclStmt(EmptyShell Empty) : Stmt(DeclStmtClass, Empty) { }
+
+NullStmt::NullStmt()
+    :Stmt (NullStmtClass)
+{}
+
+NullStmt::NullStmt(EmptyShell Empty) : Stmt(NullStmtClass, Empty) { }
+
+//CompoundStmt::CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, unsigned numStmts)
+//    :Stmt (CompoundStmtClass),NumStmts(numStmts)
+//{
+//    // 这部分
+//}
+
+
+CompoundStmt::CompoundStmt(EmptyShell Empty):Stmt(CompoundStmtClass, Empty)
+{}
+
+SwitchCase::SwitchCase(StmtClass SC)
+    : Stmt(SC), NextSwitchCase(nullptr)
+{}
+
+CaseStmt:: CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs):SwitchCase(CaseStmtClass)
+{
+    SubExprs[SUBSTMT] = 0;
+    SubExprs[LHS] = lhs;
+    SubExprs[RHS] =rhs;
+}
+CaseStmt::CaseStmt(EmptyShell Empty)
+    :SwitchCase (CaseStmtClass)
+{}
+
+DefaultStmt::DefaultStmt(std::shared_ptr<Stmt> substmt) :
+    SwitchCase(DefaultStmtClass), SubStmt(substmt){}
+
+DefaultStmt::DefaultStmt(EmptyShell)
+    : SwitchCase(DefaultStmtClass)
+{ }
+
+LabelStmt::LabelStmt(std::shared_ptr<Stmt> substmt)
+    :Stmt(LabelStmtClass),SubStmt(substmt)
+{}
+
+LabelStmt::LabelStmt(EmptyShell Empty)
+    :Stmt (LabelStmtClass,Empty)
+{}
+
+IfStmt::IfStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> then, std::shared_ptr<Stmt> elsev = nullptr)
+    :Stmt (IfStmtClass)
+{
+    SubExprs[COND]=cond;
+    SubExprs[THEN]=then;
+    SubExprs[ELSE]=elsev;
+
+
+}
+
+IfStmt::IfStmt(EmptyShell Empty)
+    :Stmt (IfStmtClass,Empty)
+{}
+
+SwitchStmt::SwitchStmt(std::shared_ptr<Expr> cond)
+    :Stmt (SwitchStmtClass),FirstCase(0)
+{
+    SubExprs[COND]=cond;
+    SubExprs[BODY]=NULL;
+}
+
+SwitchStmt::SwitchStmt(EmptyShell Empty)
+    : Stmt(SwitchStmtClass, Empty)
+{ }
 WhileStmt::WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body, SourceLocation WL)
     : Stmt(WhileStmtClass)
 {
