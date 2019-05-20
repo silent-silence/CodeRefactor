@@ -5,41 +5,29 @@
 #include "ExpressionFactory.h"
 #include "parser.hpp"
 #include "ExpressionFactory.h"
-#include "Expression/Expression.h"
-#include "Expression/Identity.h"
-#include "Expression/Literal.hpp"
-#include "Expression/Operation/BinaryOperation.h"
-#include "Expression/Operation/PrefixUnaryOperation.h"
-#include "Expression/Operation/RandomAccess.h"
-#include "Expression/Operation/FunctionCall.h"
-#include "Expression/Operation/MemberAccess.h"
-#include "Expression/Operation/PostfixUnaryOperation.h"
-#include "Expression/Operation/CastExpression.h"
-#include "Expression/Operation/TernaryOperation.h"
-#include "Expression/Operation/CommaExpression.h"
-#include "Expression/ArgumentList.h"
+#include "AST/Expr.h"
 
 using std::make_shared;					using std::string;
 using std::shared_ptr;					using std::dynamic_pointer_cast;
 
 typedef yy::Parser::token::yytokentype token;
 
-std::shared_ptr<Expression> ExpressionFactory::makeIdentity(std::string id)
+std::shared_ptr<Expr> ExpressionFactory::makeIdentity(std::string id)
 {
 	return make_shared<Identity>(id);
 }
 
-std::shared_ptr<Expression> ExpressionFactory::makeLiteral(int num)
+std::shared_ptr<Expr> ExpressionFactory::makeLiteral(int num)
 {
 	return make_shared<Literal<int>>(num);
 }
 
-std::shared_ptr<Expression> ExpressionFactory::makeLiteral(double num)
+std::shared_ptr<Expr> ExpressionFactory::makeLiteral(double num)
 {
 	return make_shared<Literal<double>>(num);
 }
 
-std::shared_ptr<Expression> ExpressionFactory::makeBinaryOperation(std::shared_ptr<Expression> firstExpression, int assignmentOpType, std::shared_ptr<Expression> secondExpression)
+std::shared_ptr<Expr> ExpressionFactory::makeBinaryOperation(std::shared_ptr<Expression> firstExpression, int assignmentOpType, std::shared_ptr<Expression> secondExpression)
 {
 	BinaryOperation::BinaryOperator op;
 	switch(assignmentOpType)

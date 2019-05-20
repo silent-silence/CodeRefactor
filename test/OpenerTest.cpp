@@ -11,7 +11,20 @@
 #include <Opener/StdioOpener.h>
 #include <Opener/StringOpener.h>
 
-TEST(OpenerTest, fileOpenerReadonly)
+using std::ofstream;			using std::fstream;
+
+class OpenerTest : public testing::Test {
+protected:
+	static void SetUpTestCase() {
+		auto of = ofstream("a");
+		of << "int a;";
+		of.close();
+	}
+
+	static void TearDownTestCase() {}
+};
+
+TEST_F(OpenerTest, fileOpenerReadonly)
 {
 	FileOpener opener("a");
 	EXPECT_EQ("a", opener.getOpenedName());
@@ -31,7 +44,7 @@ TEST(OpenerTest, fileOpenerReadonly)
 	std::cout.rdbuf(backup);
 }
 
-TEST(OpenerTest, fileOpenerReadWrite)
+TEST_F(OpenerTest, fileOpenerReadWrite)
 {
 	FileOpener opener("a", "b");
 	EXPECT_EQ("a", opener.getOpenedName());
@@ -49,7 +62,7 @@ TEST(OpenerTest, fileOpenerReadWrite)
 	EXPECT_EQ("output", readBuf);
 }
 
-TEST(OpenerTest, stdio)
+TEST_F(OpenerTest, stdio)
 {
 	StdioOpener opener;
 
@@ -68,7 +81,7 @@ TEST(OpenerTest, stdio)
 	EXPECT_EQ("stdio", opener.getOpenedName());
 }
 
-TEST(OpenerTest, stringOpener)
+TEST_F(OpenerTest, stringOpener)
 {
 	StringOpener opener;
 

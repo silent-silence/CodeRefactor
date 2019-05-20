@@ -13,8 +13,13 @@ int main(int argc, char *argv[])
 #else
 int main()
 {
+	int a[] = {1, 2};
+
+	a[4] = 2;
+	std::cout << a[4] << typeid(a).name() << std::endl;
+
 	StringOpener opener;
-	opener << string("int a[1];\n");
+	opener << string("a=4;\n");
 	//opener << string("a[1];\n");
 	Driver driver(opener);
 	driver.parse();

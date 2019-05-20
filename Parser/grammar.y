@@ -10,7 +10,6 @@
 	#include <iostream>
 	#include <string>
 	#include <memory>
-	#include "Factory/ExpressionFactory.h"
 
 	class Driver;
 }
@@ -60,36 +59,19 @@
 %token  QUESTION_MARK           "?"     COLON                   ":"     SEMICOLON           ";"     COMMA               ","
 %token  SIZEOF                  "sizeof"
 
-%token STATMENT_FOR "for"   STATMENT_SWITCH "switch"    CASE "case"
-%token KEYWORD_CONTINUE "continue"	KEYWORK_BREAK "break"	KEYWORD_RETURN "return"
+%token STATMENT_FOR         "for"       STATMENT_SWITCH "switch"    CASE            "case"
+%token KEYWORD_CONTINUE     "continue"  KEYWORK_BREAK   "break"     KEYWORD_RETURN  "return"
 
-%token TYPE_INT "int"			TYPE_INT_POINT "int *"
-%token TYPE_DOUBLE	"double"	TYPE_FLOAT "float"	TYPE_CHAR "char"	TYPE_BOOL "bool"
+%token TYPE_INT             "int"       TYPE_INT_POINT  "int *"
+%token TYPE_DOUBLE          "double"	TYPE_FLOAT      "float"     TYPE_CHAR       "char"
+%token TYPE_BOOL            "bool"
 
-%token <std::string>IDENTIFIER <int>INTEGER	<double>FLOAT
+%token <std::string>IDENTIFIER  <int>INTEGER	<double>FLOAT
 
 %token  EOF  0  "eof"
 
-%type <std::shared_ptr<Expression>>primary_expression
-%type <std::shared_ptr<Expression>>expression
-%type <std::shared_ptr<Expression>>assignment_expression
-%type <std::shared_ptr<Expression>>unary_expression
-%type <std::shared_ptr<Expression>>postfix_expression
 %type <int>unary_op
-%type <std::shared_ptr<Expression>>cast_expression
-%type <std::shared_ptr<Expression>>argument_expression_list
 %type <int>assignment_op
-%type <std::shared_ptr<Expression>>conditional_expression
-%type <std::shared_ptr<Expression>>logical_or_expression
-%type <std::shared_ptr<Expression>>logical_and_expression
-%type <std::shared_ptr<Expression>>inclusive_or_expression
-%type <std::shared_ptr<Expression>>exclusive_or_expression
-%type <std::shared_ptr<Expression>>and_expression
-%type <std::shared_ptr<Expression>>equality_expression
-%type <std::shared_ptr<Expression>>relational_expression
-%type <std::shared_ptr<Expression>>shift_expression
-%type <std::shared_ptr<Expression>>additive_expression
-%type <std::shared_ptr<Expression>>multiplicative_expression
 %type <std::string>type_name
 
 %printer { yyoutput << $$; }<*>

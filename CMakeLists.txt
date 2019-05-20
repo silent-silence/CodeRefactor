@@ -11,9 +11,9 @@ BISON_TARGET(Parser Parser/grammar.y ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp COMP
 FLEX_TARGET(Scanner Parser/lex.l ${CMAKE_CURRENT_BINARY_DIR}/scanner.cpp COMPILE_FLAGS "-+")
 ADD_FLEX_BISON_DEPENDENCY(Scanner Parser)
 
-option(_TEST_ENV "Switch to test enviroment" OFF)
+option(_TEST_ENV "Switch to test enviroment" ON)
 if(_TEST_ENV STREQUAL ON)
-    message("In test enviroment")
+    message(STATUS "In test enviroment")
     add_definitions(-DENV_TEST)
     link_libraries(gtest pthread)
 endif()
@@ -21,4 +21,10 @@ endif()
 add_executable(CodeRefactor
         main.cpp
         ${BISON_Parser_OUTPUTS} ${FLEX_Scanner_OUTPUTS}
-        Factory/ExpressionFactory.h Factory/ExpressionFactory.cpp Expression/ArgumentList.h Expression/ArgumentList.cpp Expression/Constant.h Expression/Constant.cpp Expression/Expression.h Expression/Expression.cpp Expression/Identity.h Expression/Identity.cpp Expression/Literal.hpp Expression/Operation/BinaryOperation.h Expression/Operation/BinaryOperation.cpp Expression/Operation/CastExpression.h Expression/Operation/CastExpression.cpp Expression/Operation/CommaExpression.h Expression/Operation/CommaExpression.cpp Expression/Operation/FunctionCall.h Expression/Operation/FunctionCall.cpp Expression/Operation/MemberAccess.h Expression/Operation/MemberAccess.cpp Expression/Operation/Operation.h Expression/Operation/Operation.cpp Expression/Operation/PostfixUnaryOperation.h Expression/Operation/PostfixUnaryOperation.cpp Expression/Operation/PrefixUnaryOperation.cpp Expression/Operation/PrefixUnaryOperation.h Expression/Operation/RandomAccess.h Expression/Operation/RandomAccess.cpp Expression/Operation/TernaryOperation.h Expression/Operation/TernaryOperation.cpp test/ExpressionTest.cpp Parser/Scanner.h Parser/Driver.cpp Parser/Driver.h Opener/Opener.cpp Opener/Opener.h Opener/StringOpener.cpp Opener/StringOpener.h Opener/StdioOpener.cpp Opener/StdioOpener.h Opener/FileOpener.cpp Opener/FileOpener.h test/OpenerTest.cpp)
+		Factory/ExpressionFactory.h Factory/ExpressionFactory.cpp
+		Parser/Scanner.h Parser/Driver.cpp Parser/Driver.h
+		Opener/Opener.cpp Opener/Opener.h Opener/StringOpener.cpp Opener/StringOpener.h Opener/StdioOpener.cpp Opener/StdioOpener.h Opener/FileOpener.cpp Opener/FileOpener.h
+		Declarations/Decl.h Declarations/DeclarationName.h Declarations/DeclBase.h Declarations/SourceLocation.h Declarations/QualType.cpp Declarations/QualType.h Declarations/DeclBase.cpp
+		AST/AST.hpp AST/Expr.cpp AST/Expr.h AST/Stmt.cpp AST/Stmt.h AST/StmtNodes.def AST/Type.cpp AST/Type.h AST/TypeNodes.def
+		Basic/SourceLocation.h Basic/SourceLocation.cpp
+		test/ExpressionTest.cpp test/OpenerTest.cpp test/DeclarationTest.cpp)
