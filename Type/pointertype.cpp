@@ -4,4 +4,3 @@ PointerType::PointerType()
 {
 
 }
-

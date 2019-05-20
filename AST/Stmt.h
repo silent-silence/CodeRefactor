@@ -4,9 +4,12 @@
 #include <array>
 #include <vector>
 #include <memory>
+#include "Basic/SourceLocation.h"
 
 class Expr;
 class Stmt;
+class StringLiteral;
+
 class DeclStmt;
 class NullStmt;
 class CompoundStmt;
@@ -16,6 +19,7 @@ class DefaultStmt;
 class LabelStmt;
 class IfStmt;
 class SwitchStmt;
+
 class WhileStmt;
 class DoStmt;
 class ForStmt;
@@ -96,7 +100,7 @@ public:
     DefaultStmt(std::shared_ptr<Stmt> substmt) :
         SwitchCase(DefaultStmtClass), SubStmt(substmt){}
 
-      explicit DefaultStmt(EmptyShell) : SwitchCase(DefaultStmtClass) { }
+    explicit DefaultStmt(EmptyShell) : SwitchCase(DefaultStmtClass) { }
 private:
     std::shared_ptr<Stmt> SubStmt;
 };
@@ -135,78 +139,126 @@ private:
 class WhileStmt : public Stmt
 {
 public:
-    WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body);
+    WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body, SourceLocation WL);
     explicit WhileStmt(EmptyShell Empty);
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
+    SourceLocation WhileLoc;
 };
 
 class DoStmt : public Stmt
 {
 public:
-    DoStmt(std::shared_ptr<Stmt> body, std::shared_ptr<Expr> cond);
+    DoStmt(std::shared_ptr<Stmt> body,
+           std::shared_ptr<Expr> cond,
+           SourceLocation DL,
+           SourceLocation WL,
+           SourceLocation RP);
     explicit DoStmt(EmptyShell Empty);
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
+    SourceLocation DoLoc;
+    SourceLocation WhileLoc;
+    SourceLocation RParenLoc;
 };
 
 class ForStmt : public Stmt
 {
 public:
-    ForStmt(std::shared_ptr<Stmt> Init, std::shared_ptr<Expr> Cond, std::shared_ptr<Expr> Inc, std::shared_ptr<Stmt> Body);
+    ForStmt(std::shared_ptr<Stmt> Init,
+            std::shared_ptr<Expr> Cond,
+            std::shared_ptr<Expr> Inc,
+            std::shared_ptr<Stmt> Body,
+            SourceLocation FL,
+            SourceLocation LP,
+            SourceLocation RP);
     explicit ForStmt(EmptyShell Empty);
 private:
     enum { INIT, COND, INC, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
+    SourceLocation ForLoc;
+    SourceLocation LParenLoc, RParenLoc;
 };
 
 class GotoStmt : public Stmt
 {
 public:
-    GotoStmt(LabelStmt *label);
+    GotoStmt(std::shared_ptr<LabelStmt> label, SourceLocation GL, SourceLocation LL);
     explicit GotoStmt(EmptyShell Empty);
 private:
     std::shared_ptr<LabelStmt> Label;
+    SourceLocation GotoLoc;
+    SourceLocation LabelLoc;
 };
 
 class IndirectGotoStmt : public Stmt
 {
 public:
-    IndirectGotoStmt(std::shared_ptr<Expr> target);
+    IndirectGotoStmt(SourceLocation gotoLoc, SourceLocation starLoc, std::shared_ptr<Expr> target);
 
     explicit IndirectGotoStmt(EmptyShell Empty);
 private:
     std::shared_ptr<Stmt> Target;
+    SourceLocation GotoLoc;
+    SourceLocation StarLoc;
 };
 
 class ContinueStmt : public Stmt
 {
 public:
-    ContinueStmt() : Stmt(ContinueStmtClass){}
-    explicit ContinueStmt(EmptyShell Empty) : Stmt(ContinueStmtClass, Empty) { }
+    ContinueStmt(SourceLocation CL);
+
+    explicit ContinueStmt(EmptyShell Empty);
+private:
+    SourceLocation ContinueLoc;
 };
 
 class BreakStmt : public Stmt
 {
 public:
-    BreakStmt() : Stmt(BreakStmtClass){}
-    explicit BreakStmt(EmptyShell Empty) : Stmt(BreakStmtClass, Empty) { }
+    BreakStmt(SourceLocation BL);
+    explicit BreakStmt(EmptyShell Empty);
+private:
+    SourceLocation BreakLoc;
 };
 
 class ReturnStmt : public Stmt
 {
 public:
-    ReturnStmt(std::shared_ptr<Expr> E = 0);
+    ReturnStmt(SourceLocation RL, std::shared_ptr<Expr> E = nullptr);
+
     explicit ReturnStmt(EmptyShell Empty);
 private:
     std::shared_ptr<Stmt> RetExpr;
+    SourceLocation RetLoc;
 };
 
 class AsmStmt : public Stmt
 {
+public:
+    AsmStmt(SourceLocation asmloc, bool issimple, bool isvolatile,
+            unsigned numoutputs, unsigned numinputs,
+            std::vector<std::string> names, std::vector<std::shared_ptr<StringLiteral> > constraints,
+            std::vector<std::shared_ptr<Expr> > exprs, std::shared_ptr<StringLiteral> asmstr, unsigned numclobbers,
+            std::vector<std::shared_ptr<StringLiteral> > clobbers, SourceLocation rparenloc);
 
+    explicit AsmStmt(EmptyShell Empty);
+private:
+    SourceLocation AsmLoc, RParenLoc;
+    std::shared_ptr<StringLiteral> AsmStr;
+
+    bool IsSimple;
+    bool IsVolatile;
+
+    unsigned NumOutputs;
+    unsigned NumInputs;
+
+    std::array<std::string, 4> Names;
+    std::array<std::shared_ptr<StringLiteral>, 4> Constraints;
+    std::array<std::shared_ptr<Stmt>, 4> Exprs;
+    std::array<std::shared_ptr<StringLiteral>, 4> Clobbers;
 };
 
 #endif // AST_STMT_H

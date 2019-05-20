@@ -1,4 +1,3 @@
-//
 #ifndef EXTQUALTYPE_H
 #define EXTQUALTYPE_H
 

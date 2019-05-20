@@ -4,6 +4,46 @@
 #include "AST/Type.h"
 #include "AST/Stmt.h"
 
+class Expr;
+class Stmt;
+
+class DeclRefExpr;
+class PredefinedExpr;
+class IntegerLiteral;
+class CharacterLiteral;
+class FloatingLiteral;
+class ImaginaryLiteral;
+class StringLiteral;
+class ParenExpr;
+class UnaryOperator;
+class SizeOfAlignOfExpr;
+class ArraySubscriptExpr;
+class CallExpr;
+class MemberExpr;
+class CompoundLiteralExpr;
+class CastExpr;
+class ImplicitCastExpr;
+class ExplicitCastExpr;
+class CStyleCastExpr;
+
+class BinaryOperator;
+class CompoundAssignOperator;
+class ConditionalOperator;
+class AddrLabelExpr;
+class StmtExpr;
+class TypesCompatibleExpr;
+class ShuffleVectorExpr;
+class ChooseExpr;
+class GNUNullExpr;
+class VAArgExpr;
+class InitListExpr;
+class DesignatedInitExpr;
+class ImplicitValueInitExpr;
+class ParenListExpr;
+class ExtVectorElementExpr;
+class BlockExpr;
+class BlockDeclRefExpr;
+
 //Expr  - 这代表一个表达式。
 //Expr是的Stmt子类，这允许表达式在Stmt的任何地方透明地使用。
 class Expr : public Stmt
