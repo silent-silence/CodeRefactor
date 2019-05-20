@@ -20,7 +20,10 @@ public:
     QualType,
     UnaryOperator::Opcode,
     BinaryOperator::Opcode,
-    PredefinedExpr::IdentType
+    PredefinedExpr::IdentType,
+    BuiltinType::Kind,
+    Type::TypeClass,
+    ArrayType::ArraySizeModifier
     > var_t;
     template<auto type, typename... Args>
     void create(Args... args){
@@ -87,6 +90,25 @@ private:
     void createParenListExpr(std::vector<var_t> &value);
 
     void createExtQualType(std::vector<var_t> &value);
+//    void createQualifierSet(std::vector<var_t> &value);
+    void createBuiltinType(std::vector<var_t> &value);//
+    void createFixedWidthIntType(std::vector<var_t> &value);
+    void createComplexType(std::vector<var_t> &value);
+    void createPointerType(std::vector<var_t> &value);
+    void createBlockPointerType(std::vector<var_t> &value);
+    void createReferenceType(std::vector<var_t> &value);//
+    void createLValueReferenceType(std::vector<var_t> &value);
+    void createRValueReferenceType(std::vector<var_t> &value);
+    void createMemberPointerType(std::vector<var_t> &value);
+//    void createArrayType(std::vector<var_t> &value);      protected
+    void createConstantArrayType(std::vector<var_t> &value);//
+    void createConstantArrayWithExprType(std::vector<var_t> &value);//
+    void createConstantArrayWithoutExprType(std::vector<var_t> &value);//
+    void createIncompleteArrayType(std::vector<var_t> &value);//
+    void createVariableArrayType(std::vector<var_t> &value);//
+    void createDependentSizedArrayType(std::vector<var_t> &value);//
+
+
     void createVectorType(std::vector<var_t> &value);
     void createExtVectorType(std::vector<var_t> &value);
 

@@ -624,7 +624,130 @@ void ASTContext::createExtQualType(std::vector<ASTContext::var_t> &value)
                 get<unsigned>(value[1]),
             static_cast<QualType::GCAttrTypes>(get<int>(value[2]))));
 }
-
+void ASTContext::createBuiltinType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<BuiltinType>(
+             get<BuiltinType::Kind>(value[0])));
+}
+void ASTContext::createFixedWidthIntType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<FixedWidthIntType>(
+                    get<unsigned>(value[0]),
+                get<bool>(value[1])));
+}
+void ASTContext::createComplexType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<ComplexType>(
+                    get<QualType>(value[0]),
+                get<QualType>(value[1])));
+}
+void ASTContext::createPointerType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<PointerType>(
+                    get<QualType>(value[0]),
+                get<QualType>(value[1])));
+}
+void ASTContext::createBlockPointerType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<BlockPointerType>(
+                    get<QualType>(value[0]),
+                get<QualType>(value[1])));
+}
+void ASTContext::createReferenceType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<ReferenceType>(
+                    get<Type::TypeClass>(value[0]),
+                get<QualType>(value[1]),
+            get<QualType>(value[2])));
+}
+void ASTContext::createLValueReferenceType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<LValueReferenceType>(
+                    get<QualType>(value[0]),
+                get<QualType>(value[1])));
+}
+void ASTContext::createRValueReferenceType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<RValueReferenceType>(
+                    get<QualType>(value[0]),
+                get<QualType>(value[1])));
+}
+void ASTContext::createMemberPointerType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<MemberPointerType>(
+                    get<QualType>(value[0]),
+                    pop_type(),
+                    get<QualType>(value[1])));
+}
+void ASTContext::createConstantArrayType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<ConstantArrayType>(
+                    get<QualType>(value[0]),
+                    get<QualType>(value[1]),
+            get<int>(value[2]),
+            get<ArrayType::ArraySizeModifier>(value[3]),
+            get<unsigned>(value[4])));
+}
+void ASTContext::createConstantArrayWithExprType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<ConstantArrayWithExprType>(
+                    get<QualType>(value[0]),
+                    get<QualType>(value[1]),
+            get<int>(value[2]),
+            pop_stmt<Expr>(),
+            get<ArrayType::ArraySizeModifier>(value[3]),
+            get<unsigned>(value[4])));
+}
+void ASTContext::createConstantArrayWithoutExprType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<ConstantArrayWithoutExprType>(
+                    get<QualType>(value[0]),
+                    get<QualType>(value[1]),
+            get<int>(value[2]),
+            get<ArrayType::ArraySizeModifier>(value[3]),
+            get<unsigned>(value[4])));
+}
+void ASTContext::createIncompleteArrayType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<IncompleteArrayType>(
+                    get<QualType>(value[0]),
+                    get<QualType>(value[1]),
+            get<ArrayType::ArraySizeModifier>(value[2]),
+            get<unsigned>(value[3])));
+}
+void ASTContext::createVariableArrayType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<VariableArrayType>(
+                    get<QualType>(value[0]),
+                    get<QualType>(value[1]),
+            pop_stmt<Expr>(),
+            get<ArrayType::ArraySizeModifier>(value[2]),
+            get<unsigned>(value[3])));
+}
+void ASTContext::createDependentSizedArrayType(std::vector<ASTContext::var_t> &value)
+{
+    queue_type.push(
+                make_shared<DependentSizedArrayType>(
+                    get<QualType>(value[0]),
+                    get<QualType>(value[1]),
+            pop_stmt<Expr>(),
+            get<ArrayType::ArraySizeModifier>(value[2]),
+            get<unsigned>(value[3])));
+}
 void ASTContext::createVectorType(std::vector<ASTContext::var_t> &value)
 {
     queue_type.push(
