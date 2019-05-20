@@ -70,7 +70,8 @@ PredefinedExpr::PredefinedExpr(QualType type, IdentType IT):Expr (PredefinedExpr
 PredefinedExpr::PredefinedExpr(EmptyShell Empty):Expr (PredefinedExprClass,Empty)
 {}
 
-IntegerLiteral::IntegerLiteral(const int &V, QualType type):Expr (IntegerLiteralClass,type),Value(V)
+IntegerLiteral::IntegerLiteral(const int &V, QualType type)
+    :Expr (IntegerLiteralClass,type),Value(V)
 {}
 
 IntegerLiteral::IntegerLiteral(EmptyShell Empty):Expr (IntegerLiteralClass,Empty)
@@ -98,6 +99,16 @@ ImaginaryLiteral::ImaginaryLiteral(std::shared_ptr<Expr> val, QualType Ty)
 ImaginaryLiteral::ImaginaryLiteral(EmptyShell Empty)
     :Expr (ImaginaryLiteralClass,Empty)
 {}
+
+std::shared_ptr<StringLiteral> StringLiteral::Create(const char *StrData, unsigned ByteLength, bool Wide, QualType Ty, const SourceLocation Loc, unsigned NumStrs)
+{
+
+}
+
+std::shared_ptr<StringLiteral> StringLiteral::Create(const char *StrData, unsigned ByteLength, bool Wide, QualType Ty, SourceLocation Loc)
+{
+    return Create(StrData, ByteLength, Wide, Ty, Loc, 1);
+}
 
 StringLiteral::StringLiteral(QualType Ty)
     :Expr (StringLiteralClass,Ty)
