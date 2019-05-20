@@ -4,5 +4,4 @@
 #include "AST/Expr.h"
 #include "AST/Type.h"
 
-
 #endif // AST_H

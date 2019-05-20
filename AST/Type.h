@@ -7,6 +7,8 @@
 
 class Expr;
 class Stmt;
+class ASTContext;
+class TagDecl;
 
 class QualType;
 class Type;
@@ -97,7 +99,7 @@ protected:
     enum { TypeClassBitSize = 6 };
     Type(TypeClass tc, QualType Canonical, bool dependent);
 private:
-    Type(const Type&);
+    Type(const Type &){}
 
     QualType CanonicalType;
     bool Dependent : 1;
@@ -260,7 +262,7 @@ public:
 
 protected:
     ConstantArrayType(TypeClass tc, QualType et, QualType can,
-int size, ArraySizeModifier sm, unsigned tq);
+                      int size, ArraySizeModifier sm, unsigned tq);
 private:
     int Size;
 };
@@ -303,7 +305,7 @@ class DependentSizedArrayType : public ArrayType
 {
 public:
     DependentSizedArrayType( QualType et, QualType can,
-                            std::shared_ptr<Expr>e, ArraySizeModifier sm, unsigned tq);
+                             std::shared_ptr<Expr>e, ArraySizeModifier sm, unsigned tq);
 private:
     std::shared_ptr<Stmt> SizeExpr;
     QualType ElementType;
@@ -325,8 +327,8 @@ private:
 class VectorType : public Type
 {
 public:
-protected:
     VectorType(QualType vecType, unsigned nElements, QualType canonType);
+protected:
     VectorType(TypeClass tc, QualType vecType, unsigned nElements, QualType canonType);
     QualType ElementType;
     unsigned NumElements;
@@ -335,14 +337,14 @@ protected:
 class ExtVectorType : public VectorType
 {
 public:
-private:
     ExtVectorType(QualType vecType, unsigned nElements, QualType canonType);
+private:
+
 };
 
 class FunctionType : public Type
 {
 public:
-protected:
     FunctionType(TypeClass tc, QualType res, bool SubclassInfo,
                  unsigned typeQuals, QualType Canonical, bool Dependent,
                  bool noReturn = false);
@@ -355,18 +357,18 @@ private:
 
 class FunctionNoProtoType : public FunctionType
 {
-private:
+public:
     FunctionNoProtoType(QualType Result, QualType Canonical, bool NoReturn = false);
 };
 
 class FunctionProtoType : public FunctionType
 {
 public:
-private:
     FunctionProtoType(QualType Result, const std::vector<QualType> ArgArray,
                       bool isVariadic, unsigned typeQuals, bool hasExs,
                       bool hasAnyExs, const QualType *ExArray,
                       unsigned numExs, QualType Canonical, bool NoReturn);
+private:
     static bool hasAnyDependentType(const std::vector<QualType> ArgArray);
     unsigned NumArgs : 20;
     unsigned NumExceptions : 10;
@@ -392,7 +394,6 @@ private:
 class TypeOfExprType : public Type
 {
 public:
-protected:
     TypeOfExprType(std::shared_ptr<Expr> E, QualType can = QualType());
 private:
     std::shared_ptr<Expr> TOExpr;
@@ -407,15 +408,14 @@ public:
 class TypeOfType  : public Type
 {
 public:
-private:
     TypeOfType(QualType T, QualType can);
+private:
     QualType TOType;
 };
 
 class DecltypeType : public Type
 {
 public:
-protected:
     DecltypeType(std::shared_ptr<Expr> E, QualType underlyingType, QualType can = QualType());
 private:
     std::shared_ptr<Expr> E;
@@ -425,14 +425,14 @@ private:
 class DependentDecltypeType : public DecltypeType
 {
 public:
-    //DependentDecltypeType(std::shared_ptr<Expr> E);
+    DependentDecltypeType(std::shared_ptr<Expr> E);
 };
 
 class TagType : public Type
 {
 public:
 protected:
-    //TagType(TypeClass TC, TagDecl *D, QualType can);
+    TagType(TypeClass TC, std::shared_ptr<TagDecl> D, QualType can);
     TagType(TypeClass TC, QualType can);
 private:
     //mutable llvm::PointerIntPair<TagDecl *, 1> decl;

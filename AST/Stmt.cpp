@@ -21,8 +21,9 @@ NullStmt::NullStmt(SourceLocation L) : Stmt(NullStmtClass), SemiLoc(L) {}
 NullStmt::NullStmt(EmptyShell Empty) : Stmt(NullStmtClass, Empty) { }
 
 CompoundStmt::CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, SourceLocation LB, SourceLocation RB)
-    :Stmt (CompoundStmtClass),LBracLoc(LB), RBracLoc(RB)
+    :Stmt (CompoundStmtClass), Body{StmtStart}, LBracLoc(LB), RBracLoc(RB)
 {
+
 }
 
 
@@ -33,26 +34,32 @@ SwitchCase::SwitchCase(StmtClass SC)
     : Stmt(SC), NextSwitchCase(nullptr)
 {}
 
-CaseStmt:: CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs):SwitchCase(CaseStmtClass)
+CaseStmt::CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, SourceLocation caseLoc, SourceLocation ellipsisLoc, SourceLocation colonLoc)
+    : SwitchCase(CaseStmtClass)
 {
-    SubExprs[SUBSTMT] = 0;
+    SubExprs[SUBSTMT] = nullptr;
     SubExprs[LHS] = lhs;
-    SubExprs[RHS] =rhs;
+    SubExprs[RHS] = rhs;
+    CaseLoc = caseLoc;
+    EllipsisLoc = ellipsisLoc;
+    ColonLoc = colonLoc;
 }
+
 CaseStmt::CaseStmt(EmptyShell Empty)
     :SwitchCase (CaseStmtClass)
 {}
 
-DefaultStmt::DefaultStmt(std::shared_ptr<Stmt> substmt) :
-    SwitchCase(DefaultStmtClass), SubStmt(substmt){}
+DefaultStmt::DefaultStmt(SourceLocation DL, SourceLocation CL, std::shared_ptr<Stmt> substmt)
+    :SwitchCase(DefaultStmtClass), SubStmt(substmt), DefaultLoc(DL), ColonLoc(CL)
+{}
 
 DefaultStmt::DefaultStmt(EmptyShell)
     : SwitchCase(DefaultStmtClass)
 { }
 
-LabelStmt::LabelStmt(std::shared_ptr<Stmt> substmt)
-    :Stmt(LabelStmtClass),SubStmt(substmt)
-{}
+LabelStmt::LabelStmt(SourceLocation IL, std::shared_ptr<Stmt> substmt)
+    : Stmt(LabelStmtClass),
+      SubStmt(substmt), IdentLoc(IL) {}
 
 LabelStmt::LabelStmt(EmptyShell Empty)
     :Stmt (LabelStmtClass,Empty)

@@ -1,5 +1,6 @@
 #include "AST/Type.h"
 #include "AST/Expr.h"
+#include "AST/ASTContext.h"
 
 QualType::QualType()
 {
@@ -125,7 +126,7 @@ IncompleteArrayType::IncompleteArrayType(QualType et, QualType can,
 {}
 
 VariableArrayType::VariableArrayType(QualType et, QualType can, std::shared_ptr<Expr>e,ArraySizeModifier sm, unsigned tq)
-    :ArrayType(VariableArray, et, can, sm, tq),SizeExpr((std::shared_ptr<Stmt>) e)
+    :ArrayType(VariableArray, et, can, sm, tq),SizeExpr(e)
 {}
 
 DependentSizedArrayType::DependentSizedArrayType(QualType et, QualType can,std::shared_ptr<Expr>e, ArraySizeModifier sm, unsigned tq)
@@ -219,7 +220,6 @@ Type::Type(Type::TypeClass tc, QualType Canonical, bool dependent)
     : CanonicalType(Canonical.isNull() ? QualType(shared_from_this(), 0) : Canonical),
       Dependent(dependent), TC(tc) {}
 
-Type::Type(const Type &)
-{
-
-}
+DependentDecltypeType::DependentDecltypeType(std::shared_ptr<Expr> E)
+: DecltypeType(E, QualType())
+{ }

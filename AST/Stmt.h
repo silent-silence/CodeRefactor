@@ -10,25 +10,25 @@ class Expr;
 class Stmt;
 class StringLiteral;
 
-class DeclStmt;
+class DeclStmt;//
 class NullStmt;
-class CompoundStmt;//
+class CompoundStmt;
 class SwitchCase;
 class CaseStmt;
 class DefaultStmt;
-class LabelStmt;
-class IfStmt;//
+class LabelStmt;//
+class IfStmt;
 class SwitchStmt;
 
-class WhileStmt;//
+class WhileStmt;
 class DoStmt;
-class ForStmt;//
+class ForStmt;
 class GotoStmt;
 class IndirectGotoStmt;
 class ContinueStmt;
 class BreakStmt;
 class ReturnStmt;
-class AsmStmt;
+class AsmStmt;//GNU内联汇编语句扩展
 
 //Stmt - This represents one statement.
 class Stmt
@@ -45,22 +45,23 @@ public:
     };
     struct EmptyShell {};
     Stmt(StmtClass SC);
-    explicit Stmt(StmtClass SC, EmptyShell);
     virtual ~Stmt(){}
 protected:
+    explicit Stmt(StmtClass SC, EmptyShell);
 private:
     const unsigned sClass : 8;//The statement class.
     unsigned RefCount : 24;//The reference count for this statement.
 };
 
-/// DeclStmt - Adaptor class for mixing declarations with statements and expressions.
+// DeclStmt - Adaptor class for mixing declarations with statements and expressions.
 class DeclStmt : public Stmt
 {
 public:
     DeclStmt(SourceLocation startLoc, SourceLocation endLoc);
     explicit DeclStmt(EmptyShell Empty);
 private:
-    SourceLocation StartLoc, EndLoc;
+    SourceLocation StartLoc;
+    SourceLocation EndLoc;
 };
 
 /// NullStmt - This is the null statement ";": C99 6.8.3p3.
@@ -80,45 +81,52 @@ public:
     explicit CompoundStmt(EmptyShell Empty);
 private:
     std::vector<std::shared_ptr<Stmt>> Body;
-    unsigned NumStmts;
     SourceLocation LBracLoc, RBracLoc;
 };
 
 class SwitchCase : public Stmt
 {
 public:
+
+protected:
     SwitchCase(StmtClass SC);
-private:
     std::shared_ptr<SwitchCase> NextSwitchCase;
 };
 
 class CaseStmt : public SwitchCase
 {
 public:
-    CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs);
+    CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, SourceLocation caseLoc,
+             SourceLocation ellipsisLoc, SourceLocation colonLoc);
     explicit CaseStmt(EmptyShell Empty);
 private:
     enum { SUBSTMT, LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
+    SourceLocation CaseLoc;
+    SourceLocation EllipsisLoc;
+    SourceLocation ColonLoc;
 };
 
 class DefaultStmt : public SwitchCase
 {
 public:
-    DefaultStmt(std::shared_ptr<Stmt> substmt);
-
+    DefaultStmt(SourceLocation DL, SourceLocation CL, std::shared_ptr<Stmt> substmt);
     explicit DefaultStmt(EmptyShell);
 private:
     std::shared_ptr<Stmt> SubStmt;
+    SourceLocation DefaultLoc;
+    SourceLocation ColonLoc;
 };
 
 class LabelStmt : public Stmt
 {
 public:
-    LabelStmt(std::shared_ptr<Stmt> substmt);
+    LabelStmt(SourceLocation IL, std::shared_ptr<Stmt> substmt);
     explicit LabelStmt(EmptyShell Empty);
 private:
     std::shared_ptr<Stmt> SubStmt;
+    SourceLocation IdentLoc;
+    //IdentifierInfo *Label;
 };
 
 class IfStmt : public Stmt
@@ -143,6 +151,7 @@ private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
     std::shared_ptr<SwitchCase> FirstCase;
+    SourceLocation SwitchLoc;
 };
 
 class WhileStmt : public Stmt
@@ -209,9 +218,9 @@ public:
 
     explicit IndirectGotoStmt(EmptyShell Empty);
 private:
-    std::shared_ptr<Stmt> Target;
     SourceLocation GotoLoc;
     SourceLocation StarLoc;
+    std::shared_ptr<Stmt> Target;
 };
 
 class ContinueStmt : public Stmt

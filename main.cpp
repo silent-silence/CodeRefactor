@@ -3,10 +3,12 @@
 #include <vector>
 #include <array>
 #include <tuple>
-#define add(x,y) ((x)+(y))
+#include <stdio.h>
 
 #include "AST/AST.hpp"
 #include "AST/ASTContext.h"
+
+#define add(x) (x##Class + 1) + 3
 
 using std::cout;
 using std::endl;

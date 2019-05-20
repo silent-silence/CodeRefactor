@@ -4,6 +4,7 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
+    Declarations/DeclBase.cpp \
     main.cpp \
     Basic/SourceLocation.cpp \
     AST/Expr.cpp \
@@ -19,4 +20,7 @@ HEADERS += \
     AST/Stmt.h \
     AST/StmtNodes.def \
     AST/AST.hpp \
-    AST/ASTContext.h
+    AST/ASTContext.h \
+    Declarations/Decl.h \
+    Declarations/DeclBase.h \
+    Declarations/DeclarationName.h

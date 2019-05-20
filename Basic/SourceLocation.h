@@ -11,13 +11,13 @@ public:
     bool operator<(const SourceLocation &sourceLocation) const;
 protected:
     std::string file() const;
-    unsigned int line() const;
-    unsigned int bytes() const;
+    unsigned line() const;
+    unsigned bytes() const;
 
 private:
     std::string m_file;
-    unsigned int m_line;
-    unsigned int m_bytes;
+    unsigned m_line;
+    unsigned m_bytes;
 };
 
 #endif // SOURCELOCATION_H

@@ -1,8 +1,8 @@
 #include "SourceLocation.h"
 
 SourceLocation::SourceLocation()
+    :m_file{""}, m_line{0}, m_bytes{0}
 {
-
 }
 
 bool SourceLocation::operator>(const SourceLocation &sourceLocation) const
@@ -38,12 +38,12 @@ std::string SourceLocation::file() const
     return m_file;
 }
 
-unsigned int SourceLocation::line() const
+unsigned SourceLocation::line() const
 {
     return m_line;
 }
 
-unsigned int SourceLocation::bytes() const
+unsigned SourceLocation::bytes() const
 {
     return m_bytes;
 }
