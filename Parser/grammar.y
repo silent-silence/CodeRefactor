@@ -64,7 +64,7 @@
 %token KEYWORD_FOR	"for"		KEYWORD_SWITCH	"switch"	KEYWORD_CASE	"case"
 %token KEYWORD_CONTINUE	"continue"	KEYWORD_BREAK	"break"		KEYWORD_RETURN	"return"
 %token KEYWORD_DO	"do"		KEYWORD_WHILE	"while"		KEYWORD_IF	"if"
-%token KEYWORD_ELSE	"else"
+%token KEYWORD_ELSE	"else"		KEYWORD_DEFAULT	"default"
 
 %token TYPE_BOOL	"bool"		TYPE_CHAR	"char"		TYPE_SHORT	"short"
 %token TYPE_INT		"int"		TYPE_LONG	"long"		TYPE_VOID	"void"

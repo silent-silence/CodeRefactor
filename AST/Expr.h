@@ -24,7 +24,7 @@ class MemberExpr;
 class CompoundLiteralExpr;
 class CastExpr;
 class ImplicitCastExpr;
-class ExplicitCastExpr;
+class ExplicitCastExpr;//
 class CStyleCastExpr;
 
 class BinaryOperator;

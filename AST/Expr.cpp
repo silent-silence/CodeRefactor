@@ -370,6 +370,19 @@ VAArgExpr::VAArgExpr(SourceLocation BLoc, std::shared_ptr<Expr> e, QualType t, S
 VAArgExpr::VAArgExpr(Stmt::EmptyShell Empty)
     : Expr(VAArgExprClass, Empty) { }
 
+InitListExpr::InitListExpr(SourceLocation lbraceloc,
+                           vector<shared_ptr<Expr> > initexprs,
+                           unsigned numinits,
+                           SourceLocation rbraceloc)
+    : Expr(InitListExprClass, QualType()),
+      LBraceLoc(lbraceloc), RBraceLoc(rbraceloc), SyntacticForm(0),
+      HadArrayRangeDesignator(false)
+{
+    for(unsigned i=0;i!=numinits;i++){
+        InitExprs.push_back(initexprs[i]);
+    }
+}
+
 InitListExpr::InitListExpr(Stmt::EmptyShell Empty)
     : Expr(InitListExprClass, Empty) { }
 
@@ -403,4 +416,15 @@ SizeOfAlignOfExpr::SizeOfAlignOfExpr(bool issizeof,
       isSizeof(issizeof), isType(false), OpLoc(op), RParenLoc(rp)
 {
     Ex = E;
+}
+
+ParenListExpr::ParenListExpr(SourceLocation lparenloc,
+                             vector<shared_ptr<Expr> > exprs,
+                             unsigned numexprs,
+                             SourceLocation rparenloc)
+    : Expr(ParenListExprClass, QualType()),
+      NumExprs(numexprs), LParenLoc(lparenloc), RParenLoc(rparenloc)
+{
+    for (unsigned i = 0; i != numexprs; ++i)
+        Exprs.push_back(exprs[i]);
 }

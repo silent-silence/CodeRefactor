@@ -145,7 +145,7 @@ private:
 class SwitchStmt : public Stmt
 {
 public:
-    SwitchStmt(std::shared_ptr<Expr> cond);
+    SwitchStmt(SourceLocation SL, std::shared_ptr<Expr> cond);
     explicit SwitchStmt(EmptyShell Empty);
 private:
     enum { COND, BODY, END_EXPR };

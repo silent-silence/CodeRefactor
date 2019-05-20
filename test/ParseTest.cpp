@@ -112,17 +112,17 @@ TEST_F(ParseTest, CompoundStmt)
 
 	openHelper << "1; { 123; 1234; }";
 	driver.parse();
-	EXPECT_TRUE(dynamic_pointer_cast<IntegerLiteral>(context.getTop().lock()));
+	EXPECT_TRUE(dynamic_pointer_cast<CompoundStmt>(context.getTop().lock()));
 	context.cleanAST();
 
 	openHelper << "{ 123; 1234; } 1;";
 	driver.parse();
-	EXPECT_TRUE(dynamic_pointer_cast<CompoundStmt>(context.getTop().lock()));
+	EXPECT_TRUE(dynamic_pointer_cast<IntegerLiteral>(context.getTop().lock()));
 	context.cleanAST();
 
 	openHelper << "{ 123; 1234; 123; { 123; 123; } { 13; } { } } 1;";
 	driver.parse();
-	EXPECT_TRUE(dynamic_pointer_cast<CompoundStmt>(context.getTop().lock()));
+	EXPECT_TRUE(dynamic_pointer_cast<IntegerLiteral>(context.getTop().lock()));
 	context.cleanAST();
 }
 

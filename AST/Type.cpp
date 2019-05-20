@@ -1,5 +1,6 @@
 #include "AST/Type.h"
 #include "AST/Expr.h"
+#include "AST/ASTContext.h"
 
 QualType::QualType()
 {
@@ -218,3 +219,7 @@ bool Type::isDependentType() const
 Type::Type(Type::TypeClass tc, QualType Canonical, bool dependent)
     : CanonicalType(Canonical.isNull() ? QualType(shared_from_this(), 0) : Canonical),
       Dependent(dependent), TC(tc) {}
+
+DependentDecltypeType::DependentDecltypeType(std::shared_ptr<Expr> E)
+: DecltypeType(E, QualType())
+{ }

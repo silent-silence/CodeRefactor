@@ -54,6 +54,7 @@ character   (\'{letter}\')
 "while"         { return yy::Parser::make_KEYWORD_WHILE(loc); }
 "if"            { return yy::Parser::make_KEYWORD_IF(loc); }
 "else"          { return yy::Parser::make_KEYWORD_ELSE(loc); }
+"default"       { return yy::Parser::make_KEYWORD_DEFAULT(loc); }
 
 "sizeof"		{ return yy::Parser::make_SIZEOF(loc); }
 

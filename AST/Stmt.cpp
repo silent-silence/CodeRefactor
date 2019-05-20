@@ -65,8 +65,8 @@ LabelStmt::LabelStmt(EmptyShell Empty)
     :Stmt (LabelStmtClass,Empty)
 {}
 
-SwitchStmt::SwitchStmt(std::shared_ptr<Expr> cond)
-    :Stmt (SwitchStmtClass),FirstCase(0)
+SwitchStmt::SwitchStmt(SourceLocation SL, std::shared_ptr<Expr> cond)
+    :Stmt (SwitchStmtClass),FirstCase(0), SwitchLoc{SL}
 {
     SubExprs[COND]=cond;
     SubExprs[BODY]=NULL;
