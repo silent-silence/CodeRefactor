@@ -33,8 +33,9 @@
 {
 	#include "Parser/Driver.h"
 	#include "OpenHelper/OpenHelper.h"
+	#include "Parser/YaccAdapter.h"
 	#define yylex driver.getSacnner().yylex
-	#define DRIVER yy::Parser::driver
+	#define DRIVER yy::Parser::driver.getAdapter()
 }
 
 %define api.token.prefix {TOK_}
@@ -174,16 +175,12 @@ return_stmt
 
 /* Declarations */
 decl_stmt
-	: declaration_specifiers ";"
-	| declaration_specifiers init_declarator_list ";"
+	: declaration_specifiers ";"				{ DRIVER.makeDeclStmt(@1, @2); }
+	| declaration_specifiers init_declarator_list ";"	{ DRIVER.makeDeclStmt(@1, @3); }
 	;
 declaration_specifiers
-	: storage_class_specifier
-	| storage_class_specifier declaration_specifiers
-	| type_specifier
+	: type_specifier					{ DRIVER.makeBuiltinType(); }
 	| type_specifier declaration_specifiers
-	| type_qualifier
-	| type_qualifier declaration_specifiers
 	;
 init_declarator_list
 	: init_declarator
@@ -193,23 +190,21 @@ init_declarator
 	: declarator
 	| declarator "=" initializer
 	;
-storage_class_specifier
-	: "typedef"
-	| "extern"
-	| "static"
-	| "auto"
-	| "register"
-	;
 type_specifier
-	: "void"
-	| "char"
-	| "short"
-	| "int"
-	| "long"
-	| "float"
-	| "double"
-	| "signed"
-	| "unsigned"
+	: "typedef"			{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::TYPEDEF); }
+	| "extern"			{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::EXTERN); }
+	| "static"			{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::STATIC); }
+	| "auto"			{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::AUTO); }
+	| "register"			{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::REGISTER); }
+	| "void"			{ DRIVER.addTypeSpecifier(YaccAdapter::VOID); }
+	| "char"			{ DRIVER.addTypeSpecifier(YaccAdapter::CHAR); }
+	| "short"			{ DRIVER.addTypeSpecifier(YaccAdapter::SHORT); }
+	| "int"				{ DRIVER.addTypeSpecifier(YaccAdapter::INT); }
+	| "long"			{ DRIVER.addTypeSpecifier(YaccAdapter::LONG); }
+	| "float"			{ DRIVER.addTypeSpecifier(YaccAdapter::FLOAT); }
+	| "double"			{ DRIVER.addTypeSpecifier(YaccAdapter::DOUBLE); }
+	| "signed"			{ DRIVER.addTypeSpecifier(YaccAdapter::SIGNED); }
+	| "unsigned"			{ DRIVER.addTypeSpecifier(YaccAdapter::UNSIGNED); }
 	| struct_or_union_specifier
 	| enum_specifier
 	//| TYPE_NAME
@@ -220,8 +215,8 @@ struct_or_union_specifier
 	| struct_or_union IDENTIFIER
 	;
 struct_or_union
-	: "struct"
-	| "union"
+	: "struct"			{ DRIVER.addTypeSpecifier(YaccAdapter::STRUCT); }
+	| "union"			{ DRIVER.addTypeSpecifier(YaccAdapter::UNION); }
 	;
 struct_declaration_list
 	: struct_declaration
@@ -267,7 +262,7 @@ declarator
 	| direct_declarator
 	;
 direct_declarator
-	: IDENTIFIER
+	: IDENTIFIER							{ DRIVER.makeVariable($1, @1); }
 	| "(" declarator ")"
 	| direct_declarator "[" integer_constant_expression "]"
 	| direct_declarator "[" "]"

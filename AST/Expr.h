@@ -3,7 +3,7 @@
 
 #include "AST/Type.h"
 #include "AST/Stmt.h"
-#include "Declarations/Decl.h"
+#include "Decl/Decl.h"
 
 class Expr;
 class Stmt;

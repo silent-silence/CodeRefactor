@@ -23,7 +23,7 @@ add_executable(CodeRefactor
         ${BISON_Parser_OUTPUTS} ${FLEX_Scanner_OUTPUTS}
 		Parser/Scanner.h Parser/Driver.cpp Parser/Driver.h
 		OpenHelper/OpenHelper.cpp OpenHelper/OpenHelper.h OpenHelper/StringStreamOpenHelper.cpp OpenHelper/StringStreamOpenHelper.h OpenHelper/StdioOpenHelper.cpp OpenHelper/StdioOpenHelper.h OpenHelper/FileOpenHelper.cpp OpenHelper/FileOpenHelper.h
-		Declarations/Decl.h Declarations/DeclarationName.h Declarations/DeclBase.h Declarations/DeclBase.cpp
+        Decl/Decl.h Decl/DeclName.h Decl/DeclBase.h Decl/DeclBase.cpp
 		AST/AST.hpp AST/Expr.cpp AST/Expr.h AST/Stmt.cpp AST/Stmt.h AST/StmtNodes.def AST/Type.cpp AST/Type.h AST/TypeNodes.def AST/ASTContext.h AST/ASTContext.cpp
 		Basic/SourceLocation.h Basic/SourceLocation.cpp
-		test/ParseTest.cpp test/OpenHelperTest.cpp test/DeclarationTest.cpp Declarations/DeclGroupRef.cpp Declarations/DeclGroupRef.h)
+		test/BasicParseTest.cpp test/OpenHelperTest.cpp test/DeclarationTest.cpp Decl/DeclGroupRef.cpp Decl/DeclGroupRef.h Parser/YaccAdapter.cpp Parser/YaccAdapter.h Decl/DeclContextHolder.cpp Decl/DeclContextHolder.h)

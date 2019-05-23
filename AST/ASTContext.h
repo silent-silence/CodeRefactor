@@ -10,30 +10,43 @@
 class ASTContext
 {
 public:
-    typedef std::variant<
-    unsigned,
-    unsigned long,
-    int,
-    double,
-    float,
-    bool,
-    char *,
-    SourceLocation,
-    QualType,
-    UnaryOperator::Opcode,
-    BinaryOperator::Opcode,
-    PredefinedExpr::IdentType,
-	BuiltinType::Kind,
-	Type::TypeClass,
-	ArrayType::ArraySizeModifier,
-    std::string
-    > var_t;
-    template<auto type, typename... Args>
-    void create(Args... args){
+	enum Marker {
+		Marker_1 = 0x01,
+		Marker_2 = 0x02,
+		Marker_3 = 0x04,
+		Marker_4 = 0x08
+	};
+	typedef std::variant<
+			unsigned,
+			unsigned long,
+			int,
+			double,
+			float,
+			bool,
+			char *,
+			SourceLocation,
+			QualType,
+			UnaryOperator::Opcode,
+			BinaryOperator::Opcode,
+			PredefinedExpr::IdentType,
+			BuiltinType::Kind,
+			Type::TypeClass,
+			CastExpr::CastKind,
+			ArrayType::ArraySizeModifier,
+			std::string,
+			std::vector<std::shared_ptr<Stmt>>,
+			std::vector<std::shared_ptr<Expr>>,
+			std::shared_ptr<Expr>,
+			std::shared_ptr<Stmt>,
+			std::shared_ptr<Type>,
+			std::shared_ptr<NamedDecl>
+	> var_t;
+    /*template<auto type, typename... Args>
+	std::shared_ptr<Stmt> create(Args... args){
         std::vector<var_t> value;
         (value.push_back(var_t{args}), ...);
         if(typeid (type)==typeid (Stmt::StmtClass)){
-            createStmt(static_cast<Stmt::StmtClass>(type), value);
+            return createStmt(static_cast<Stmt::StmtClass>(type), value);
         }
         else if(typeid (type)==typeid (Type::TypeClass)){
             createType(static_cast<Type::TypeClass>(type), value);
@@ -41,95 +54,205 @@ public:
         else {
             throw std::string("Unable to identify identifier!");
         }
-    }
+    }*/
+	template<typename... Args>
+	std::shared_ptr<Stmt> createStmt(Stmt::StmtClass type, Args... args)
+	{
+		std::vector<var_t> value;
+		(value.push_back(var_t{args}), ...);
+		std::shared_ptr<Stmt> stmt;
+		switch (type) {
+			case Stmt::DeclStmtClass:				return createDeclStmt(value);
+			case Stmt::NullStmtClass:				return createNullStmt(value);
+			case Stmt::CompoundStmtClass:			return createCompoundStmt(value);
+			case Stmt::CaseStmtClass:				return createCaseStmt(value);
+			case Stmt::DefaultStmtClass:			return createDefaultStmt(value);
+			case Stmt::LabelStmtClass:				return createLabelStmt(value);
+			case Stmt::IfStmtClass:					return createIfStmt(value);
+			case Stmt::SwitchStmtClass:				return createSwitchStmt(value);
+			case Stmt::WhileStmtClass:				return createWhileStmt(value);
+			case Stmt::DoStmtClass:					return createDoStmt(value);
+			case Stmt::ForStmtClass:				return createForStmt(value);
+			case Stmt::GotoStmtClass:				return createGotoStmt(value);
+			case Stmt::IndirectGotoStmtClass:		return createIndirectGotoStmt(value);
+			case Stmt::ContinueStmtClass:			return createContinueStmt(value);
+			case Stmt::BreakStmtClass:				return createBreakStmt(value);
+			case Stmt::ReturnStmtClass:				return createReturnStmt(value);
+			case Expr::DeclRefExprClass:			return createDeclRefExpr(value);
+			case Expr::PredefinedExprClass:			return createPredefinedExpr(value);
+			case Expr::IntegerLiteralClass:			return createIntegerLiteral(value);
+			case Expr::CharacterLiteralClass:		return createCharacterLiteral(value);
+			case Expr::FloatingLiteralClass:		return createFloatingLiteral(value);
+			case Expr::ImaginaryLiteralClass:		return createImaginaryLiteral(value);
+			case Expr::StringLiteralClass:			return createStringLiteral(value);
+			case Expr::ParenExprClass:				return createParenExpr(value);
+			case Expr::UnaryOperatorClass:			return createUnaryOperator(value);
+			case Expr::SizeOfAlignOfExprClass:		return createSizeOfAlignOfExpr(value);
+			case Expr::ArraySubscriptExprClass:		return createArraySubscriptExpr(value);
+			case Expr::CallExprClass:				return createCallExpr(value);
+			case Expr::MemberExprClass:				return createMemberExpr(value);
+			case Expr::CompoundLiteralExprClass:	return createCompoundLiteralExpr(value);
+			case Expr::ImplicitCastExprClass:		return createImplicitCastExpr(value);
+			case Expr::CStyleCastExprClass:			return createCStyleCastExpr(value);
+			case Expr::BinaryOperatorClass:			return createBinaryOperator(value);
+			case Expr::CompoundAssignOperatorClass:	return createCompoundAssignOperator(value);
+			case Expr::ConditionalOperatorClass:	return createConditionalOperator(value);
+				/*case Expr::AddrLabelExprClass:
+					createAddrLabelExpr(value);
+					break;*/
+				/*case Expr::StmtExprClass:
+					createStmtExpr(value);
+					break;*/
+				/*case Expr::TypesCompatibleExprClass:
+					createTypesCompatibleExpr(value);
+					break;*/
+				/*case Expr::ShuffleVectorExprClass:
+					createShuffleVectorExpr(value);
+					break;*/
+				/*case Expr::ChooseExprClass:
+					createChooseExpr(value);
+					break;*/
+				/*case Expr::GNUNullExprClass:
+					createGNUNullExpr(value);
+					break;*/
+			case Expr::VAArgExprClass:				return createVAArgExpr(value);
+			case Expr::InitListExprClass:			return createInitListExpr(value);
+			case Expr::ParenListExprClass:			return createParenListExpr(value);
+		}
+	}
+
+	template<typename... Args>
+	std::shared_ptr<Type> createType(Type::TypeClass type, Args... args)
+	{
+		std::vector<var_t> value;
+		(value.push_back(var_t{args}), ...);
+		
+		switch (type) {
+			case Type::ExtQual:break;
+			case Type::Builtin:					return createBuiltinType(value);
+			case Type::FixedWidthInt:break;
+			case Type::Complex:break;
+			case Type::Pointer:break;
+			case Type::BlockPointer:break;
+			case Type::LValueReference:break;
+			case Type::RValueReference:break;
+			case Type::MemberPointer:break;
+			case Type::ConstantArray:break;
+			case Type::ConstantArrayWithExpr:break;
+			case Type::ConstantArrayWithoutExpr:break;
+			case Type::IncompleteArray:break;
+			case Type::VariableArray:break;
+			case Type::DependentSizedArray:break;
+			case Type::DependentSizedExtVector:break;
+			case Type::Vector:break;
+			case Type::ExtVector:break;
+			case Type::FunctionProto:break;
+			case Type::FunctionNoProto:break;
+			case Type::Typedef:break;
+			case Type::TypeOfExpr:break;
+			case Type::TypeOf:break;
+			case Type::Decltype:break;
+			case Type::Record:break;
+			case Type::Enum:break;
+			case Type::TemplateTypeParm:break;
+			case Type::TemplateSpecialization:break;
+			case Type::QualifiedName:break;
+			case Type::Typename:break;
+			case Type::ObjCInterface:break;
+			case Type::ObjCObjectPointer:break;
+		}
+	}
+
+	void updateASTRoot(std::shared_ptr<Stmt> root);
 
 #ifdef ENV_TEST
-    std::weak_ptr<Stmt> getTop() const;
+    std::weak_ptr<Stmt> getRoot() const;
     void cleanAST();
 #endif
 
+    /// @brief Not allow copy
+    ASTContext &operator =(ASTContext &) = delete;
+
 private:
-	void createStmt(Stmt::StmtClass type, std::vector<var_t> &value);
-	void createType(Type::TypeClass type, std::vector<var_t> value);
+	std::shared_ptr<Stmt> createDeclStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createNullStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createCompoundStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createCaseStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createDefaultStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createLabelStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createIfStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createSwitchStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createWhileStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createDoStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createForStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createGotoStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createIndirectGotoStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createContinueStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createBreakStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createReturnStmt(std::vector<var_t> &value);//done
 
-	void createDeclStmt(std::vector<var_t> &value);
-	void createNullStmt(std::vector<var_t> &value);//done
-	void createCompoundStmt(std::vector<var_t> &value);//done
-	void createCaseStmt(std::vector<var_t> &value);
-	void createDefaultStmt(std::vector<var_t> &value);
-	void createLabelStmt(std::vector<var_t> &value);
-	void createIfStmt(std::vector<var_t> &value);
-	void createSwitchStmt(std::vector<var_t> &value);
-	void createWhileStmt(std::vector<var_t> &value);
-	void createDoStmt(std::vector<var_t> &value);
-	void createForStmt(std::vector<var_t> &value);
-	void createGotoStmt(std::vector<var_t> &value);
-	void createIndirectGotoStmt(std::vector<var_t> &value);
-	void createContinueStmt(std::vector<var_t> &value);//done
-	void createBreakStmt(std::vector<var_t> &value);//done
-	void createReturnStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createDeclRefExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createPredefinedExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createIntegerLiteral(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createCharacterLiteral(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createFloatingLiteral(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createImaginaryLiteral(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createStringLiteral(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createParenExpr(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createUnaryOperator(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createSizeOfAlignOfExpr(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createArraySubscriptExpr(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createCallExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createMemberExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createCompoundLiteralExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createImplicitCastExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createCStyleCastExpr(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createBinaryOperator(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createCompoundAssignOperator(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createConditionalOperator(std::vector<var_t> &value);//done
+	//std::shared_ptr<Stmt> createAddrLabelExpr(std::vector<var_t> &value);///gun extension
+	//std::shared_ptr<Stmt> createStmtExpr(std::vector<var_t> &value);///gun extension
+	//std::shared_ptr<Stmt> createTypesCompatibleExpr(std::vector<var_t> &value);///gun extension
+	//std::shared_ptr<Stmt> createShuffleVectorExpr(std::vector<var_t> &value);///clang extension
+	//std::shared_ptr<Stmt> createChooseExpr(std::vector<var_t> &value);///gun extension
+	//std::shared_ptr<Stmt> createGNUNullExpr(std::vector<var_t> &value);///gun extension
+	std::shared_ptr<Stmt> createVAArgExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createInitListExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createParenListExpr(std::vector<var_t> &value);//done
 
-	void createDeclRefExpr(std::vector<var_t> &value);
-	void createPredefinedExpr(std::vector<var_t> &value);
-	void createIntegerLiteral(std::vector<var_t> &value);//done
-	void createCharacterLiteral(std::vector<var_t> &value);
-	void createFloatingLiteral(std::vector<var_t> &value);//done
-	void createImaginaryLiteral(std::vector<var_t> &value);
-	void createStringLiteral(std::vector<var_t> &value);//done
-	void createParenExpr(std::vector<var_t> &value);//done
-	void createUnaryOperator(std::vector<var_t> &value);//done
-	void createSizeOfAlignOfExpr(std::vector<var_t> &value);//done
-	void createArraySubscriptExpr(std::vector<var_t> &value);//done
-	void createCallExpr(std::vector<var_t> &value);
-	void createMemberExpr(std::vector<var_t> &value);
-	void createCompoundLiteralExpr(std::vector<var_t> &value);
-	void createImplicitCastExpr(std::vector<var_t> &value);
-	void createCStyleCastExpr(std::vector<var_t> &value);//done
-	void createBinaryOperator(std::vector<var_t> &value);//done
-	void createCompoundAssignOperator(std::vector<var_t> &value);//done
-	void createConditionalOperator(std::vector<var_t> &value);//done
-	void createAddrLabelExpr(std::vector<var_t> &value);///gun extension
-	void createStmtExpr(std::vector<var_t> &value);///gun extension
-	void createTypesCompatibleExpr(std::vector<var_t> &value);///gun extension
-	void createShuffleVectorExpr(std::vector<var_t> &value);///clang extension
-	void createChooseExpr(std::vector<var_t> &value);///gun extension
-	void createGNUNullExpr(std::vector<var_t> &value);///gun extension
-	void createVAArgExpr(std::vector<var_t> &value);
-	void createInitListExpr(std::vector<var_t> &value);
-	void createParenListExpr(std::vector<var_t> &value);
-
-	void createExtQualType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createExtQualType(std::vector<var_t> &value);
 //    void createQualifierSet(std::vector<var_t> &value);
-	void createBuiltinType(std::vector<var_t> &value);//
-	void createFixedWidthIntType(std::vector<var_t> &value);
-	void createComplexType(std::vector<var_t> &value);
-	void createPointerType(std::vector<var_t> &value);
-	void createBlockPointerType(std::vector<var_t> &value);
-	void createReferenceType(std::vector<var_t> &value);//
-	void createLValueReferenceType(std::vector<var_t> &value);
-	void createRValueReferenceType(std::vector<var_t> &value);
-	void createMemberPointerType(std::vector<var_t> &value);
+	std::shared_ptr<Type> createBuiltinType(std::vector<var_t> &value);//
+	std::shared_ptr<Type> createFixedWidthIntType(std::vector<var_t> &value);
+	std::shared_ptr<Type> createComplexType(std::vector<var_t> &value);
+	std::shared_ptr<Type> createPointerType(std::vector<var_t> &value);
+	std::shared_ptr<Type> createBlockPointerType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createReferenceType(std::vector<var_t> &value);//
+	//std::shared_ptr<Type> createLValueReferenceType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createRValueReferenceType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createMemberPointerType(std::vector<var_t> &value);
 //    void createArrayType(std::vector<var_t> &value);      protected
-	void createConstantArrayType(std::vector<var_t> &value);//
-	void createConstantArrayWithExprType(std::vector<var_t> &value);//
-	void createConstantArrayWithoutExprType(std::vector<var_t> &value);//
-	void createIncompleteArrayType(std::vector<var_t> &value);//
-	void createVariableArrayType(std::vector<var_t> &value);//
-	void createDependentSizedArrayType(std::vector<var_t> &value);//
+	std::shared_ptr<Type> createConstantArrayType(std::vector<var_t> &value);//
+	std::shared_ptr<Type> createConstantArrayWithExprType(std::vector<var_t> &value);//
+	std::shared_ptr<Type> createConstantArrayWithoutExprType(std::vector<var_t> &value);//
+	std::shared_ptr<Type> createIncompleteArrayType(std::vector<var_t> &value);//
+	//std::shared_ptr<Type> createVariableArrayType(std::vector<var_t> &value);//
+	//std::shared_ptr<Type> createDependentSizedArrayType(std::vector<var_t> &value);//
 
 
-	void createVectorType(std::vector<var_t> &value);
-	void createExtVectorType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createVectorType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createExtVectorType(std::vector<var_t> &value);
 
-	void createFunctionNoProtoType(std::vector<var_t> &value);
-	void createFunctionProtoType(std::vector<var_t> &value);
-	void createTypeOfExprType(std::vector<var_t> &value);
-	void createDependentTypeOfExprType(std::vector<var_t> &value);
-	void createTypeOfType(std::vector<var_t> &value);
-	void createDecltypeType(std::vector<var_t> &value);
-	void createDependentDecltypeType(std::vector<var_t> &value);
+	std::shared_ptr<Type> createFunctionNoProtoType(std::vector<var_t> &value);
+	std::shared_ptr<Type> createFunctionProtoType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createTypeOfExprType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createDependentTypeOfExprType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createTypeOfType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createDecltypeType(std::vector<var_t> &value);
+	//std::shared_ptr<Type> createDependentDecltypeType(std::vector<var_t> &value);
 
-	std::stack<std::shared_ptr<Stmt>> queue;
+	std::shared_ptr<Stmt> m_ASTRoot;
+	/*std::stack<std::shared_ptr<Stmt>> queue;
 	std::stack<std::shared_ptr<Type>> queue_type;
 
 	template<typename T=Stmt>
@@ -147,7 +270,7 @@ private:
 		std::shared_ptr<Type> ptr=queue_type.top();
 		queue_type.pop();
 		return std::dynamic_pointer_cast<T>(ptr);
-	}
+	}*/
 };
 
 #endif // ASTCONTEXT_H

@@ -2,8 +2,8 @@
 
 #include <gtest/gtest.h>
 #include <memory>
-#include "Declarations/Decl.h"
-#include "Declarations/DeclBase.h"
+#include "Decl/Decl.h"
+#include "Decl/DeclBase.h"
 
 using std::shared_ptr;				using std::make_shared;
 
@@ -12,7 +12,7 @@ TEST(DelcarationTest, Decls)
 	auto context = make_shared<DeclContext>();
 	SourceLocation location;
 
-	DeclarationName name("variable");
+	DeclName name("variable");
 	auto variable = make_shared<VariableDecl>(context, location, QualType(), name);
 	context->addDecl(variable);
 
