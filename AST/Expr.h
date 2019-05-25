@@ -80,6 +80,8 @@ public:
 protected:
     DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l);
     DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l, bool TD, bool VD);
+    virtual child_iterator child_begin() { return child_iterator(); }
+    virtual child_iterator child_end(){ return child_iterator(); }
 private:
     std::shared_ptr<NamedDecl> D;
     SourceLocation Loc;
@@ -95,6 +97,8 @@ public:
     };
     PredefinedExpr(SourceLocation l, QualType type, IdentType IT);
     explicit PredefinedExpr(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return child_iterator(); }
+    virtual child_iterator child_end() { return child_iterator(); }
 private:
     IdentType Type;
     SourceLocation Loc;
@@ -105,6 +109,8 @@ class IntegerLiteral : public Expr
 public:
     IntegerLiteral(const int &V, QualType type, SourceLocation l);
     explicit IntegerLiteral(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return child_iterator(); }
+     virtual child_iterator child_end() { return child_iterator(); }
 private:
     int Value;
     SourceLocation Loc;
@@ -115,6 +121,8 @@ class CharacterLiteral : public Expr
 public:
     CharacterLiteral(unsigned value, bool iswide, QualType type, SourceLocation l);
     CharacterLiteral(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return child_iterator();}
+     virtual child_iterator child_end(){ return child_iterator();}
 private:
     unsigned Value;
     bool IsWide;
@@ -126,6 +134,8 @@ class FloatingLiteral : public Expr
 public:
     FloatingLiteral(const float &V, bool isexact, QualType Type, SourceLocation L);
     explicit FloatingLiteral(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return child_iterator(); }
+    virtual child_iterator child_end(){ return child_iterator(); }
 private:
     float Value;
     bool IsExact : 1;
@@ -137,6 +147,8 @@ class ImaginaryLiteral : public Expr
 public:
     ImaginaryLiteral(std::shared_ptr<Expr> val, QualType Ty);
     explicit ImaginaryLiteral(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &Val; }
+    virtual child_iterator child_end(){ return &Val+1; }
 private:
     std::shared_ptr<Stmt> Val;
 };
@@ -150,6 +162,8 @@ public:
     static std::shared_ptr<StringLiteral> Create(const char *StrData,
                                                  unsigned ByteLength,
                                                  bool Wide, QualType Ty, SourceLocation Loc);
+    virtual child_iterator child_begin(){ return child_iterator(); }
+     virtual child_iterator child_end(){ return child_iterator(); }
 private:
     StringLiteral(QualType Ty);
 
@@ -165,6 +179,8 @@ class ParenExpr : public Expr
 public:
     ParenExpr(SourceLocation l, SourceLocation r, std::shared_ptr<Expr> val);
     explicit ParenExpr(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &Val; }
+     virtual child_iterator child_end(){ return &Val+1; }
 private:
     std::shared_ptr<Stmt> Val;
     SourceLocation L;
@@ -186,6 +202,8 @@ public:
     };
     UnaryOperator(std::shared_ptr<Expr> input, Opcode opc, QualType type, SourceLocation l);
     explicit UnaryOperator(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &Val; }
+    virtual child_iterator child_end(){ return &Val+1; }
 private:
     std::shared_ptr<Stmt> Val;
     Opcode Opc;
@@ -205,6 +223,20 @@ public:
 
     explicit SizeOfAlignOfExpr(EmptyShell Empty)
         : Expr(SizeOfAlignOfExprClass, Empty) { }
+    virtual child_iterator child_begin(){
+//        if (isArgumentType()) {
+//          if (VariableArrayType* T = dyn_cast<VariableArrayType>(
+//                                         getArgumentType().getTypePtr()))
+//            return child_iterator(T);
+//          return child_iterator();
+//        }
+//        return child_iterator(&Argument.Ex);
+      }
+    virtual child_iterator child_end(){
+//        if (isArgumentType())
+//          return child_iterator();
+//        return child_iterator(&Argument.Ex + 1);
+      }
 private:
     bool isSizeof : 1;  // true if sizeof, false if alignof.
     bool isType : 1;    // true if operand is a type, false if an expression
@@ -221,6 +253,8 @@ public:
                        QualType t,
                        SourceLocation rbracketloc);
     explicit ArraySubscriptExpr(EmptyShell Shell);
+    virtual child_iterator child_begin(){return &SubExprs[0];}
+     virtual child_iterator child_end() {return &SubExprs[0]+END_EXPR;}
 private:
     enum { LHS, RHS, END_EXPR=2 };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -236,6 +270,12 @@ public:
              QualType t,
              SourceLocation rparenloc);
     CallExpr(StmtClass SC, EmptyShell Empty);
+    virtual child_iterator child_begin() {
+        return &SubExprs[0];
+      }
+    virtual child_iterator child_end() {
+        return &SubExprs[0]+NumArgs+ARGS_START;
+      }
 protected:
     CallExpr(StmtClass SC,
              std::shared_ptr<Expr> fn,
@@ -259,6 +299,8 @@ public:
                SourceLocation l,
                QualType ty);
     explicit MemberExpr(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &Base; }
+    virtual child_iterator child_end(){ return &Base+1; }
 private:
     std::shared_ptr<Stmt> Base;
     std::shared_ptr<NamedDecl> MemberDecl;
@@ -274,6 +316,8 @@ public:
                         std::shared_ptr<Expr> init,
                         bool fileScope);
     explicit CompoundLiteralExpr(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &Init; }
+     virtual child_iterator child_end(){ return &Init+1; }
 private:
     std::shared_ptr<Stmt> Init;
     bool FileScope;
@@ -297,6 +341,8 @@ public:
         CastInfo(CastKind Kind)
             : Kind(Kind) { }
     };
+    virtual child_iterator child_begin(){ return &Op; }
+    virtual child_iterator child_end(){ return &Op+1; }
 protected:
     CastExpr(StmtClass SC, QualType ty, const CastInfo &info, std::shared_ptr<Expr>op) ;
     CastExpr(StmtClass SC, EmptyShell Empty);

@@ -75,9 +75,10 @@ public:
 	void addDecl(std::shared_ptr<Decl> d);
 	//void addHiddenDecl(std::shared_ptr<Decl> d);
 
-	std::weak_ptr<Decl> lookup(DeclName name) {
-		return m_decls.find(name) != m_decls.cend() ? m_decls.find(name)->second : nullptr;
-	}
+	std::weak_ptr<Decl> lookup(DeclName &name);
+	std::weak_ptr<Decl> lookup(DeclName &&name);
+	std::weak_ptr<Decl> lookup(std::string &name);
+	std::weak_ptr<Decl> lookup(std::string &&name);
 
 	//void makeDeclVisibleInContext(std::shared_ptr<NamedDecl> d);
 

@@ -38,7 +38,7 @@ public:
 			std::vector<std::shared_ptr<Expr>>,
 			std::shared_ptr<Expr>,
 			std::shared_ptr<Stmt>,
-			std::shared_ptr<Type>,
+			std::shared_ptr<QualType>,
 			std::shared_ptr<NamedDecl>
 	> var_t;
     /*template<auto type, typename... Args>
@@ -119,6 +119,9 @@ public:
 			case Expr::InitListExprClass:			return createInitListExpr(value);
 			case Expr::ParenListExprClass:			return createParenListExpr(value);
 		}
+
+		// silent no return statement warnings
+		return nullptr;
 	}
 
 	template<typename... Args>
@@ -126,13 +129,13 @@ public:
 	{
 		std::vector<var_t> value;
 		(value.push_back(var_t{args}), ...);
-		
+
 		switch (type) {
 			case Type::ExtQual:break;
 			case Type::Builtin:					return createBuiltinType(value);
 			case Type::FixedWidthInt:break;
 			case Type::Complex:break;
-			case Type::Pointer:break;
+			case Type::Pointer:					return createPointerType(value);
 			case Type::BlockPointer:break;
 			case Type::LValueReference:break;
 			case Type::RValueReference:break;
@@ -140,7 +143,7 @@ public:
 			case Type::ConstantArray:break;
 			case Type::ConstantArrayWithExpr:break;
 			case Type::ConstantArrayWithoutExpr:break;
-			case Type::IncompleteArray:break;
+			case Type::IncompleteArray:			return createIncompleteArrayType(value);
 			case Type::VariableArray:break;
 			case Type::DependentSizedArray:break;
 			case Type::DependentSizedExtVector:break;
@@ -161,6 +164,9 @@ public:
 			case Type::ObjCInterface:break;
 			case Type::ObjCObjectPointer:break;
 		}
+
+		// silent no return statement warnings
+		return nullptr;
 	}
 
 	void updateASTRoot(std::shared_ptr<Stmt> root);

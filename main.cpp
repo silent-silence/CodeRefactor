@@ -1,39 +1,25 @@
-#ifdef ENV_TEST
+#include <iostream>
+#include <memory>
+#include <vector>
+#include <array>
+#include <tuple>
+#include <stdio.h>
 
-#include <gtest/gtest.h>
-
-int main(int argc, char *argv[])
-{
-	testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
-}
-
-#else
-
-#include "OpenHelper/StringStreamOpenHelper.h"
-#include "Parser/Driver.h"
+#include "AST/AST.hpp"
 #include "AST/ASTContext.h"
 
+using std::cout;
+using std::endl;
+using std::array;
+using std::vector;
 using std::string;
+using std::weak_ptr;
+using std::shared_ptr;
+using std::make_shared;
 
 int main()
 {
-	int a[] = {1, 2};
-
-	a[4] = 2;
-	std::cout << a[4] << typeid(a).name() << std::endl;
-
-	StringStreamOpenHelper openHelper;
-	openHelper << string("a=4;\n");
-	//openHelper << string("a[1];\n");
-	ASTContext context;
-	Driver driver(openHelper, context);
-	driver.parse();
-
-	std::string output;
-	openHelper >> output;
-	std::cout << output;
-
-	return 0;
+//    shared_ptr<int> a=make_shared<int>(8);
+//    auto ptr=(&a)+1;
+    return 0;
 }
-#endif

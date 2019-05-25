@@ -78,13 +78,20 @@ std::shared_ptr<Stmt> ASTContext::createLabelStmt(std::vector<ASTContext::var_t>
 
 std::shared_ptr<Stmt> ASTContext::createIfStmt(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return make_shared<IfStmt>(
-					get<SourceLocation>(value[0]),
-					pop_stmt<Expr>(),
-					pop_stmt(),
-					value[1].emplace<SourceLocation>(SourceLocation())\
-	);*/
+	if (value.size() == 3)
+		return make_shared<IfStmt>(
+				get<SourceLocation>(value[0]),
+				get<shared_ptr<Expr>>(value[1]),
+				get<shared_ptr<Stmt>>(value[2])
+		);
+	else
+		return make_shared<IfStmt>(
+				get<SourceLocation>(value[0]),
+				get<shared_ptr<Expr>>(value[1]),
+				get<shared_ptr<Stmt>>(value[2]),
+				get<SourceLocation>(value[3]),
+				get<shared_ptr<Stmt>>(value[4])
+		);
 }
 
 std::shared_ptr<Stmt> ASTContext::createSwitchStmt(std::vector<ASTContext::var_t> &value)
@@ -117,16 +124,16 @@ std::shared_ptr<Stmt> ASTContext::createDoStmt(std::vector<ASTContext::var_t> &v
 
 std::shared_ptr<Stmt> ASTContext::createForStmt(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return make_shared<ForStmt>(
-					pop_stmt(),
-					pop_stmt<Expr>(),
-					pop_stmt<Expr>(),
-					pop_stmt(),
-					get<SourceLocation>(value[0]),
-					get<SourceLocation>(value[1]),
-					get<SourceLocation>(value[2])
-	);*/
+	bool haveInc = get<bool>(value[0]);
+	return make_shared<ForStmt>(
+					get<shared_ptr<Stmt>>(value[1]),
+					get<shared_ptr<Expr>>(value[2]),
+					haveInc ? get<shared_ptr<Expr>>(value[7]) : nullptr,
+					get<shared_ptr<Stmt>>(value[3]),
+					get<SourceLocation>(value[4]),
+					get<SourceLocation>(value[5]),
+					get<SourceLocation>(value[6])
+	);
 }
 
 std::shared_ptr<Stmt> ASTContext::createGotoStmt(std::vector<ASTContext::var_t> &value)
@@ -173,14 +180,11 @@ std::shared_ptr<Stmt> ASTContext::createReturnStmt(std::vector<ASTContext::var_t
 
 std::shared_ptr<Stmt> ASTContext::createDeclRefExpr(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*queue.push(
-			make_shared<DeclRefExpr>(
-					pop_stmt<NamedDecl>(),//error
-					get<QualType>(value[0]),
-					get<SourceLocation>(value[1]),
-					get<bool>(value[2]),
-					get<bool>(value[3])));*/
+	return make_shared<DeclRefExpr>(
+			get<shared_ptr<NamedDecl>>(value[0]),
+			get<QualType>(value[1]),
+			get<SourceLocation>(value[2])
+	);
 }
 
 std::shared_ptr<Stmt> ASTContext::createPredefinedExpr(std::vector<ASTContext::var_t> &value)
@@ -276,11 +280,11 @@ std::shared_ptr<Stmt> ASTContext::createSizeOfAlignOfExpr(std::vector<ASTContext
 {
 	//TODO: set return type
 	QualType retType(make_shared<Type>(), 0);
-	if(holds_alternative<shared_ptr<Type>>(value[3]))
+	if(holds_alternative<QualType>(value[2]))
 	{
 		return make_shared<SizeOfAlignOfExpr>(
 						true,
-						get<QualType>(value[3]),
+						get<QualType>(value[2]),
 						retType,
 						get<SourceLocation>(value[0]),
 						get<SourceLocation>(value[1])
@@ -290,7 +294,7 @@ std::shared_ptr<Stmt> ASTContext::createSizeOfAlignOfExpr(std::vector<ASTContext
 	{
 		return make_shared<SizeOfAlignOfExpr>(
 						true,
-						get<shared_ptr<Expr>>(value[3]),
+						get<shared_ptr<Expr>>(value[2]),
 						retType,
 						get<SourceLocation>(value[0]),
 						get<SourceLocation>(value[1])
@@ -313,7 +317,6 @@ std::shared_ptr<Stmt> ASTContext::createArraySubscriptExpr(std::vector<ASTContex
 std::shared_ptr<Stmt> ASTContext::createCallExpr(std::vector<ASTContext::var_t> &value)
 {
 	// TODO: get return type
-	// TODO: init CallExpr::SubExpr
 	QualType retType(make_shared<Type>(), 0);
 	auto args = get<vector<shared_ptr<Expr>>>(value[1]);
 	return make_shared<CallExpr>(
@@ -362,12 +365,12 @@ std::shared_ptr<Stmt> ASTContext::createImplicitCastExpr(std::vector<ASTContext:
 
 std::shared_ptr<Stmt> ASTContext::createCStyleCastExpr(std::vector<ASTContext::var_t> &value)
 {
-	// TODO Get types
-	QualType exprType(make_shared<Type>(), 0);
+	auto expr = get<shared_ptr<Expr>>(value[1]);
+	QualType exprType = expr->getType();
 	return make_shared<CStyleCastExpr>(
 					exprType,
 					get<CastExpr::CastKind>(value[0]),
-					get<shared_ptr<Expr>>(value[1]),
+					expr,
 					get<QualType>(value[2]),
 					get<SourceLocation>(value[3]),
 					get<SourceLocation>(value[4])
@@ -533,44 +536,40 @@ std::shared_ptr<Stmt> ASTContext::createParenListExpr(std::vector<ASTContext::va
 
 std::shared_ptr<Type> ASTContext::createBuiltinType(std::vector<ASTContext::var_t> &value)
 {
-	return make_shared<BuiltinType>(get<BuiltinType::Kind>(value[0]));
+	return BuiltinType::creator(get<BuiltinType::Kind>(value[0]));
 }
 
-std::shared_ptr<Type> ASTContext::createFixedWidthIntType(std::vector<ASTContext::var_t> &value)
+/*std::shared_ptr<Type> ASTContext::createFixedWidthIntType(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return FixedWidthIntType(
+	return FixedWidthIntType(
 					get<unsigned>(value[0]),
 					get<bool>(value[1])
-	);*/
-}
+	);
+}*/
 
-std::shared_ptr<Type> ASTContext::createComplexType(std::vector<ASTContext::var_t> &value)
+/*std::shared_ptr<Type> ASTContext::createComplexType(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return ComplexType(
+	return ComplexType(
 					get<QualType>(value[0]),
 					get<QualType>(value[1])
-	);*/
-}
+	);
+}*/
 
 std::shared_ptr<Type> ASTContext::createPointerType(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return PointerType(
+	return PointerType::creator(
 					get<QualType>(value[0]),
 					get<QualType>(value[1])
-	);*/
+	);
 }
 
-std::shared_ptr<Type> ASTContext::createBlockPointerType(std::vector<ASTContext::var_t> &value)
+/*std::shared_ptr<Type> ASTContext::createBlockPointerType(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return BlockPointerType(
+	return BlockPointerType::creator(
 					get<QualType>(value[0]),
 					get<QualType>(value[1])
-	);*/
-}
+	);
+}*/
 
 /*void ASTContext::createReferenceType(std::vector<ASTContext::var_t> &value)
 {
@@ -608,50 +607,46 @@ std::shared_ptr<Type> ASTContext::createBlockPointerType(std::vector<ASTContext:
 
 std::shared_ptr<Type> ASTContext::createConstantArrayType(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return ConstantArrayType(
+	return ConstantArrayType::creator(
 					get<QualType>(value[0]),
 					get<QualType>(value[1]),
 					get<int>(value[2]),
 					get<ArrayType::ArraySizeModifier>(value[3]),
 					get<unsigned>(value[4])
-	);*/
+	);
 }
 
-std::shared_ptr<Type> ASTContext::createConstantArrayWithExprType(std::vector<ASTContext::var_t> &value)
+/*std::shared_ptr<Type> ASTContext::createConstantArrayWithExprType(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return ConstantArrayWithExprType(
+	return ConstantArrayWithExprType(
 					get<QualType>(value[0]),
 					get<QualType>(value[1]),
 					get<int>(value[2]),
 					get<shared_ptr<Expr>>(value[5]),
 					get<ArrayType::ArraySizeModifier>(value[3]),
 					get<unsigned>(value[4])
-	);*/
-}
+	);
+}*/
 
-std::shared_ptr<Type> ASTContext::createConstantArrayWithoutExprType(std::vector<ASTContext::var_t> &value)
+/*std::shared_ptr<Type> ASTContext::createConstantArrayWithoutExprType(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return ConstantArrayWithoutExprType(
+	return ConstantArrayWithoutExprType(
 					get<QualType>(value[0]),
 					get<QualType>(value[1]),
 					get<int>(value[2]),
 					get<ArrayType::ArraySizeModifier>(value[3]),
 					get<unsigned>(value[4])
-	);*/
-}
+	);
+}*/
 
 std::shared_ptr<Type> ASTContext::createIncompleteArrayType(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return IncompleteArrayType(
+	return IncompleteArrayType::creator(
 					get<QualType>(value[0]),
 					get<QualType>(value[1]),
 					get<ArrayType::ArraySizeModifier>(value[2]),
 					get<unsigned>(value[3])
-	);*/
+	);
 }
 
 /*void ASTContext::createVariableArrayType(std::vector<ASTContext::var_t> &value)
@@ -694,24 +689,23 @@ std::shared_ptr<Type> ASTContext::createIncompleteArrayType(std::vector<ASTConte
 					get<QualType>(value[2])));
 }*/
 
-std::shared_ptr<Type> ASTContext::createFunctionNoProtoType(std::vector<ASTContext::var_t> &value)
+/*std::shared_ptr<Type> ASTContext::createFunctionNoProtoType(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return FunctionNoProtoType(
+	return FunctionNoProtoType(
 					get<QualType>(value[0]),
 					get<QualType>(value[1]),
 					get<bool>(value[2])
-	);*/
-}
+	);
+}*/
 
-std::shared_ptr<Type> ASTContext::createFunctionProtoType(std::vector<ASTContext::var_t> &value)
+/*std::shared_ptr<Type> ASTContext::createFunctionProtoType(std::vector<ASTContext::var_t> &value)
 {
-//    queue_type.push(
-//                make_shared<FunctionProtoType>(
-//                    get<QualType>(value[0]),
-//                get<QualType>(value[1]),
-	//            get<bool>(value[2])));
-}
+	queue_type.push(
+			make_shared<FunctionProtoType>(
+					get<QualType>(value[0]),
+					get<QualType>(value[1]),
+					get<bool>(value[2])));
+}*/
 
 /*void ASTContext::createTypeOfExprType(std::vector<ASTContext::var_t> &value)
 {

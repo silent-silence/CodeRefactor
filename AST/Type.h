@@ -13,46 +13,44 @@ class TagDecl;
 class QualType;
 class Type;
 
-class ExtQualType;
-class QualifierSet;
-class BuiltinType;
-class FixedWidthIntType;
-class ComplexType;
-class PointerType;
-class BlockPointerType;
-class ReferenceType;
-class LValueReferenceType;
-class RValueReferenceType;
-class MemberPointerType;
-class ArrayType;
-class ConstantArrayType;
-class ConstantArrayWithExprType;
-class ConstantArrayWithoutExprType;
-class IncompleteArrayType;
-class VariableArrayType;
-class DependentSizedArrayType;
+class ExtQualType;//
+class QualifierSet;//
+class BuiltinType;//
+class FixedWidthIntType;//
+class ComplexType;//
+class PointerType;//
+class BlockPointerType;//
+class ReferenceType;//
+class LValueReferenceType;//
+class RValueReferenceType;//
+class MemberPointerType;//
+class ArrayType;//
+class ConstantArrayType;//
+class ConstantArrayWithExprType;//
+class ConstantArrayWithoutExprType;//
+class IncompleteArrayType;//
+class VariableArrayType;//
+class DependentSizedArrayType;//
 
-class DependentSizedExtVectorType;
-class VectorType;
-class ExtVectorType;
-class FunctionType;
-class FunctionNoProtoType;
-class FunctionProtoType;
-class TypedefType;
-class TypeOfExprType;
-class DependentTypeOfExprType;
-class TypeOfType;
-class DecltypeType;
+class DependentSizedExtVectorType;//
+class VectorType;//
+class ExtVectorType;//
+class FunctionType;//
+class FunctionNoProtoType;//
+class FunctionProtoType;//
+class TypedefType;//
+class TypeOfExprType;//
+class DependentTypeOfExprType;//
+class TypeOfType;//
+class DecltypeType;//
 class DependentDecltypeType;
-class TagType;
+class TagType;//
 class RecordType;
 class EnumType;
 class TemplateTypeParmType;
 class TemplateSpecializationType;
 class QualifiedNameType;
 class TypenameType;
-class ObjCInterfaceType;
-class ObjCObjectPointerType;
 
 class QualType
 {
@@ -72,7 +70,7 @@ public:
     static const unsigned MaxAddressSpace = 0xffffffu;
 
     QualType();
-    QualType(const std::weak_ptr<Type> Ptr, unsigned Quals);
+    QualType(const std::shared_ptr<Type> Ptr, unsigned Quals);
     std::shared_ptr<Type> getTypePtr() const;
     unsigned getCVRQualifiers() const;
     std::shared_ptr<Type> operator->() const;
@@ -81,7 +79,7 @@ public:
     bool isVolatileQualified() const;
     bool isRestrictQualified() const;
 private:
-    std::pair<std::weak_ptr<Type>, unsigned> Value;
+    std::pair<std::shared_ptr<Type>, unsigned> Value;
 };
 
 /// @brief This is the base class of the type hierarchy
@@ -97,16 +95,15 @@ public:
     Type(){}
     Type(TypeClass tc, bool dependent);
     bool isDependentType() const;
-    Type(std::shared_ptr<Type> type);
-	QualType getCanonicalType() const { return CanonicalType; }
+	QualType &getCanonicalType();
+
+    void setCanonicalType(const QualType &value);
 
 protected:
     enum { TypeClassBitSize = 6 };
-    static std::shared_ptr<Type> creator(TypeClass tc, QualType Canonical, bool dependent);
-
 private:
-    Type(const Type &)=default;
-    void setCanonicalType(const QualType &value);
+    //    Type(const Type&)=default;           // DO NOT IMPLEMENT.
+    //    void operator=(const Type&)=default;
 
     QualType CanonicalType;
     bool Dependent : 1;
@@ -119,7 +116,15 @@ private:
 class ExtQualType : public Type
 {
 public:
-    ExtQualType(std::shared_ptr<Type> Base,QualType CanonicalPtr, unsigned AddrSpace,QualType::GCAttrTypes gcAttr);
+    static std::shared_ptr<Type> creator(
+            std::shared_ptr<Type> Base,
+            QualType CanonicalPtr,
+            unsigned AddrSpace,
+            QualType::GCAttrTypes gcAttr);
+
+    ExtQualType(std::shared_ptr<Type> Base,
+                unsigned AddrSpace,
+                QualType::GCAttrTypes gcAttr);
 private:
     std::shared_ptr<Type> BaseType;
     unsigned AddressSpace;
@@ -181,8 +186,10 @@ public:
         ObjCId,    // This represents the ObjC 'id' type.
         ObjCClass  // This represents the ObjC 'Class' type.
     };
+    static std::shared_ptr<Type> creator(Kind k);
     BuiltinType(Kind k);
 private:
+
     Kind TypeKind;
 };
 
@@ -190,8 +197,10 @@ private:
 class FixedWidthIntType : public Type
 {
 public:
+    static std::shared_ptr<Type> creator(unsigned W,bool S);
+
     FixedWidthIntType(unsigned W,bool S);
-private:
+    private:
     unsigned Width;
     bool Signed;
 };
@@ -200,8 +209,10 @@ private:
 class ComplexType : public Type
 {
 public:
-    ComplexType(QualType Element, QualType CanonicalPtr);
-private:
+    static std::shared_ptr<Type> creator(QualType Element, QualType CanonicalPtr);
+
+    ComplexType(QualType Element);
+    private:
     QualType ElementType;
 };
 
@@ -209,8 +220,10 @@ private:
 class PointerType : public Type
 {
 public:
-    PointerType(QualType Pointee, QualType CanonicalPtr);
-private:
+    static std::shared_ptr<Type> creator(QualType Pointee, QualType CanonicalPtr);
+
+    PointerType(QualType Pointee);
+    private:
     QualType PointeeType;
 };
 
@@ -219,8 +232,10 @@ private:
 class BlockPointerType : public Type
 {
 public:
-    BlockPointerType(QualType Pointee, QualType CanonicalCls);
-private:
+    static std::shared_ptr<Type> creator(QualType Pointee, QualType CanonicalCls);
+
+    BlockPointerType(QualType Pointee);
+    private:
     QualType PointeeType;
 };
 
@@ -228,9 +243,8 @@ private:
 /// @brief Base for LValueReferenceType and RValueReferenceType
 class ReferenceType : public Type
 {
-public:
-    ReferenceType(TypeClass tc, QualType Referencee, QualType CanonicalRef);
 protected:
+    ReferenceType(TypeClass tc, QualType Referencee);
 private:
     QualType PointeeType;
 };
@@ -240,7 +254,8 @@ private:
 class LValueReferenceType : public ReferenceType
 {
 public:
-    LValueReferenceType(QualType Referencee, QualType CanonicalRef);
+    static std::shared_ptr<Type> creator(QualType Referencee, QualType CanonicalRef);
+    LValueReferenceType(QualType Referencee);
 };
 
 /// @C++
@@ -248,7 +263,8 @@ public:
 class RValueReferenceType : public ReferenceType
 {
 public:
-    RValueReferenceType(QualType Referencee, QualType CanonicalRef);
+    static std::shared_ptr<Type> creator(QualType Referencee, QualType CanonicalRef);
+    RValueReferenceType(QualType Referencee);
 };
 
 /// @C++
@@ -257,8 +273,14 @@ public:
 class MemberPointerType : public Type
 {
 public:
-    MemberPointerType(QualType Pointee, const std::shared_ptr<Type>Cls, QualType CanonicalPtr);
-private:
+    static std::shared_ptr<Type> creator(
+            QualType Pointee,
+            const std::shared_ptr<Type>Cls,
+            QualType CanonicalPtr);
+
+    MemberPointerType(QualType Pointee,
+                      const std::shared_ptr<Type>Cls);
+    private:
     QualType PointeeType;
     const std::shared_ptr<Type> Class;
 };
@@ -271,9 +293,10 @@ public:
         Normal, Static, Star
     };
 protected:
-    ArrayType(TypeClass tc, QualType et, QualType can,
-              ArraySizeModifier sm, unsigned tq);
-
+    ArrayType(TypeClass tc,
+              QualType et,
+              ArraySizeModifier sm,
+              unsigned tq);
 private:
     QualType ElementType;
     unsigned SizeModifier : 2;
@@ -285,11 +308,12 @@ private:
 class ConstantArrayType : public ArrayType
 {
 public:
-    ConstantArrayType(QualType et, QualType can,int size,
+    static std::shared_ptr<Type> creator(QualType et, QualType can, int size,
+                                         ArraySizeModifier sm, unsigned tq);
+    ConstantArrayType(QualType et, int size,
                       ArraySizeModifier sm, unsigned tq);
-
 protected:
-    ConstantArrayType(TypeClass tc, QualType et, QualType can,
+    ConstantArrayType(TypeClass tc, QualType et,
                       int size, ArraySizeModifier sm, unsigned tq);
 private:
     int Size;
@@ -300,10 +324,14 @@ private:
 class ConstantArrayWithExprType : public ConstantArrayType
 {
 public:
-    ConstantArrayWithExprType(QualType et, QualType can,
-                              int size,std::shared_ptr<Expr>e,
+    static std::shared_ptr<Type> creator(QualType et, QualType can,
+                                         int size, std::shared_ptr<Expr>e,
+                                         ArraySizeModifier sm, unsigned tq);
+
+    ConstantArrayWithExprType(QualType et,
+                              int size, std::shared_ptr<Expr>e,
                               ArraySizeModifier sm, unsigned tq);
-private:
+    private:
     std::shared_ptr<Expr> SizeExpr;
 };
 
@@ -314,7 +342,10 @@ private:
 class ConstantArrayWithoutExprType : public ConstantArrayType
 {
 public:
-    ConstantArrayWithoutExprType(QualType et, QualType can,
+    static std::shared_ptr<Type> creator(QualType et, QualType can,
+                                         int size,
+                                         ArraySizeModifier sm, unsigned tq);
+    ConstantArrayWithoutExprType(QualType et,
                                  int size,
                                  ArraySizeModifier sm, unsigned tq);
 };
@@ -324,7 +355,9 @@ public:
 class IncompleteArrayType : public ArrayType
 {
 public:
-    IncompleteArrayType(QualType et, QualType can,
+    static std::shared_ptr<Type> creator(QualType et, QualType can,
+                                         ArraySizeModifier sm, unsigned tq);
+    IncompleteArrayType(QualType et,
                         ArraySizeModifier sm, unsigned tq);
 };
 
@@ -334,9 +367,13 @@ public:
 class VariableArrayType : public ArrayType
 {
 public:
-    VariableArrayType(QualType et, QualType can, std::shared_ptr<Expr>e,
+    static std::shared_ptr<Type> creator(QualType et, QualType can,
+                                         std::shared_ptr<Expr>e,
+                                         ArraySizeModifier sm, unsigned tq);
+
+    VariableArrayType(QualType et, std::shared_ptr<Expr>e,
                       ArraySizeModifier sm, unsigned tq);
-private:
+    private:
     std::shared_ptr<Stmt> SizeExpr;
 };
 
@@ -353,9 +390,17 @@ private:
 class DependentSizedArrayType : public ArrayType
 {
 public:
-    DependentSizedArrayType( QualType et, QualType can,
-                             std::shared_ptr<Expr>e, ArraySizeModifier sm, unsigned tq);
-private:
+    static std::shared_ptr<Type> creator(QualType et,
+                                         QualType can,
+                                         std::shared_ptr<Expr>e,
+                                         ArraySizeModifier sm,
+                                         unsigned tq);
+
+
+    DependentSizedArrayType(QualType et,
+                            std::shared_ptr<Expr>e,
+                            ArraySizeModifier sm, unsigned tq);
+    private:
     std::shared_ptr<Stmt> SizeExpr;
     QualType ElementType;
     SourceLocation loc;
@@ -372,8 +417,16 @@ private:
 /// @endcode
 class DependentSizedExtVectorType : public Type
 {
-private:
-    DependentSizedExtVectorType(QualType ElementType, QualType can, std::shared_ptr<Expr> SizeExpr, SourceLocation loc);
+public:
+    static std::shared_ptr<Type> creator(QualType ElementType,
+                                         QualType can,
+                                         std::shared_ptr<Expr> SizeExpr,
+                                         SourceLocation loc);
+
+    DependentSizedExtVectorType(QualType ElementType,
+                                std::shared_ptr<Expr> SizeExpr,
+                                SourceLocation loc);
+    private:
 
     std::shared_ptr<Expr> SizeExpr;
     QualType ElementType;
@@ -385,9 +438,17 @@ private:
 class VectorType : public Type
 {
 public:
-    VectorType(QualType vecType, unsigned nElements, QualType canonType);
+    static std::shared_ptr<Type> creator(QualType vecType,
+                                         unsigned nElements,
+                                         QualType canonType);
+    VectorType(QualType vecType,
+               unsigned nElements);
 protected:
-    VectorType(TypeClass tc, QualType vecType, unsigned nElements, QualType canonType);
+    VectorType(TypeClass tc,
+               QualType vecType,
+               unsigned nElements);
+private:
+
     QualType ElementType;
     unsigned NumElements;
 };
@@ -397,8 +458,10 @@ protected:
 class ExtVectorType : public VectorType
 {
 public:
-    ExtVectorType(QualType vecType, unsigned nElements, QualType canonType);
-private:
+    static std::shared_ptr<Type> creator(QualType vecType,
+                                         unsigned nElements,
+                                         QualType canonType);
+    ExtVectorType(QualType vecType, unsigned nElements);
 
 };
 
@@ -406,8 +469,9 @@ private:
 class FunctionType : public Type
 {
 public:
+protected:
     FunctionType(TypeClass tc, QualType res, bool SubclassInfo,
-                 unsigned typeQuals, QualType Canonical, bool Dependent,
+                 unsigned typeQuals, bool Dependent,
                  bool noReturn = false);
 private:
     bool SubClassData : 1;
@@ -421,7 +485,10 @@ private:
 class FunctionNoProtoType : public FunctionType
 {
 public:
-    FunctionNoProtoType(QualType Result, QualType Canonical, bool NoReturn = false);
+    static std::shared_ptr<Type> creator(QualType Result,
+                                         QualType Canonical,
+                                         bool NoReturn = false);
+    FunctionNoProtoType(QualType Result, bool NoReturn = false);
 };
 
 /// @brief Represents a prototype with argument type info
@@ -429,10 +496,16 @@ public:
 class FunctionProtoType : public FunctionType
 {
 public:
+    static std::shared_ptr<Type> creator(QualType Result, const std::vector<QualType> ArgArray,
+                                         unsigned numArgs,
+                                         bool isVariadic, unsigned typeQuals, bool hasExs,
+                                         bool hasAnyExs, const std::vector<QualType> ExArray,
+                                         unsigned numExs, QualType Canonical,  bool NoReturn);
     FunctionProtoType(QualType Result, const std::vector<QualType> ArgArray,
+                      unsigned numArgs,
                       bool isVariadic, unsigned typeQuals, bool hasExs,
-                      bool hasAnyExs, const QualType *ExArray,
-                      unsigned numExs, QualType Canonical, bool NoReturn);
+                      bool hasAnyExs, const std::vector<QualType> ExArray,
+                      unsigned numExs, bool NoReturn);
 private:
     static bool hasAnyDependentType(const std::vector<QualType> ArgArray);
     unsigned NumArgs : 20;
@@ -451,7 +524,7 @@ protected:
         assert(!isa<TypedefType>(can) && "Invalid canonical type");
     }*/
     TypedefType(TypeClass tc, QualType can)
-        : Type(Type::creator(tc, can, can->isDependentType())){
+        : Type(tc, can->isDependentType()){
     }
 private:
     //TypedefDecl *Decl;
@@ -462,7 +535,9 @@ private:
 class TypeOfExprType : public Type
 {
 public:
-    TypeOfExprType(std::shared_ptr<Expr> E, QualType can = QualType());
+    static std::shared_ptr<Type> creator(std::shared_ptr<Expr> E,
+                                         QualType can = QualType());
+    TypeOfExprType(std::shared_ptr<Expr> E);
 private:
     std::shared_ptr<Expr> TOExpr;
 };
@@ -479,7 +554,8 @@ public:
 class TypeOfType  : public Type
 {
 public:
-    TypeOfType(QualType T, QualType can);
+    static std::shared_ptr<Type> creator(QualType T, QualType can);
+    TypeOfType(QualType T);
 private:
     QualType TOType;
 };
@@ -489,7 +565,11 @@ private:
 class DecltypeType : public Type
 {
 public:
-    DecltypeType(std::shared_ptr<Expr> E, QualType underlyingType, QualType can = QualType());
+    static std::shared_ptr<Type> creator(std::shared_ptr<Expr> E,
+                                         QualType underlyingType,
+                                         QualType can = QualType());
+    DecltypeType(std::shared_ptr<Expr> E,
+                 QualType underlyingType);
 private:
     std::shared_ptr<Expr> E;
     QualType UnderlyingType;
@@ -500,37 +580,34 @@ class DependentDecltypeType : public DecltypeType
 {
 public:
     DependentDecltypeType(std::shared_ptr<Expr> E);
+private:
 };
 
 /// @brief a struct/union/class/enum
 class TagType : public Type
 {
-public:
 protected:
-    TagType(TypeClass TC, std::shared_ptr<TagDecl> D, QualType can);
-    TagType(TypeClass TC, QualType can);
+    TagType(TypeClass TC, std::shared_ptr<TagDecl> D);
 private:
-    //mutable llvm::PointerIntPair<TagDecl *, 1> decl;
+    std::pair<std::shared_ptr<TagDecl> , unsigned> decl;
 };
 
 /// @brief structs/unions/classes
 class RecordType : public TagType
 {
-public:
 protected:
-    /*explicit RecordType(RecordDecl *D)
-        : TagType(Record, reinterpret_cast<TagDecl*>(D), QualType()) { }
-    explicit RecordType(TypeClass TC, RecordDecl *D)
-        : TagType(TC, reinterpret_cast<TagDecl*>(D), QualType()) { }*/
+    //    explicit RecordType(std::shared_ptr<RecordDecl> D)
+    //        : TagType(Record, std::dynamic_pointer_cast<TagDecl>(D), QualType()) { }
+    //    explicit RecordType(TypeClass TC, std::shared_ptr<RecordDecl> D)
+    //        : TagType(TC, std::dynamic_pointer_cast<TagDecl>(D), QualType()) { }
 };
 
 /// @brief enum
 class EnumType : public TagType
 {
-public:
 private:
-    //explicit EnumType(EnumDecl *D)
-    //    : TagType(Enum, reinterpret_cast<TagDecl*>(D), QualType()) { }
+    //    explicit EnumType(std::shared_ptr<EnumDecl> D)
+    //        : TagType(Enum, std::dynamic_pointer_cast<TagDecl>(D), QualType()) { }
 };
 
 /// @C++
@@ -539,21 +616,20 @@ class TemplateTypeParmType : public Type
 public:
 
 private:
-    /*TemplateTypeParmType(unsigned D, unsigned I, bool PP, IdentifierInfo *N,
-                         QualType Canon)
-        : Type(TemplateTypeParm, Canon, true),
-          Depth(D), Index(I), ParameterPack(PP), Name(N) { }
+    //    TemplateTypeParmType(unsigned D, unsigned I, bool PP,
+    //                         std::shared_ptr<IdentifierInfo> N,
+    //                         QualType Canon)
+    //        : Type(TemplateTypeParm, true),
+    //          Depth(D), Index(I), ParameterPack(PP), Name(N) { }
 
-    TemplateTypeParmType(unsigned D, unsigned I, bool PP)
-        : Type(TemplateTypeParm, QualType(this, 0), true),
-          Depth(D), Index(I), ParameterPack(PP), Name(0) { }*/
-    TemplateTypeParmType(unsigned D, unsigned I, bool PP, QualType Canon);
-    TemplateTypeParmType(unsigned D, unsigned I, bool PP);
+    //    TemplateTypeParmType(unsigned D, unsigned I, bool PP)
+    //        : Type(TemplateTypeParm, QualType(this, 0), true),
+    //          Depth(D), Index(I), ParameterPack(PP), Name(0) { }
 
     unsigned Depth : 15;
     unsigned Index : 16;
     unsigned ParameterPack : 1;
-    //IdentifierInfo *Name;
+    //    std::shared_ptr<IdentifierInfo> Name;
 };
 
 /// @C++
@@ -562,11 +638,9 @@ class TemplateSpecializationType : public Type
 {
 public:
 private:
-    /*TemplateSpecializationType(ASTContext &Context,
-                                 TemplateName T,
+    /*TemplateSpecializationType(TemplateName T,
                                  const TemplateArgument *Args,
                                  unsigned NumArgs, QualType Canon);*/
-    TemplateSpecializationType(unsigned NumArgs, QualType Canon);
 
     unsigned NumArgs;
     //TemplateName Template;
@@ -589,17 +663,6 @@ class TypenameType : public Type
 {
 public:
     TypenameType();
-};
-
-class ObjCInterfaceType : public Type
-{
-
-};
-
-class ObjCObjectPointerType : public Type
-{
-private:
-    QualType PointeeType;
 };
 
 #endif // AST_TYPE_H

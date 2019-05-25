@@ -187,9 +187,9 @@ CallExpr::CallExpr(shared_ptr<Expr> fn,
     : Expr(CallExprClass, t), NumArgs(numargs)
 {
     //SubExprs = new (C) Stmt*[numargs+1];
-    SubExprs[FN] = fn;
+    SubExprs.push_back(fn);
     for (unsigned i = 0; i != numargs; ++i)
-        SubExprs[i+ARGS_START] = args[i];
+        SubExprs.push_back(args[i]);
     RParenLoc = rparenloc;
 }
 
