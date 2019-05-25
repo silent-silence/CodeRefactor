@@ -412,6 +412,8 @@ public:
     BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc, QualType ResTy, SourceLocation opLoc);
 
     explicit BinaryOperator(EmptyShell Empty);
+    virtual child_iterator child_begin() { return &SubExprs[0]; }
+    virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
 protected:
     BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc, QualType ResTy, SourceLocation oploc, bool dead);
 
@@ -444,6 +446,8 @@ public:
                         std::shared_ptr<Expr> rhs, QualType t);
 
     explicit ConditionalOperator(EmptyShell Empty);
+    virtual child_iterator child_begin(){return &SubExprs[0];}
+    virtual child_iterator child_end(){return &SubExprs[0]+END_EXPR;}
 private:
     enum { COND, LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -456,6 +460,8 @@ public:
                   QualType t);
 
     explicit AddrLabelExpr(EmptyShell Empty);
+    virtual child_iterator child_begin() { return child_iterator(); }
+    virtual child_iterator child_end(){ return child_iterator(); }
 private:
     SourceLocation AmpAmpLoc;
     SourceLocation LabelLoc;
@@ -468,6 +474,8 @@ public:
     StmtExpr(std::shared_ptr<CompoundStmt> substmt, QualType T,
              SourceLocation lp, SourceLocation rp);
     explicit StmtExpr(EmptyShell Empty);
+    virtual child_iterator child_begin() { return &SubStmt; }
+    virtual child_iterator child_end(){ return &SubStmt+1; }
 private:
     std::shared_ptr<Stmt> SubStmt;
     SourceLocation LParenLoc;
@@ -480,6 +488,8 @@ public:
     TypesCompatibleExpr(QualType ReturnType, SourceLocation BLoc,
                         QualType t1, QualType t2, SourceLocation RP);
     explicit TypesCompatibleExpr(EmptyShell Empty);
+    virtual child_iterator child_begin(){return child_iterator();}
+    virtual child_iterator child_end(){return child_iterator();}
 private:
     QualType Type1;
     QualType Type2;
@@ -495,6 +505,8 @@ public:
                       SourceLocation RP);
 
     explicit ShuffleVectorExpr(EmptyShell Empty);
+    virtual child_iterator child_begin(){return &SubExprs[0];}
+    virtual child_iterator child_end(){return &SubExprs[0]+NumExprs; }
 private:
     SourceLocation BuiltinLoc, RParenLoc;
     std::vector<std::shared_ptr<Stmt>> SubExprs;
@@ -509,6 +521,9 @@ public:
                SourceLocation RP);
 
     explicit ChooseExpr(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &SubExprs[0]; }
+    virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
+
 private:
     enum { COND, LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -522,6 +537,8 @@ public:
     GNUNullExpr(QualType Ty, SourceLocation Loc);
 
     explicit GNUNullExpr(EmptyShell Empty);
+    virtual child_iterator child_begin(){return child_iterator();}
+    virtual child_iterator child_end(){return child_iterator();}
 private:
     SourceLocation TokenLoc;
 };
@@ -532,6 +549,8 @@ public:
     VAArgExpr(SourceLocation BLoc, std::shared_ptr<Expr> e, QualType t, SourceLocation RPLoc);
 
     explicit VAArgExpr(EmptyShell Empty);
+    virtual child_iterator child_begin(){return &Val;}
+    virtual child_iterator child_end(){return &Val+1;}
 private:
     std::shared_ptr<Stmt> Val;
     SourceLocation BuiltinLoc;
@@ -546,6 +565,12 @@ public:
                  SourceLocation rbraceloc);
 
     explicit InitListExpr(EmptyShell Empty);
+    virtual child_iterator child_begin() {
+        return InitExprs.size() ? &InitExprs[0] :nullptr;
+        }
+    virtual child_iterator child_end(){
+        return InitExprs.size() ? &InitExprs[0] + InitExprs.size() : nullptr;
+    }
 private:
     std::vector<std::shared_ptr<Stmt>> InitExprs;
     SourceLocation LBraceLoc;
@@ -579,6 +604,14 @@ private:
     //    explicit DesignatedInitExpr(unsigned NumSubExprs)
     //        : Expr(DesignatedInitExprClass, EmptyShell()),
     //          NumDesignators(0), Designators(0), NumSubExprs(NumSubExprs) { }
+//    Stmt::child_iterator DesignatedInitExpr::child_begin() {
+//      char* Ptr = static_cast<char*>(static_cast<void *>(this));
+//      Ptr += sizeof(DesignatedInitExpr);
+//      return reinterpret_cast<Stmt**>(reinterpret_cast<void**>(Ptr));
+//    }
+//    Stmt::child_iterator DesignatedInitExpr::child_end() {
+//      return child_iterator(&*child_begin() + NumSubExprs);
+//    }
 
 };
 
@@ -588,6 +621,8 @@ public:
     explicit ImplicitValueInitExpr(QualType ty);
 
     explicit ImplicitValueInitExpr(EmptyShell Empty);
+    virtual child_iterator child_begin(){return child_iterator();}
+    virtual child_iterator child_end(){return child_iterator();}
 };
 
 class ParenListExpr : public Expr
@@ -595,6 +630,8 @@ class ParenListExpr : public Expr
 public:
     ParenListExpr(SourceLocation lparenloc, std::vector<std::shared_ptr<Expr>> exprs,
                   unsigned numexprs, SourceLocation rparenloc);
+    virtual child_iterator child_begin(){return &Exprs[0];}
+    virtual child_iterator child_end(){return &Exprs[0]+NumExprs;}
 private:
     std::vector<std::shared_ptr<Stmt>> Exprs;
     unsigned NumExprs;
@@ -611,6 +648,8 @@ public:
     //          Base(base), Accessor(&accessor), AccessorLoc(loc) {}
 
     explicit ExtVectorElementExpr(EmptyShell Empty);
+    virtual child_iterator child_begin() { return &Base; }
+    virtual child_iterator child_end() { return &Base+1; }
 private:
     std::shared_ptr<Stmt> Base;
     //      IdentifierInfo *Accessor;
