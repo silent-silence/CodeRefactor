@@ -150,7 +150,7 @@ public:
 			case Type::Vector:break;
 			case Type::ExtVector:break;
 			case Type::FunctionProto:break;
-			case Type::FunctionNoProto:break;
+			case Type::FunctionNoProto:			return createFunctionNoProtoType(value);
 			case Type::Typedef:break;
 			case Type::TypeOfExpr:break;
 			case Type::TypeOf:break;

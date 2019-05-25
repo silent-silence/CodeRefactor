@@ -9,7 +9,7 @@
 #include "Decl/DeclContextHolder.h"
 #include "OpenHelper/OpenHelper.h"
 #include "AST/Type.h"
-#include "Errors/SymbolError.hpp"
+#include "Errors/TypeError.hpp"
 #include <vector>
 #include <iostream>
 
@@ -504,6 +504,19 @@ void YaccAdapter::makeConditionalOperator()
 	);
 }
 
+/*void YaccAdapter::makeFunctionNoProtoType()
+{
+	auto retType = pop_type();
+	m_typeStack.push(
+			m_ASTContext.createType(
+					Type::FunctionNoProto,
+					retType->getCanonicalType(),
+					retType->getCanonicalType(),
+					false
+			)
+	);
+}*/
+
 void YaccAdapter::addTypeSpecifier(YaccAdapter::TypeSpecifier type)
 {
 	// long and long long need special operation
@@ -513,7 +526,7 @@ void YaccAdapter::addTypeSpecifier(YaccAdapter::TypeSpecifier type)
 	else if ((type != YaccAdapter::TypeSpecifier::LONG) && (m_typeSpecifier & type) == 0)
 		m_typeSpecifier |= type;
 	else
-		throw std::runtime_error("");
+		throw TypeError("");
 }
 
 void YaccAdapter::addTypeSpecifier(YaccAdapter::TypeSpecifier type, YaccAdapter::TypeSpecifier storageSpecifier)
@@ -528,7 +541,7 @@ void YaccAdapter::makeBuiltinType()
 	{
 		// reset specifiers before throw
 		m_typeSpecifier = 0;
-		throw std::runtime_error("??");
+		throw TypeError("??");
 	}
 
 	if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & CHAR)
@@ -619,9 +632,12 @@ void YaccAdapter::storeVariable(std::string name, yy::location &l)
 
 void YaccAdapter::makeVariable(std::shared_ptr<Type> type)
 {
-	auto varName = m_nameStack.top();
-	m_nameStack.pop();
-	m_declContextHolder.createVariable(varName.first, varName.second, type->getCanonicalType());
+	while(!m_nameStack.empty())
+	{
+		auto varName = m_nameStack.top();
+		m_nameStack.pop();
+		m_declContextHolder.createVariable(varName.first, varName.second, type->getCanonicalType());
+	}
 }
 
 bool YaccAdapter::isTypeSpecifierNotIllegal()

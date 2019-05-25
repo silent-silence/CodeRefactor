@@ -89,6 +89,10 @@
 %type <int>assignment_op
 %type <int>block_stmt
 %type <int>argument_expression_list
+%type <int>struct_declaration_list
+%type <int>struct_declarator_list
+%type <int>parameter_list
+%type <int>parameter_type_list
 
 %printer { yyoutput << $$; }<*>
 %%
@@ -166,7 +170,7 @@ default_stmt
 	: "default" ":" statement				{ DRIVER.makeDefaultStmt(@1, @2); }
 	;
 label_stmt
-	: IDENTIFIER ":" statement				{ /*DRIVER.makeLabelStmt(@1, @2);*/ }
+	: IDENTIFIER ":" statement				{ /*DRIVER.makeLabelStmt(@1);*/ }
 	;
 goto_stmt
 	: "goto" IDENTIFIER					{ /*DRIVER.makeGotoStmt(@1, @2);*/ }
@@ -223,8 +227,8 @@ struct_or_union
 	| "union"						{ DRIVER.addTypeSpecifier(YaccAdapter::UNION); }
 	;
 struct_declaration_list
-	: struct_declaration
-	| struct_declaration_list struct_declaration
+	: struct_declaration					{ $$ = 1; }
+	| struct_declaration_list struct_declaration		{ $$ = $1 + 1; }
 	;
 struct_declaration
 	: specifier_qualifier_list struct_declarator_list ";"
@@ -236,8 +240,8 @@ specifier_qualifier_list
 	| type_qualifier
 	;
 struct_declarator_list
-	: struct_declarator
-	| struct_declarator_list "," struct_declarator
+	: struct_declarator					{ $$ = 1; }
+	| struct_declarator_list "," struct_declarator		{ $$ = $1 + 1; }
 	;
 struct_declarator
 	: declarator
@@ -272,7 +276,7 @@ direct_declarator
 	| direct_declarator "[" "]"				{ DRIVER.makeIncompleteArrayType(); }
 	| direct_declarator "(" parameter_type_list ")"
 	| direct_declarator "(" identifier_list ")"
-	| direct_declarator "(" ")"
+	| direct_declarator "(" ")"				{ /*DRIVER.makeFunctionNoProtoType();*/ }
 	;
 pointer
 	: "*"
@@ -285,12 +289,12 @@ type_qualifier_list
 	| type_qualifier_list type_qualifier
 	;
 parameter_type_list
-	: parameter_list
-	| parameter_list "," ELLIPSIS
+	: parameter_list					{ $$ = $1; }
+	| parameter_list "," ELLIPSIS				{ $$ = $1 + 1; }
 	;
 parameter_list
-	: parameter_declaration
-	| parameter_list "," parameter_declaration
+	: parameter_declaration					{ $$ = 1; }
+	| parameter_list "," parameter_declaration		{ $$ = $1 + 1; }
 	;
 parameter_declaration
 	: declaration_specifiers declarator

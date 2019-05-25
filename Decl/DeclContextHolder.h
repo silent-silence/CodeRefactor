@@ -19,6 +19,7 @@ public:
 	std::shared_ptr<DeclContext> getContext() const;
 
 	void createVariable(std::string name, SourceLocation &location, QualType type);
+	void createFunction();
 
 #ifdef ENV_TEST
 	void clean();

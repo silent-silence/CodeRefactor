@@ -12,6 +12,7 @@
 #include "Parser/YaccAdapter.h"
 #include "AST/ASTContext.h"
 #include "Decl/DeclContextHolder.h"
+#include "Errors/TypeError.hpp"
 
 using std::make_shared;				using std::shared_ptr;
 using std::fstream;					using std::string;
@@ -231,7 +232,7 @@ TEST_F(BasicParseTest, CallTest)
 
 TEST_F(BasicParseTest, IfTest)
 {
-	/*openHelper << "if(1) ;";
+	openHelper << "if(1) ;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<IfStmt>(astContext.getRoot().lock()));
 	adapter.clean();
@@ -239,7 +240,7 @@ TEST_F(BasicParseTest, IfTest)
 	openHelper << "if(1) { 123; 23452; }";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<IfStmt>(astContext.getRoot().lock()));
-	adapter.clean();*/
+	adapter.clean();
 
 	// TODO Matching if else
 	openHelper << "if(1) if(2) ; else {123; } else {345;}";
@@ -247,10 +248,10 @@ TEST_F(BasicParseTest, IfTest)
 	EXPECT_TRUE(dynamic_pointer_cast<IfStmt>(astContext.getRoot().lock()));
 	adapter.clean();
 
-	/*openHelper << "if(1) { } else if(2) { }";
+	openHelper << "if(1) { } else if(2) { }";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<IfStmt>(astContext.getRoot().lock()));
-	adapter.clean();*/
+	adapter.clean();
 }
 
 TEST_F(BasicParseTest, ForTest)
@@ -334,7 +335,7 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 	EXPECT_NO_THROW(driver.parse());
 
 	openHelper << "unsigned void;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	// char
 	openHelper << "char;";
@@ -344,7 +345,7 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 	EXPECT_NO_THROW(driver.parse());
 
 	openHelper << "long char;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	// short
 	openHelper << "short;";
@@ -354,7 +355,7 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 	EXPECT_NO_THROW(driver.parse());
 
 	openHelper << "long short;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	// int
 	openHelper << "int;";
@@ -364,17 +365,17 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 	EXPECT_NO_THROW(driver.parse());
 
 	openHelper << "int double;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	// float
 	openHelper << "float;";
 	EXPECT_NO_THROW(driver.parse());
 
 	openHelper << "unsigned float;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	openHelper << "long float;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	// double
 	openHelper << "double;";
@@ -384,10 +385,10 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 	EXPECT_NO_THROW(driver.parse());
 
 	openHelper << "long long double;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	openHelper << "unsigned double;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	// signed & unsigned
 	openHelper << "signed;";
@@ -397,10 +398,10 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 	EXPECT_NO_THROW(driver.parse());
 
 	openHelper << "unsigned signed;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	openHelper << "unsigned unsigned;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	// long & long long
 	openHelper << "long;";
@@ -413,7 +414,7 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 	EXPECT_NO_THROW(driver.parse());
 
 	openHelper << "long long long;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 
 	// storage
 	openHelper << "typedef;";
@@ -429,18 +430,57 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 	EXPECT_NO_THROW(driver.parse());
 
 	openHelper << "extern static;";
-	EXPECT_THROW(driver.parse(), std::runtime_error);
+	EXPECT_THROW(driver.parse(), TypeError);
 }
 
 TEST_F(BasicParseTest, VariableTest)
 {
-	/*openHelper << "long int a;";
+	openHelper << "long int a;";
 	driver.parse();
-	auto var = dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("a").lock());
-	EXPECT_EQ(var->getIdentifier(), string("a"));*/
+	EXPECT_EQ(
+			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("a").lock())->getIdentifier(),
+			string("a")
+	);
+	astContext.cleanAST();
+	declContext.clean();
 
-	openHelper << "long int a[];";
+	openHelper << "long int b[][];";
 	driver.parse();
+	EXPECT_EQ(
+			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("b").lock())->getIdentifier(),
+			string("b")
+	);
+	astContext.cleanAST();
+	declContext.clean();
+
+	openHelper << "long int c, d, e;";
+	driver.parse();
+	EXPECT_EQ(
+			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("c").lock())->getIdentifier(),
+			string("c")
+	);
+	EXPECT_EQ(
+			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("d").lock())->getIdentifier(),
+			string("d")
+	);
+	EXPECT_EQ(
+			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("e").lock())->getIdentifier(),
+			string("e")
+	);
+	astContext.cleanAST();
+	declContext.clean();
 }
 
+
+TEST_F(BasicParseTest, FunctionTest)
+{
+	openHelper << "int a();";
+	driver.parse();
+	EXPECT_EQ(
+			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("a").lock())->getIdentifier(),
+			string("a")
+	);
+	astContext.cleanAST();
+	declContext.clean();
+}
 #endif

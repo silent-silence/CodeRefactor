@@ -69,11 +69,10 @@ std::shared_ptr<Stmt> ASTContext::createDefaultStmt(std::vector<ASTContext::var_
 
 std::shared_ptr<Stmt> ASTContext::createLabelStmt(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return make_shared<LabelStmt>(
+	return make_shared<LabelStmt>(
 					get<SourceLocation>(value[0]),
-					pop_stmt()
-	);*/
+					get<shared_ptr<Stmt>>(value[1])
+	);
 }
 
 std::shared_ptr<Stmt> ASTContext::createIfStmt(std::vector<ASTContext::var_t> &value)
@@ -689,14 +688,14 @@ std::shared_ptr<Type> ASTContext::createIncompleteArrayType(std::vector<ASTConte
 					get<QualType>(value[2])));
 }*/
 
-/*std::shared_ptr<Type> ASTContext::createFunctionNoProtoType(std::vector<ASTContext::var_t> &value)
+std::shared_ptr<Type> ASTContext::createFunctionNoProtoType(std::vector<ASTContext::var_t> &value)
 {
-	return FunctionNoProtoType(
+	return FunctionNoProtoType::creator(
 					get<QualType>(value[0]),
 					get<QualType>(value[1]),
 					get<bool>(value[2])
 	);
-}*/
+}
 
 /*std::shared_ptr<Type> ASTContext::createFunctionProtoType(std::vector<ASTContext::var_t> &value)
 {

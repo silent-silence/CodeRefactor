@@ -30,6 +30,35 @@ class BreakStmt;
 class ReturnStmt;
 class AsmStmt;//GNU内联汇编语句扩展
 
+class Iterator{
+    std::shared_ptr<Stmt> *m_ptr;
+public:
+    Iterator():m_ptr(nullptr){}
+    Iterator(std::shared_ptr<Stmt> *ptr)
+        :m_ptr(ptr)
+    {}
+    Iterator& operator++() { ++m_ptr; return *this; }
+    Iterator operator-(size_t i) { return m_ptr-i; }
+    Iterator operator+(size_t i) { return m_ptr+i; }
+    std::shared_ptr<Stmt> operator[](size_t idx){
+        return m_ptr[idx];
+    }
+
+    signed operator-(const Iterator& R) const{
+        return static_cast<signed>(m_ptr - R.m_ptr);
+    }
+    std::shared_ptr<Stmt> operator*() const{
+        return *m_ptr;
+    }
+    std::shared_ptr<Stmt> operator->() const{
+        return *m_ptr;
+    }
+    bool operator==(const Iterator& R) const { return m_ptr == R.m_ptr; }
+    bool operator!=(const Iterator& R) const { return m_ptr != R.m_ptr; }
+    bool operator>(const Iterator& R) const { return m_ptr > R.m_ptr; }
+    bool operator>=(const Iterator& R) const { return m_ptr >= R.m_ptr; }
+};
+
 //Stmt - This represents one statement.
 class Stmt
 {
@@ -46,6 +75,10 @@ public:
     struct EmptyShell {};
     Stmt(StmtClass SC);
     virtual ~Stmt(){}
+    typedef Iterator child_iterator;
+
+    virtual child_iterator child_begin() = 0;
+    virtual child_iterator child_end()   = 0;
 protected:
     explicit Stmt(StmtClass SC, EmptyShell);
 private:
@@ -59,6 +92,8 @@ class DeclStmt : public Stmt
 public:
     DeclStmt(SourceLocation startLoc, SourceLocation endLoc);
     explicit DeclStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){return child_iterator();}
+    virtual child_iterator child_end(){return child_iterator();}
 private:
     SourceLocation StartLoc;
     SourceLocation EndLoc;
@@ -70,6 +105,8 @@ class NullStmt : public Stmt
 public:
     NullStmt(SourceLocation L);
     explicit NullStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){return child_iterator();}
+    virtual child_iterator child_end(){return child_iterator();}
 private:
     SourceLocation SemiLoc;
 };
@@ -79,6 +116,8 @@ class CompoundStmt : public Stmt
 public:
     CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, SourceLocation LB, SourceLocation RB);
     explicit CompoundStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &Body[0]; }
+    virtual child_iterator child_end(){ return &Body[Body.size()]; }
 private:
     std::vector<std::shared_ptr<Stmt>> Body;
     SourceLocation LBracLoc, RBracLoc;
@@ -96,6 +135,9 @@ protected:
 class CaseStmt : public SwitchCase
 {
 public:
+    // Iterators
+    virtual child_iterator child_begin(){ return &SubExprs[0]; }
+    virtual child_iterator child_end(){ return &SubExprs[END_EXPR]; }
     CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, SourceLocation caseLoc,
              SourceLocation ellipsisLoc, SourceLocation colonLoc);
     explicit CaseStmt(EmptyShell Empty);
@@ -110,8 +152,11 @@ private:
 class DefaultStmt : public SwitchCase
 {
 public:
+
     DefaultStmt(SourceLocation DL, SourceLocation CL, std::shared_ptr<Stmt> substmt);
     explicit DefaultStmt(EmptyShell);
+    virtual child_iterator child_begin() { return &SubStmt; }
+    virtual child_iterator child_end() { return &SubStmt+1; }
 private:
     std::shared_ptr<Stmt> SubStmt;
     SourceLocation DefaultLoc;
@@ -121,6 +166,8 @@ private:
 class LabelStmt : public Stmt
 {
 public:
+    virtual child_iterator child_begin() { return &SubStmt; }
+    virtual child_iterator child_end() { return &SubStmt+1; }
     LabelStmt(SourceLocation IL, std::shared_ptr<Stmt> substmt);
     explicit LabelStmt(EmptyShell Empty);
 private:
@@ -132,9 +179,12 @@ private:
 class IfStmt : public Stmt
 {
 public:
+
     IfStmt(SourceLocation IL, std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> then,
            SourceLocation EL = SourceLocation(), std::shared_ptr<Stmt> elsev= nullptr);
     explicit IfStmt(EmptyShell Empty);
+    virtual child_iterator child_begin() { return &SubExprs[0]; }
+    virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
 private:
     enum { COND, THEN, ELSE, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -147,6 +197,8 @@ class SwitchStmt : public Stmt
 public:
     SwitchStmt(SourceLocation SL, std::shared_ptr<Expr> cond);
     explicit SwitchStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){return &SubExprs[0];}
+    virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -159,6 +211,8 @@ class WhileStmt : public Stmt
 public:
     WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body, SourceLocation WL);
     explicit WhileStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &SubExprs[0];}
+    virtual child_iterator child_end(){return &SubExprs[0]+END_EXPR;}
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -174,6 +228,8 @@ public:
            SourceLocation WL,
            SourceLocation RP);
     explicit DoStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &SubExprs[0]; }
+    virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -193,6 +249,8 @@ public:
             SourceLocation LP,
             SourceLocation RP);
     explicit ForStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &SubExprs[0]; }
+    virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
 private:
     enum { INIT, COND, INC, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -205,6 +263,8 @@ class GotoStmt : public Stmt
 public:
     GotoStmt(std::shared_ptr<LabelStmt> label, SourceLocation GL, SourceLocation LL);
     explicit GotoStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return child_iterator(); }
+    virtual child_iterator child_end(){ return child_iterator(); }
 private:
     std::shared_ptr<LabelStmt> Label;
     SourceLocation GotoLoc;
@@ -217,6 +277,8 @@ public:
     IndirectGotoStmt(SourceLocation gotoLoc, SourceLocation starLoc, std::shared_ptr<Expr> target);
 
     explicit IndirectGotoStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &Target; }
+    virtual child_iterator child_end(){ return &Target+1; }
 private:
     SourceLocation GotoLoc;
     SourceLocation StarLoc;
@@ -229,6 +291,8 @@ public:
     ContinueStmt(SourceLocation CL);
 
     explicit ContinueStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return child_iterator(); }
+    virtual child_iterator child_end(){ return child_iterator(); }
 private:
     SourceLocation ContinueLoc;
 };
@@ -238,6 +302,8 @@ class BreakStmt : public Stmt
 public:
     BreakStmt(SourceLocation BL);
     explicit BreakStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return child_iterator(); }
+    virtual child_iterator child_end(){ return child_iterator(); }
 private:
     SourceLocation BreakLoc;
 };
@@ -248,6 +314,8 @@ public:
     ReturnStmt(SourceLocation RL, std::shared_ptr<Expr> E = nullptr);
 
     explicit ReturnStmt(EmptyShell Empty);
+    virtual child_iterator child_begin(){ return &RetExpr; }
+    virtual child_iterator child_end() { return RetExpr ? &RetExpr+1 : &RetExpr; }
 private:
     std::shared_ptr<Stmt> RetExpr;
     SourceLocation RetLoc;

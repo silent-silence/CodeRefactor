@@ -69,7 +69,7 @@ public:
 	void makeCompoundStmt(unsigned stmtNumInBlock, yy::location &l, yy::location &r);
 	void makeCaseStmt(yy::location &l, yy::location &r, yy::location &c);
 	void makeDefaultStmt(yy::location &d, yy::location &e);
-	void makeLabelStmt(yy::location &l, yy::location &r);
+	void makeLabelStmt(yy::location &l);
 	void makeIfStmt(yy::location &l);
 	void makeIfElseStmt(yy::location &lf, yy::location &le);
 	void makeSwitchStmt(yy::location &l);
