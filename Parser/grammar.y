@@ -129,16 +129,20 @@ expr_stmt
 	: expression ";" 					{ /* Do nothing */ }
 	;
 if_stmt
-	: "if" "(" expression ")" statement			{ /*DRIVER.makeIfStmt();*/ }
-	| "if" "(" expression ")" statement "else" statement	{ /*DRIVER.makeIfStmt();*/ }
+	: "if" "(" expression ")" statement			{ DRIVER.makeIfStmt(@1); }
+	| "if" "(" expression ")" statement "else" statement	{ DRIVER.makeIfElseStmt(@1, @6); }
 	;
 for_stmt
-	: "for" "(" expr_or_null_expr expr_or_null_expr ")" statement			{ /*DIRVER.makeForStmt();*/ }
-	| "for" "(" expr_or_null_expr expr_or_null_expr expression ")" statement	{ /*DIRVER.makeForStmt();*/ }
+	: "for" "(" for_init_stmt expr_or_null_stmt ")" statement		{ DRIVER.makeForStmt(@1, @2, @5, false); }
+	| "for" "(" for_init_stmt expr_or_null_stmt expression ")" statement	{ DRIVER.makeForStmt(@1, @2, @6, true); }
 	;
-expr_or_null_expr
+expr_or_null_stmt
 	: expr_stmt
 	| null_stmt
+	;
+for_init_stmt
+	: expr_or_null_stmt
+	| decl_stmt
 	;
 while_stmt
 	: "while" "(" expression ")" statement			{ DRIVER.makeWhileStmt(@1); }
@@ -175,8 +179,8 @@ return_stmt
 
 /* Declarations */
 decl_stmt
-	: declaration_specifiers ";"				{ DRIVER.makeDeclStmt(@1, @2); }
-	| declaration_specifiers init_declarator_list ";"	{ DRIVER.makeDeclStmt(@1, @3); }
+	: declaration_specifiers ";"				{ DRIVER.makeDeclStmt(@1, @2, false); }
+	| declaration_specifiers init_declarator_list ";"	{ DRIVER.makeDeclStmt(@1, @3, true); }
 	;
 declaration_specifiers
 	: type_specifier					{ DRIVER.makeBuiltinType(); }
@@ -191,20 +195,20 @@ init_declarator
 	| declarator "=" initializer
 	;
 type_specifier
-	: "typedef"			{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::TYPEDEF); }
-	| "extern"			{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::EXTERN); }
-	| "static"			{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::STATIC); }
-	| "auto"			{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::AUTO); }
-	| "register"			{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::REGISTER); }
-	| "void"			{ DRIVER.addTypeSpecifier(YaccAdapter::VOID); }
-	| "char"			{ DRIVER.addTypeSpecifier(YaccAdapter::CHAR); }
-	| "short"			{ DRIVER.addTypeSpecifier(YaccAdapter::SHORT); }
-	| "int"				{ DRIVER.addTypeSpecifier(YaccAdapter::INT); }
-	| "long"			{ DRIVER.addTypeSpecifier(YaccAdapter::LONG); }
-	| "float"			{ DRIVER.addTypeSpecifier(YaccAdapter::FLOAT); }
-	| "double"			{ DRIVER.addTypeSpecifier(YaccAdapter::DOUBLE); }
-	| "signed"			{ DRIVER.addTypeSpecifier(YaccAdapter::SIGNED); }
-	| "unsigned"			{ DRIVER.addTypeSpecifier(YaccAdapter::UNSIGNED); }
+	: "typedef"						{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::TYPEDEF); }
+	| "extern"						{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::EXTERN); }
+	| "static"						{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::STATIC); }
+	| "auto"						{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::AUTO); }
+	| "register"						{ DRIVER.addTypeSpecifier(YaccAdapter::STORAGE, YaccAdapter::REGISTER); }
+	| "void"						{ DRIVER.addTypeSpecifier(YaccAdapter::VOID); }
+	| "char"						{ DRIVER.addTypeSpecifier(YaccAdapter::CHAR); }
+	| "short"						{ DRIVER.addTypeSpecifier(YaccAdapter::SHORT); }
+	| "int"							{ DRIVER.addTypeSpecifier(YaccAdapter::INT); }
+	| "long"						{ DRIVER.addTypeSpecifier(YaccAdapter::LONG); }
+	| "float"						{ DRIVER.addTypeSpecifier(YaccAdapter::FLOAT); }
+	| "double"						{ DRIVER.addTypeSpecifier(YaccAdapter::DOUBLE); }
+	| "signed"						{ DRIVER.addTypeSpecifier(YaccAdapter::SIGNED); }
+	| "unsigned"						{ DRIVER.addTypeSpecifier(YaccAdapter::UNSIGNED); }
 	| struct_or_union_specifier
 	| enum_specifier
 	//| TYPE_NAME
@@ -215,8 +219,8 @@ struct_or_union_specifier
 	| struct_or_union IDENTIFIER
 	;
 struct_or_union
-	: "struct"			{ DRIVER.addTypeSpecifier(YaccAdapter::STRUCT); }
-	| "union"			{ DRIVER.addTypeSpecifier(YaccAdapter::UNION); }
+	: "struct"						{ DRIVER.addTypeSpecifier(YaccAdapter::STRUCT); }
+	| "union"						{ DRIVER.addTypeSpecifier(YaccAdapter::UNION); }
 	;
 struct_declaration_list
 	: struct_declaration
@@ -262,10 +266,10 @@ declarator
 	| direct_declarator
 	;
 direct_declarator
-	: IDENTIFIER							{ DRIVER.makeVariable($1, @1); }
+	: IDENTIFIER						{ DRIVER.storeVariable($1, @1); }
 	| "(" declarator ")"
-	| direct_declarator "[" integer_constant_expression "]"
-	| direct_declarator "[" "]"
+	| direct_declarator "[" integer_constant_expression "]"	{ /*DRIVER.makeConstantArrayType();*/ }
+	| direct_declarator "[" "]"				{ DRIVER.makeIncompleteArrayType(); }
 	| direct_declarator "(" parameter_type_list ")"
 	| direct_declarator "(" identifier_list ")"
 	| direct_declarator "(" ")"
@@ -298,7 +302,7 @@ identifier_list
 	| identifier_list "," IDENTIFIER
 	;
 type_name
-	: specifier_qualifier_list
+	: specifier_qualifier_list				{ DRIVER.makeBuiltinType(); }
 	| specifier_qualifier_list abstract_declarator
 	;
 abstract_declarator
@@ -327,9 +331,10 @@ initializer_list
 	| initializer_list "," initializer
 	;
 
+
 /* Expressions */
 primary_expression
-	: IDENTIFIER				{ /*$$ = ExpressionFactory::makeIdentity($1);*/ }
+	: IDENTIFIER				{ DRIVER.makeDeclRefExpr($1, @1); }
 	| FLOATING_LITERAL			{ DRIVER.makeFloatingLiteral($1, @1); }
 	| STRING_LITERAL			{ DRIVER.makeStringLiteral($1, @1); }
 	| integer_constant_expression		{ }

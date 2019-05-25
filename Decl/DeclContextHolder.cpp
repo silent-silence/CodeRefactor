@@ -25,3 +25,10 @@ void DeclContextHolder::createVariable(std::string name, SourceLocation &locatio
 	auto decl = make_shared<VariableDecl>(m_contextRoot, location, type, varName);
 	m_contextRoot->addDecl(decl);
 }
+
+#ifdef ENV_TEST
+void DeclContextHolder::clean()
+{
+	m_contextRoot = make_shared<DeclContext>();
+}
+#endif

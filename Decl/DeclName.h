@@ -7,10 +7,10 @@
 class DeclName {
 public:
 	DeclName() = default;
-	DeclName(const char *s)
+	explicit DeclName(const char *s)
 		: m_identity{s}
 	{}
-	DeclName(const std::string &s)
+	explicit DeclName(const std::string &s)
 		: m_identity{s}
 	{}
 	std::string getIdentifier() const { return m_identity; }

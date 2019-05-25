@@ -9,10 +9,14 @@
 #include "Decl/DeclContextHolder.h"
 #include "OpenHelper/OpenHelper.h"
 #include "AST/Type.h"
+#include "Errors/SymbolError.hpp"
 #include <vector>
+#include <iostream>
 
 using std::make_shared;					using std::shared_ptr;
 using std::vector;						using std::dynamic_pointer_cast;
+using std::cerr;						using std::endl;
+using std::make_pair;
 
 typedef yy::Parser::token::yytokentype token;
 
@@ -22,32 +26,35 @@ YaccAdapter::YaccAdapter(ASTContext &context,  DeclContextHolder &declContext, O
 
 void YaccAdapter::parseDone()
 {
-	if(!m_stmtQueue.empty())
-		m_ASTContext.updateASTRoot(m_stmtQueue.top());
+	if(!m_stmtStack.empty())
+		m_ASTContext.updateASTRoot(m_stmtStack.top());
 }
 
 #ifdef ENV_TEST
 void YaccAdapter::clean()
 {
-	while(!m_stmtQueue.empty())
-		m_stmtQueue.pop();
-	while(!m_typeQueue.empty())
-		m_typeQueue.pop();
+	while(!m_stmtStack.empty())
+		m_stmtStack.pop();
+	while(!m_typeStack.empty())
+		m_typeStack.pop();
 }
 #endif
 
-void YaccAdapter::makeDeclStmt(yy::location &l, yy::location &r)
+void YaccAdapter::makeDeclStmt(yy::location &l, yy::location &r, bool haveDefinedName)
 {
 	SourceLocation lp = toSourceLocation(l);
 	SourceLocation rp = toSourceLocation(r);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(Stmt::DeclStmtClass, lp, rp)
 	);
+	if(haveDefinedName)
+		makeVariable(pop_type());
 }
+
 void YaccAdapter::makeNullStmt(yy::location &l)
 {
 	SourceLocation lp = toSourceLocation(l);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(Stmt::NullStmtClass, lp)
 	);
 }
@@ -61,7 +68,7 @@ void YaccAdapter::makeCompoundStmt(unsigned stmtNumInBlock, yy::location &l, yy:
 		stmts.push_back(pop_stmt());
 	}
 	reverse(stmts.begin(), stmts.end());
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(Stmt::CompoundStmtClass, stmts, lb, rb)
 	);
 }
@@ -71,7 +78,7 @@ void YaccAdapter::makeCaseStmt(yy::location &l, yy::location &r, yy::location &c
 	SourceLocation lp = toSourceLocation(l);
 	SourceLocation rp = toSourceLocation(r);
 	SourceLocation cp = toSourceLocation(c);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::CaseStmtClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
@@ -85,7 +92,7 @@ void YaccAdapter::makeDefaultStmt(yy::location &l, yy::location &r)
 {
 	SourceLocation lp = toSourceLocation(l);
 	SourceLocation rp = toSourceLocation(r);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::DefaultStmtClass,
 					lp, rp,
@@ -94,10 +101,39 @@ void YaccAdapter::makeDefaultStmt(yy::location &l, yy::location &r)
 	);
 }
 
+void YaccAdapter::makeIfStmt(yy::location &l)
+{
+	SourceLocation lp = toSourceLocation(l);
+	m_stmtStack.push(
+			m_ASTContext.createStmt(
+					Stmt::IfStmtClass,
+					lp,
+					dynamic_pointer_cast<Expr>(pop_stmt()),
+					pop_stmt()
+			)
+	);
+}
+
+void YaccAdapter::makeIfElseStmt(yy::location &l, yy::location &r)
+{
+	SourceLocation lp = toSourceLocation(l);
+	SourceLocation rp = toSourceLocation(r);
+	m_stmtStack.push(
+			m_ASTContext.createStmt(
+					Stmt::IfStmtClass,
+					lp,
+					dynamic_pointer_cast<Expr>(pop_stmt()),
+					pop_stmt(),
+					rp,
+					pop_stmt()
+			)
+	);
+}
+
 void YaccAdapter::makeSwitchStmt(yy::location &l)
 {
 	SourceLocation lp = toSourceLocation(l);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::SwitchStmtClass,
 					lp,
@@ -109,7 +145,7 @@ void YaccAdapter::makeSwitchStmt(yy::location &l)
 void YaccAdapter::makeWhileStmt(yy::location &l)
 {
 	SourceLocation lp = toSourceLocation(l);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::WhileStmtClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
@@ -124,7 +160,7 @@ void YaccAdapter::makeDoStmt(yy::location &d, yy::location &w, yy::location &l)
 	SourceLocation dp = toSourceLocation(d);
 	SourceLocation wp = toSourceLocation(w);
 	SourceLocation lp = toSourceLocation(l);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::DoStmtClass,
 					pop_stmt(),
@@ -134,10 +170,41 @@ void YaccAdapter::makeDoStmt(yy::location &d, yy::location &w, yy::location &l)
 	);
 }
 
+void YaccAdapter::makeForStmt(yy::location &f, yy::location &l, yy::location &r, bool haveInc)
+{
+	SourceLocation fp = toSourceLocation(f);
+	SourceLocation lp = toSourceLocation(l);
+	SourceLocation rp = toSourceLocation(r);
+
+	if (haveInc)
+		m_stmtStack.push(
+				m_ASTContext.createStmt(
+						Stmt::ForStmtClass,
+						haveInc,
+						pop_stmt(),
+						dynamic_pointer_cast<Expr>(pop_stmt()),
+						pop_stmt(),
+						fp, lp, rp,
+						dynamic_pointer_cast<Expr>(pop_stmt())
+				)
+		);
+	else
+		m_stmtStack.push(
+				m_ASTContext.createStmt(
+						Stmt::ForStmtClass,
+						haveInc,
+						pop_stmt(),
+						dynamic_pointer_cast<Expr>(pop_stmt()),
+						pop_stmt(),
+						fp, lp, rp
+				)
+		);
+}
+
 void YaccAdapter::makeContinueStmt(yy::location &l)
 {
 	SourceLocation lp = toSourceLocation(l);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(Stmt::ContinueStmtClass, lp)
 	);
 }
@@ -145,7 +212,7 @@ void YaccAdapter::makeContinueStmt(yy::location &l)
 void YaccAdapter::makeBreakStmt(yy::location &l)
 {
 	SourceLocation lp = toSourceLocation(l);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(Stmt::BreakStmtClass, lp)
 	);
 }
@@ -153,7 +220,7 @@ void YaccAdapter::makeBreakStmt(yy::location &l)
 void YaccAdapter::makeReturnStmt(yy::location &l, bool haveExpr)
 {
 	SourceLocation lp = toSourceLocation(l);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::ReturnStmtClass,
 					lp,
@@ -162,11 +229,25 @@ void YaccAdapter::makeReturnStmt(yy::location &l, bool haveExpr)
 	);
 }
 
+void YaccAdapter::makeDeclRefExpr(std::string &name, yy::location &l)
+{
+	std::shared_ptr<NamedDecl> decl = dynamic_pointer_cast<NamedDecl>(
+			m_declContextHolder.getContext()->lookup(name).lock()
+	);
+	QualType declType;
+	SourceLocation lp = toSourceLocation(l);
+	m_stmtStack.push(
+			m_ASTContext.createStmt(
+					Stmt::DeclRefExprClass, decl, declType, lp
+			)
+	);
+}
+
 void YaccAdapter::makeIntegerLiteral(int val, yy::location &l)
 {
 	SourceLocation lp = toSourceLocation(l);
 	/// @note The type of integer literal should specified by ASTContext
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::IntegerLiteralClass,
 					val, lp
@@ -178,7 +259,7 @@ void YaccAdapter::makeCharacterLiteral(unsigned val, yy::location &l)
 {
 	SourceLocation lp = toSourceLocation(l);
 	/// @note The type of character literal should specified by ASTContext
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::CharacterLiteralClass,
 					val, false, lp
@@ -190,7 +271,7 @@ void YaccAdapter::makeFloatingLiteral(float val, yy::location &l)
 {
 	SourceLocation lp = toSourceLocation(l);
 	/// @note The type of floating literal should specified by ASTContext
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::FloatingLiteralClass,
 					val, false, lp
@@ -202,7 +283,7 @@ void YaccAdapter::makeStringLiteral(std::string str, yy::location &location)
 {
 	SourceLocation l = toSourceLocation(location);
 	/// @note The type of string literal should specified by ASTContext
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::StringLiteralClass,
 					str.data(), sizeof(str.data()), false, l, str.length()
@@ -214,7 +295,7 @@ void YaccAdapter::makeParenExpr(yy::location &l, yy::location &r)
 {
 	SourceLocation lp = toSourceLocation(l);
 	SourceLocation rp = toSourceLocation(r);
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::ParenExprClass,
 					lp, rp, dynamic_pointer_cast<Expr>(pop_stmt())
@@ -240,7 +321,7 @@ void YaccAdapter::makeUnaryOperator(int opc, yy::location &l)
 		case '!':					operatorCode = UnaryOperator::LNot;		break;
 	}
 	/// @note The type of the operation should be calculated by ASTContext
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::UnaryOperatorClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
@@ -257,25 +338,27 @@ void YaccAdapter::makeSizeofExpr(yy::location &l, yy::location &r, bool isSizeof
 	std::shared_ptr<Stmt> sizeofExpr;
 	if(isSizeofType)
 	{
+		auto type = pop_type();
 		sizeofExpr = m_ASTContext.createStmt(
 				Stmt::SizeOfAlignOfExprClass,
 				lp, rp,
-				pop_type()
+				type->getCanonicalType()
 		);
 	}
 	else
 		sizeofExpr = m_ASTContext.createStmt(
 				Stmt::SizeOfAlignOfExprClass,
-				lp, rp, dynamic_pointer_cast<Expr>(pop_stmt())
+				lp, rp,
+				dynamic_pointer_cast<Expr>(pop_stmt())
 		);
-	m_stmtQueue.push(sizeofExpr);
+	m_stmtStack.push(sizeofExpr);
 }
 
 void YaccAdapter::makeArraySubscripExpr(yy::location &l)
 {
 	SourceLocation lp = toSourceLocation(l);
 	/// @note The type of array should be specified by ASTContext
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::ArraySubscriptExprClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
@@ -287,13 +370,14 @@ void YaccAdapter::makeArraySubscripExpr(yy::location &l)
 
 void YaccAdapter::makeCallExpr(unsigned parameterNum, yy::location &l)
 {
+	// TODO Find member name in DeclContext
 	SourceLocation lp = toSourceLocation(l);
 	vector<shared_ptr<Expr>> exprs;
 	for(auto i = 0; i != parameterNum; i++) {
 		exprs.push_back(dynamic_pointer_cast<Expr>(pop_stmt()));
 	}
 	/// @note The return type and parameter number can be found by ASTContext
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::CallExprClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
@@ -309,12 +393,13 @@ void YaccAdapter::makeMemberExpr(int opc, yy::location &l)
 	{
 		case '.':					isArrow = false;	break;
 		case token::TOK_POINT_OP:	isArrow = true;		break;
+		default:					isArrow = false;
 	}
 	SourceLocation lp = toSourceLocation(l);
 	/// @note The type of member can be found by ASTContext
 	// TODO find NamedDecl
-	shared_ptr<NamedDecl> decl;
-	m_stmtQueue.push(
+	shared_ptr<NamedDecl> decl;// = make_shared<NamedDecl>();
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::MemberExprClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
@@ -328,12 +413,13 @@ void YaccAdapter::makeCStyleCastExpr(yy::location &l, yy::location &r)
 	SourceLocation lp = toSourceLocation(l);
 	SourceLocation rp = toSourceLocation(r);
 	/// @note Type of expr should be found by ASTContext
-	m_stmtQueue.push(
+	auto exprType = pop_type();
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::CStyleCastExprClass,
 					CastExpr::CastKind::CK_Unknown,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
-					pop_type(),
+					exprType->getCanonicalType(),
 					lp, rp
 			)
 	);
@@ -366,7 +452,7 @@ void YaccAdapter::makeBinaryOperator(int opc, yy::location &location)
 	}
 	SourceLocation l = toSourceLocation(location);
 	/// @note Type of the operation should by found by ASTContext
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::BinaryOperatorClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
@@ -395,7 +481,7 @@ void YaccAdapter::makeCompoundAssignOperator(int opc, yy::location &location)
 	}
 	SourceLocation l = toSourceLocation(location);
 	/// @note Types should be found by ASTContext
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::CompoundAssignOperatorClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
@@ -408,7 +494,7 @@ void YaccAdapter::makeCompoundAssignOperator(int opc, yy::location &location)
 void YaccAdapter::makeConditionalOperator()
 {
 	/// @note Type of result should be found by ASTContext
-	m_stmtQueue.push(
+	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::ConditionalOperatorClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
@@ -446,53 +532,96 @@ void YaccAdapter::makeBuiltinType()
 	}
 
 	if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & CHAR)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UChar));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UChar));
 	else if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & SHORT)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UShort));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UShort));
 	else if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & INT)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UInt));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UInt));
 	else if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & LONG)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::ULong));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::ULong));
 	else if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & LONGLONG)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::ULongLong));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::ULongLong));
 	else if(m_typeSpecifier & SIGNED && m_typeSpecifier & CHAR)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::SChar));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::SChar));
 	else if(m_typeSpecifier & LONG && m_typeSpecifier & DOUBLE)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::LongDouble));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::LongDouble));
 	else if(m_typeSpecifier & LONG && m_typeSpecifier & INT)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Long));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Long));
 	else if(m_typeSpecifier & VOID)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Void));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Void));
 	else if(m_typeSpecifier & CHAR)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Char_S));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Char_S));
 	else if(m_typeSpecifier & SHORT)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Short));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Short));
 	else if(m_typeSpecifier & INT)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Int));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Int));
 	else if(m_typeSpecifier & FLOAT)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Float));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Float));
 	else if(m_typeSpecifier & DOUBLE)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Double));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Double));
 	else if(m_typeSpecifier & SIGNED)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Int));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Int));
 	else if(m_typeSpecifier & UNSIGNED)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UInt));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UInt));
 	else if(m_typeSpecifier & LONG)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Long));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Long));
 	else if(m_typeSpecifier & LONGLONG)
-		m_typeQueue.push(m_ASTContext.createType(Type::Builtin, BuiltinType::LongLong));
+		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::LongLong));
 
 	// reset specifiers after built
 	m_typeSpecifier = 0;
 }
 
-void YaccAdapter::makeVariable(std::string name, yy::location &l)
+void YaccAdapter::makeConstantArrayType()
 {
-	SourceLocation lp = toSourceLocation(l);
-	m_declContextHolder.createVariable(name, lp, pop_type()->getCanonicalType());
-	/*
-	auto decl = make_shared<VariableDecl>(m_declContext, lp, pop_type(), name);
-	m_declContext.addDecl(decl);*/
+	auto elementType = pop_type();
+	auto arrayType = m_ASTContext.createType(
+			Type::Pointer,
+			elementType->getCanonicalType(),
+			elementType->getCanonicalType()
+	);
+	// TODO Calculate array size
+	m_typeStack.push(
+			m_ASTContext.createType(
+					Type::ConstantArray,
+					elementType->getCanonicalType(),
+					arrayType->getCanonicalType(),
+					dynamic_pointer_cast<Expr>(pop_stmt()),
+					ArrayType::Normal,
+					0
+			)
+	);
+}
+
+void YaccAdapter::makeIncompleteArrayType()
+{
+	auto elementType = pop_type();
+	auto arrayType = m_ASTContext.createType(
+			Type::Pointer,
+			elementType->getCanonicalType(),
+			elementType->getCanonicalType()
+	);
+	m_typeStack.push(
+			m_ASTContext.createType(
+					Type::IncompleteArray,
+					elementType->getCanonicalType(),
+					arrayType->getCanonicalType(),
+					ArrayType::Normal,
+					static_cast<unsigned>(0)
+			)
+	);
+}
+
+void YaccAdapter::storeVariable(std::string name, yy::location &l)
+{
+	m_nameStack.push(make_pair(name, toSourceLocation(l)));
+}
+
+void YaccAdapter::makeVariable(std::shared_ptr<Type> type)
+{
+	auto varName = m_nameStack.top();
+	m_nameStack.pop();
+	m_declContextHolder.createVariable(varName.first, varName.second, type->getCanonicalType());
 }
 
 bool YaccAdapter::isTypeSpecifierNotIllegal()
@@ -536,18 +665,18 @@ SourceLocation YaccAdapter::toSourceLocation(yy::location &location)
 
 std::shared_ptr<Stmt> YaccAdapter::pop_stmt()
 {
-	if(m_stmtQueue.empty())
+	if(m_stmtStack.empty())
 		throw std::range_error("Stmt queue empty");
-	std::shared_ptr<Stmt> ptr=m_stmtQueue.top();
-	m_stmtQueue.pop();
+	std::shared_ptr<Stmt> ptr=m_stmtStack.top();
+	m_stmtStack.pop();
 	return ptr;
 }
 
 std::shared_ptr<Type> YaccAdapter::pop_type()
 {
-	if(m_typeQueue.empty())
+	if(m_typeStack.empty())
 		throw std::range_error("Type queue empty");
-	std::shared_ptr<Type> ptr = m_typeQueue.top();
-	m_typeQueue.pop();
+	std::shared_ptr<Type> ptr = m_typeStack.top();
+	m_typeStack.pop();
 	return ptr;
 }

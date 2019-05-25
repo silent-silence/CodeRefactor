@@ -20,6 +20,10 @@ public:
 
 	void createVariable(std::string name, SourceLocation &location, QualType type);
 
+#ifdef ENV_TEST
+	void clean();
+#endif
+
 private:
 	std::shared_ptr<DeclContext> m_contextRoot;
 };

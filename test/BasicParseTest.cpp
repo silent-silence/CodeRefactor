@@ -5,10 +5,8 @@
 #ifdef ENV_TEST
 
 #include <memory>
-#include <fstream>
 #include <string>
 #include <gtest/gtest.h>
-#include <OpenHelper/FileOpenHelper.h>
 #include "OpenHelper/StringStreamOpenHelper.h"
 #include "Parser/Driver.h"
 #include "Parser/YaccAdapter.h"
@@ -199,16 +197,15 @@ TEST_F(BasicParseTest, ArraySubscriptTest)
 
 TEST_F(BasicParseTest, MemberExprTest)
 {
-	// TODO: do this after identities is recognised
-	/*openHelper << "a.a;";
+	openHelper << "int a; a.a;";
 	driver.parse();
-	EXPECT_TRUE(dynamic_pointer_cast<MemberExpr>(astContext.getTop().lock()));
+	EXPECT_TRUE(dynamic_pointer_cast<MemberExpr>(astContext.getRoot().lock()));
 	adapter.clean();
 
 	openHelper << "a->a;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<MemberExpr>(astContext.getRoot().lock()));
-	adapter.clean();*/
+	adapter.clean();
 }
 
 TEST_F(BasicParseTest, CastTest)
@@ -221,23 +218,69 @@ TEST_F(BasicParseTest, CastTest)
 
 TEST_F(BasicParseTest, CallTest)
 {
-	// TODO: do this after CallExpr::SubExpr initialized
-	/*openHelper << "34();";
+	openHelper << "34();";
 	driver.parse();
-	EXPECT_TRUE(dynamic_pointer_cast<CStyleCastExpr>(astContext.getTop().lock()));
+	EXPECT_TRUE(dynamic_pointer_cast<CallExpr>(astContext.getRoot().lock()));
 	adapter.clean();
 
 	openHelper << "34(12, 43);";
 	driver.parse();
-	EXPECT_TRUE(dynamic_pointer_cast<CStyleCastExpr>(astContext.getRoot().lock()));
-	adapter.clean();*/
+	EXPECT_TRUE(dynamic_pointer_cast<CallExpr>(astContext.getRoot().lock()));
+	adapter.clean();
 }
 
 TEST_F(BasicParseTest, IfTest)
-{}
+{
+	/*openHelper << "if(1) ;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<IfStmt>(astContext.getRoot().lock()));
+	adapter.clean();
+
+	openHelper << "if(1) { 123; 23452; }";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<IfStmt>(astContext.getRoot().lock()));
+	adapter.clean();*/
+
+	// TODO Matching if else
+	openHelper << "if(1) if(2) ; else {123; } else {345;}";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<IfStmt>(astContext.getRoot().lock()));
+	adapter.clean();
+
+	/*openHelper << "if(1) { } else if(2) { }";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<IfStmt>(astContext.getRoot().lock()));
+	adapter.clean();*/
+}
 
 TEST_F(BasicParseTest, ForTest)
-{}
+{
+	openHelper << "for(;;) ;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<ForStmt>(astContext.getRoot().lock()));
+	adapter.clean();
+
+	openHelper << "for(int a;;) ;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<ForStmt>(astContext.getRoot().lock()));
+	adapter.clean();
+
+	openHelper << "for(1;2;3) ;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<ForStmt>(astContext.getRoot().lock()));
+	adapter.clean();
+
+	openHelper << "for(int b;2;3) { 12; }";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<ForStmt>(astContext.getRoot().lock()));
+	adapter.clean();
+
+	// TODO: do this after struct is recognised
+	/*openHelper << "for(struct { int a; int b; } c;;) ;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<ForStmt>(astContext.getRoot().lock()));
+	adapter.clean();*/
+}
 
 TEST_F(BasicParseTest, WhileTest)
 {
@@ -391,10 +434,13 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 
 TEST_F(BasicParseTest, VariableTest)
 {
-	openHelper << "long int a;";
+	/*openHelper << "long int a;";
 	driver.parse();
 	auto var = dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("a").lock());
-	EXPECT_EQ(var->getIdentifier(), string("a"));
+	EXPECT_EQ(var->getIdentifier(), string("a"));*/
+
+	openHelper << "long int a[];";
+	driver.parse();
 }
 
 #endif

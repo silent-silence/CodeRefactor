@@ -16,6 +16,7 @@ class ASTContext;
 class DeclContextHolder;
 class OpenHelper;
 
+/// @brief An Adapter which is called by yacc rules, and create AST via ASTContext/DeclContextHolder interface.
 class YaccAdapter {
 public:
 	/// @brief Each enumerator hold one bit, represents a basic type specifier
@@ -63,17 +64,18 @@ public:
 #endif
 
 	/// @brief Make statements
-	void makeDeclStmt(yy::location &l, yy::location &r);
+	void makeDeclStmt(yy::location &l, yy::location &r, bool haveDefinedName);
 	void makeNullStmt(yy::location &l);
 	void makeCompoundStmt(unsigned stmtNumInBlock, yy::location &l, yy::location &r);
 	void makeCaseStmt(yy::location &l, yy::location &r, yy::location &c);
 	void makeDefaultStmt(yy::location &d, yy::location &e);
 	void makeLabelStmt(yy::location &l, yy::location &r);
-	void makeIfStmt();
+	void makeIfStmt(yy::location &l);
+	void makeIfElseStmt(yy::location &lf, yy::location &le);
 	void makeSwitchStmt(yy::location &l);
 	void makeWhileStmt(yy::location &l);
 	void makeDoStmt(yy::location &d, yy::location &w, yy::location &l);
-	void makeForStmt();
+	void makeForStmt(yy::location &f, yy::location &l, yy::location &r, bool haveInc);
 	void makeGotoStmt(yy::location &l, yy::location &r);
 	void makeIndirectGotoStmt();
 	void makeContinueStmt(yy::location &l);
@@ -82,7 +84,7 @@ public:
 
 	/// @brief Make expressions
 	//void makeStmtExpr(yy::location &l, yy::location &r);
-	void makeDeclRefExpr();
+	void makeDeclRefExpr(std::string &name, yy::location &l);
 	void makePredefinedExpr();
 	void makeIntegerLiteral(int val, yy::location &l);
 	void makeCharacterLiteral(unsigned val, yy::location &l);
@@ -105,7 +107,7 @@ public:
 	void makeInitListExpr();
 	void makeParenListExpr();
 
-	/// @brief Temporary save type specifier
+	/// @brief Temporary save type specifier before create a type
 	void addTypeSpecifier(TypeSpecifier type);
 	void addTypeSpecifier(TypeSpecifier type, TypeSpecifier storageSpecifier);
 
@@ -141,13 +143,16 @@ public:
 	//void makeDependentDecltypeType(std::vector<var_t> &value);
 
 	/// @brief Symbol table
-	void makeVariable(std::string name, yy::location &l);
+	void storeVariable(std::string name, yy::location &l);
+	void makeVariable(std::shared_ptr<Type> type);
 
 private:
+	/// @brief Check if type specifier is allowed
 	bool isTypeSpecifierNotIllegal();
 
 	SourceLocation toSourceLocation(yy::location &location);
 
+	/// @brief Pop a Stmt/Type from the stack
 	std::shared_ptr<Stmt> pop_stmt();
 	std::shared_ptr<Type> pop_type();
 
@@ -155,10 +160,15 @@ private:
 	DeclContextHolder &m_declContextHolder;
 	OpenHelper &m_source;
 
-	std::stack<std::shared_ptr<Stmt>> m_stmtQueue;
+	/// @brief Temporary save the storage class specifiers(typedef/extern/static/register)
 	TypeSpecifier m_storageSpecifier;
+	/// @brief Temporary save the basic type of specifiers(int/long/double...)
 	unsigned m_typeSpecifier;
-	std::stack<std::shared_ptr<Type>> m_typeQueue;
+
+	/// @brief The stack of Stmt/Type
+	std::stack<std::shared_ptr<Stmt>> m_stmtStack;
+	std::stack<std::shared_ptr<Type>> m_typeStack;
+	std::stack<std::pair<std::string, SourceLocation>> m_nameStack;
 
 	/*template<typename T=Stmt>
 	std::shared_ptr<T> pop_stmt(){
