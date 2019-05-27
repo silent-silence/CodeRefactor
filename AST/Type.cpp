@@ -424,7 +424,7 @@ DependentTypeOfExprType::DependentTypeOfExprType(std::shared_ptr<Expr> E)
 std::shared_ptr<Type> TypeOfType::creator(QualType T, QualType can)
 {
     auto ptr=std::make_shared<TypeOfType>(T);
-    ptr->setCanonicalType(can.isNull()?QualType(ptr, 0):can);
+    //ptr->setCanonicalType(can.isNull()?QualType(ptr, 0):can);
     return std::move(ptr);
 }
 

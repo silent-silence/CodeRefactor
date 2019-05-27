@@ -76,6 +76,7 @@ private:
     QualType TR;
 };
 
+
 class DeclRefExpr : public Expr
 {
 public:
@@ -188,10 +189,10 @@ private:
 class StringLiteral : public Expr
 {
 public:
-    static std::shared_ptr<StringLiteral> Create(const char *StrData,
+    static std::shared_ptr<StringLiteral> Create(const std::string StrData,
                                                  unsigned ByteLength, bool Wide, QualType Ty,
                                                  const SourceLocation Loc, unsigned NumStrs);
-    static std::shared_ptr<StringLiteral> Create(const char *StrData,
+    static std::shared_ptr<StringLiteral> Create(const std::string StrData,
                                                  unsigned ByteLength,
                                                  bool Wide, QualType Ty, SourceLocation Loc);
     virtual child_iterator child_begin(){ return child_iterator(); }
@@ -204,7 +205,7 @@ public:
 private:
     StringLiteral(QualType Ty);
 
-    const char *StrData;
+    std::string StrData;
     unsigned ByteLength;
     bool IsWide;
     unsigned NumConcatenated;

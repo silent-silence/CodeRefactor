@@ -82,8 +82,6 @@ public:
     typedef Iterator child_iterator;
     virtual child_iterator child_begin() = 0;
     virtual child_iterator child_end()   = 0;
-
-     static bool classof(const Stmt *) { return true; }
 protected:
     explicit Stmt(StmtClass SC, EmptyShell);
 private:
@@ -294,7 +292,7 @@ class ForStmt : public Stmt
 {
 public:
     ForStmt(std::shared_ptr<Stmt> Init,
-            std::shared_ptr<Expr> Cond,
+            std::shared_ptr<Stmt> Cond,
             std::shared_ptr<Expr> Inc,
             std::shared_ptr<Stmt> Body,
             SourceLocation FL,
