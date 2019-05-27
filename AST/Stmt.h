@@ -82,6 +82,8 @@ public:
     typedef Iterator child_iterator;
     virtual child_iterator child_begin() = 0;
     virtual child_iterator child_end()   = 0;
+
+     static bool classof(const Stmt *) { return true; }
 protected:
     explicit Stmt(StmtClass SC, EmptyShell);
 private:
@@ -97,6 +99,10 @@ public:
     explicit DeclStmt(EmptyShell Empty);
     virtual child_iterator child_begin(){return child_iterator();}
     virtual child_iterator child_end(){return child_iterator();}
+    static bool classof(const Stmt *T) {
+      return T->getStmtClass() == DeclStmtClass;
+    }
+    static bool classof(const DeclStmt *) { return true; }
 private:
     SourceLocation StartLoc;
     SourceLocation EndLoc;
@@ -110,6 +116,10 @@ public:
     explicit NullStmt(EmptyShell Empty);
     virtual child_iterator child_begin(){return child_iterator();}
     virtual child_iterator child_end(){return child_iterator();}
+    static bool classof(const Stmt *T) {
+      return T->getStmtClass() == NullStmtClass;
+    }
+    static bool classof(const NullStmt *) { return true; }
 private:
     SourceLocation SemiLoc;
 };
@@ -121,6 +131,11 @@ public:
     explicit CompoundStmt(EmptyShell Empty);
     virtual child_iterator child_begin(){ return &Body[0]; }
     virtual child_iterator child_end(){ return &Body[Body.size()]; }
+    static bool classof(const Stmt *T) {
+      return T->getStmtClass() == CompoundStmtClass;
+    }
+    static bool classof(const CompoundStmt *) { return true; }
+
 private:
     std::vector<std::shared_ptr<Stmt>> Body;
     SourceLocation LBracLoc, RBracLoc;
@@ -129,7 +144,11 @@ private:
 class SwitchCase : public Stmt
 {
 public:
-
+    static bool classof(const Stmt *T) {
+      return T->getStmtClass() == CaseStmtClass ||
+      T->getStmtClass() == DefaultStmtClass;
+    }
+    static bool classof(const SwitchCase *) { return true; }
 protected:
     SwitchCase(StmtClass SC);
     std::shared_ptr<SwitchCase> NextSwitchCase;
@@ -144,6 +163,10 @@ public:
     CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, SourceLocation caseLoc,
              SourceLocation ellipsisLoc, SourceLocation colonLoc);
     explicit CaseStmt(EmptyShell Empty);
+    static bool classof(const Stmt *T) {
+      return T->getStmtClass() == CaseStmtClass;
+    }
+    static bool classof(const CaseStmt *) { return true; }
 private:
     enum { SUBSTMT, LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -160,6 +183,10 @@ public:
     explicit DefaultStmt(EmptyShell);
     virtual child_iterator child_begin() { return &SubStmt; }
     virtual child_iterator child_end() { return &SubStmt+1; }
+    static bool classof(const Stmt *T) {
+      return T->getStmtClass() == DefaultStmtClass;
+    }
+    static bool classof(const DefaultStmt *) { return true; }
 private:
     std::shared_ptr<Stmt> SubStmt;
     SourceLocation DefaultLoc;
@@ -173,6 +200,11 @@ public:
     virtual child_iterator child_end() { return &SubStmt+1; }
     LabelStmt(SourceLocation IL, std::shared_ptr<Stmt> substmt);
     explicit LabelStmt(EmptyShell Empty);
+    static bool classof(const Stmt *T) {
+      return T->getStmtClass() == LabelStmtClass;
+    }
+    static bool classof(const LabelStmt *) { return true; }
+
 private:
     std::shared_ptr<Stmt> SubStmt;
     SourceLocation IdentLoc;
@@ -188,6 +220,10 @@ public:
     explicit IfStmt(EmptyShell Empty);
     virtual child_iterator child_begin() { return &SubExprs[0]; }
     virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
+    static bool classof(const Stmt *T) {
+      return T->getStmtClass() == IfStmtClass;
+    }
+    static bool classof(const IfStmt *) { return true; }
 private:
     enum { COND, THEN, ELSE, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -202,6 +238,11 @@ public:
     explicit SwitchStmt(EmptyShell Empty);
     virtual child_iterator child_begin(){return &SubExprs[0];}
     virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
+    static bool classof(const Stmt *T) {
+      return T->getStmtClass() == SwitchStmtClass;
+    }
+    static bool classof(const SwitchStmt *) { return true; }
+
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
