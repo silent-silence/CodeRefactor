@@ -77,6 +77,9 @@ public:
     DeclRefExpr(std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l);
     DeclRefExpr(std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l, bool TD, bool VD);
     explicit DeclRefExpr(EmptyShell Empty);
+
+    std::shared_ptr<NamedDecl> getDecl() const { return D; }
+
 protected:
     DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l);
     DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l, bool TD, bool VD);
@@ -109,6 +112,9 @@ class IntegerLiteral : public Expr
 public:
     IntegerLiteral(const int &V, QualType type, SourceLocation l);
     explicit IntegerLiteral(EmptyShell Empty);
+
+	const int &getValue() const { return Value; }
+
     virtual child_iterator child_begin(){ return child_iterator(); }
      virtual child_iterator child_end() { return child_iterator(); }
 private:
@@ -121,6 +127,9 @@ class CharacterLiteral : public Expr
 public:
     CharacterLiteral(unsigned value, bool iswide, QualType type, SourceLocation l);
     CharacterLiteral(EmptyShell Empty);
+
+    unsigned getValue() const { return Value; }
+
     virtual child_iterator child_begin(){ return child_iterator();}
      virtual child_iterator child_end(){ return child_iterator();}
 private:
@@ -134,6 +143,9 @@ class FloatingLiteral : public Expr
 public:
     FloatingLiteral(const float &V, bool isexact, QualType Type, SourceLocation L);
     explicit FloatingLiteral(EmptyShell Empty);
+
+	float getValue() const { return Value; };
+
     virtual child_iterator child_begin(){ return child_iterator(); }
     virtual child_iterator child_end(){ return child_iterator(); }
 private:
@@ -162,6 +174,9 @@ public:
     static std::shared_ptr<StringLiteral> Create(const char *StrData,
                                                  unsigned ByteLength,
                                                  bool Wide, QualType Ty, SourceLocation Loc);
+
+    const char *getStrData() const { return StrData; }
+
     virtual child_iterator child_begin(){ return child_iterator(); }
      virtual child_iterator child_end(){ return child_iterator(); }
 private:
@@ -202,6 +217,9 @@ public:
     };
     UnaryOperator(std::shared_ptr<Expr> input, Opcode opc, QualType type, SourceLocation l);
     explicit UnaryOperator(EmptyShell Empty);
+
+	Opcode getOpcode() const { return Opc; }
+
     virtual child_iterator child_begin(){ return &Val; }
     virtual child_iterator child_end(){ return &Val+1; }
 private:
@@ -223,6 +241,7 @@ public:
 
     explicit SizeOfAlignOfExpr(EmptyShell Empty)
         : Expr(SizeOfAlignOfExprClass, Empty) { }
+
     virtual child_iterator child_begin(){
 //        if (isArgumentType()) {
 //          if (VariableArrayType* T = dyn_cast<VariableArrayType>(
@@ -237,6 +256,9 @@ public:
 //          return child_iterator();
 //        return child_iterator(&Argument.Ex + 1);
       }
+      bool isArgumentType() const { return isType; }
+      std::shared_ptr<Expr> getArgumentExpr() const { return std::dynamic_pointer_cast<Expr>(Ex); }
+
 private:
     bool isSizeof : 1;  // true if sizeof, false if alignof.
     bool isType : 1;    // true if operand is a type, false if an expression
@@ -253,6 +275,10 @@ public:
                        QualType t,
                        SourceLocation rbracketloc);
     explicit ArraySubscriptExpr(EmptyShell Shell);
+
+    std::shared_ptr<Expr> getLHS() const { return std::dynamic_pointer_cast<Expr>(SubExprs[LHS]); }
+	std::shared_ptr<Expr> getRHS() const { return std::dynamic_pointer_cast<Expr>(SubExprs[RHS]); }
+
     virtual child_iterator child_begin(){return &SubExprs[0];}
      virtual child_iterator child_end() {return &SubExprs[0]+END_EXPR;}
 private:
@@ -412,6 +438,11 @@ public:
     BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc, QualType ResTy, SourceLocation opLoc);
 
     explicit BinaryOperator(EmptyShell Empty);
+
+    std::shared_ptr<Expr> getLHS() const { return std::dynamic_pointer_cast<Expr>(SubExprs[LHS]); }
+    std::shared_ptr<Expr> getRHS() const { return std::dynamic_pointer_cast<Expr>(SubExprs[RHS]); }
+    Opcode getOpcode() const { return Opc; }
+
     virtual child_iterator child_begin() { return &SubExprs[0]; }
     virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
 protected:
@@ -446,6 +477,11 @@ public:
                         std::shared_ptr<Expr> rhs, QualType t);
 
     explicit ConditionalOperator(EmptyShell Empty);
+
+    std::shared_ptr<Expr> getCond() const { return std::dynamic_pointer_cast<Expr>(SubExprs[COND]); }
+	std::shared_ptr<Expr> getLHS() const { return std::dynamic_pointer_cast<Expr>(SubExprs[LHS]); }
+	std::shared_ptr<Expr> getRHS() const { return std::dynamic_pointer_cast<Expr>(SubExprs[RHS]); }
+
     virtual child_iterator child_begin(){return &SubExprs[0];}
     virtual child_iterator child_end(){return &SubExprs[0]+END_EXPR;}
 private:

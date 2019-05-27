@@ -49,12 +49,13 @@ std::shared_ptr<Stmt> ASTContext::createCompoundStmt(std::vector<ASTContext::var
 
 std::shared_ptr<Stmt> ASTContext::createCaseStmt(std::vector<ASTContext::var_t> &value)
 {
+	// TODO: RHS not initialized
 	return make_shared<CaseStmt>(
 					get<shared_ptr<Expr>>(value[0]),
-					get<shared_ptr<Expr>>(value[1]),
+					nullptr,
+					get<SourceLocation>(value[1]),
 					get<SourceLocation>(value[2]),
-					get<SourceLocation>(value[3]),
-					get<SourceLocation>(value[4])
+					get<SourceLocation>(value[3])
 	);
 }
 

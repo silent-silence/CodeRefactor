@@ -82,7 +82,6 @@ void YaccAdapter::makeCaseStmt(yy::location &l, yy::location &r, yy::location &c
 			m_ASTContext.createStmt(
 					Stmt::CaseStmtClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
-					dynamic_pointer_cast<Expr>(pop_stmt()),
 					lp, rp, cp
 			)
 	);

@@ -122,8 +122,9 @@ std::shared_ptr<StringLiteral> StringLiteral::Create(const char *StrData, unsign
 	// TODO: maybe move this into constructor
 	struct PtrMaker : public StringLiteral {
 		PtrMaker(QualType Ty) : StringLiteral(Ty) {}
+		~PtrMaker() override = default;
 		static std::shared_ptr<StringLiteral> make(QualType Ty) {
-			return std::make_shared<PtrMaker>(Ty);
+			return std::dynamic_pointer_cast<StringLiteral>(std::make_shared<PtrMaker>(Ty));
 		}
 	};
 	auto stringLiteral = PtrMaker::make(Ty);

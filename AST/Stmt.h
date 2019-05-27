@@ -75,6 +75,9 @@ public:
     struct EmptyShell {};
     Stmt(StmtClass SC);
     virtual ~Stmt(){}
+
+    StmtClass getStmtClass() { return static_cast<StmtClass>(sClass); }
+
     typedef Iterator child_iterator;
 
     virtual child_iterator child_begin() = 0;
@@ -141,6 +144,11 @@ public:
     CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, SourceLocation caseLoc,
              SourceLocation ellipsisLoc, SourceLocation colonLoc);
     explicit CaseStmt(EmptyShell Empty);
+
+    std::shared_ptr<Stmt> getSubStmt() const { return SubExprs[SUBSTMT]; }
+    std::shared_ptr<Stmt> getLHS() const { return SubExprs[LHS]; }
+    std::shared_ptr<Stmt> getRHS() const { return SubExprs[RHS]; }
+
 private:
     enum { SUBSTMT, LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -183,6 +191,11 @@ public:
     IfStmt(SourceLocation IL, std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> then,
            SourceLocation EL = SourceLocation(), std::shared_ptr<Stmt> elsev= nullptr);
     explicit IfStmt(EmptyShell Empty);
+
+    std::shared_ptr<Stmt> getCond() const { return SubExprs[COND]; }
+	std::shared_ptr<Stmt> getThen() const { return SubExprs[THEN]; }
+	std::shared_ptr<Stmt> getElse() const { return SubExprs[ELSE]; }
+
     virtual child_iterator child_begin() { return &SubExprs[0]; }
     virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
 private:
@@ -211,6 +224,10 @@ class WhileStmt : public Stmt
 public:
     WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body, SourceLocation WL);
     explicit WhileStmt(EmptyShell Empty);
+
+    std::shared_ptr<Stmt> getCond() const { return SubExprs[COND]; }
+    std::shared_ptr<Stmt> getBody() const { return SubExprs[BODY]; }
+
     virtual child_iterator child_begin(){ return &SubExprs[0];}
     virtual child_iterator child_end(){return &SubExprs[0]+END_EXPR;}
 private:
@@ -228,6 +245,10 @@ public:
            SourceLocation WL,
            SourceLocation RP);
     explicit DoStmt(EmptyShell Empty);
+
+    std::shared_ptr<Stmt> getCond() const { return SubExprs[COND]; }
+    std::shared_ptr<Stmt> getBody() const { return SubExprs[BODY]; }
+
     virtual child_iterator child_begin(){ return &SubExprs[0]; }
     virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
 private:
@@ -249,6 +270,12 @@ public:
             SourceLocation LP,
             SourceLocation RP);
     explicit ForStmt(EmptyShell Empty);
+
+    std::shared_ptr<Stmt> getInit() const { return SubExprs[INIT]; }
+	std::shared_ptr<Stmt> getCond() const { return SubExprs[COND]; }
+	std::shared_ptr<Stmt> getInc() const { return SubExprs[INC]; }
+	std::shared_ptr<Stmt> getBody() const { return SubExprs[BODY]; }
+
     virtual child_iterator child_begin(){ return &SubExprs[0]; }
     virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
 private:
@@ -314,6 +341,9 @@ public:
     ReturnStmt(SourceLocation RL, std::shared_ptr<Expr> E = nullptr);
 
     explicit ReturnStmt(EmptyShell Empty);
+
+    std::shared_ptr<Expr> getRetValue() const { return std::dynamic_pointer_cast<Expr>(RetExpr); }
+
     virtual child_iterator child_begin(){ return &RetExpr; }
     virtual child_iterator child_end() { return RetExpr ? &RetExpr+1 : &RetExpr; }
 private:

@@ -25,5 +25,7 @@ StringStreamOpenHelper &operator <<(StringStreamOpenHelper &opener, std::string 
 StringStreamOpenHelper &operator >>(StringStreamOpenHelper &opener, std::string &outputBuf)
 {
 	outputBuf = opener.os.str();
+	opener.os.clear();
+	opener.os.str("");
 	return opener;
 }

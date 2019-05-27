@@ -26,4 +26,4 @@ add_executable(CodeRefactor
         Decl/Decl.h Decl/DeclName.h Decl/DeclBase.h Decl/DeclBase.cpp
 		AST/AST.hpp AST/Expr.cpp AST/Expr.h AST/Stmt.cpp AST/Stmt.h AST/StmtNodes.def AST/Type.cpp AST/Type.h AST/TypeNodes.def AST/ASTContext.h AST/ASTContext.cpp
 		Basic/SourceLocation.h Basic/SourceLocation.cpp
-		test/BasicParseTest.cpp test/OpenHelperTest.cpp test/DeclarationTest.cpp Decl/DeclGroupRef.cpp Decl/DeclGroupRef.h Parser/YaccAdapter.cpp Parser/YaccAdapter.h Decl/DeclContextHolder.cpp Decl/DeclContextHolder.h Errors/SymbolError.hpp test/HybridParseTest.cpp Errors/TypeError.hpp)
+		test/BasicParseTest.cpp test/OpenHelperTest.cpp test/DeclarationTest.cpp Decl/DeclGroupRef.cpp Decl/DeclGroupRef.h Parser/YaccAdapter.cpp Parser/YaccAdapter.h Decl/DeclContextHolder.cpp Decl/DeclContextHolder.h Errors/SymbolError.hpp test/HybridParseTest.cpp Errors/TypeError.hpp ASTOperation/Printer.cpp ASTOperation/Printer.h test/ASTStructureTest.cpp)
