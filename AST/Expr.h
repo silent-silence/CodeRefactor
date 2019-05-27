@@ -59,6 +59,11 @@ public:
     bool isValueDependent() const;
     void setValueDependent(bool value);
 
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() >= firstExprConstant &&
+                T->getStmtClass() <= lastExprConstant;
+    }
+    static bool classof(const std::shared_ptr<Expr>) { return true; }
 protected:
     Expr(StmtClass SC, QualType T);
     Expr(StmtClass SC, QualType T, bool TD, bool VD);
@@ -110,7 +115,7 @@ public:
     IntegerLiteral(const int &V, QualType type, SourceLocation l);
     explicit IntegerLiteral(EmptyShell Empty);
     virtual child_iterator child_begin(){ return child_iterator(); }
-     virtual child_iterator child_end() { return child_iterator(); }
+    virtual child_iterator child_end() { return child_iterator(); }
 private:
     int Value;
     SourceLocation Loc;
@@ -122,7 +127,7 @@ public:
     CharacterLiteral(unsigned value, bool iswide, QualType type, SourceLocation l);
     CharacterLiteral(EmptyShell Empty);
     virtual child_iterator child_begin(){ return child_iterator();}
-     virtual child_iterator child_end(){ return child_iterator();}
+    virtual child_iterator child_end(){ return child_iterator();}
 private:
     unsigned Value;
     bool IsWide;
@@ -163,7 +168,7 @@ public:
                                                  unsigned ByteLength,
                                                  bool Wide, QualType Ty, SourceLocation Loc);
     virtual child_iterator child_begin(){ return child_iterator(); }
-     virtual child_iterator child_end(){ return child_iterator(); }
+    virtual child_iterator child_end(){ return child_iterator(); }
 private:
     StringLiteral(QualType Ty);
 
@@ -180,7 +185,7 @@ public:
     ParenExpr(SourceLocation l, SourceLocation r, std::shared_ptr<Expr> val);
     explicit ParenExpr(EmptyShell Empty);
     virtual child_iterator child_begin(){ return &Val; }
-     virtual child_iterator child_end(){ return &Val+1; }
+    virtual child_iterator child_end(){ return &Val+1; }
 private:
     std::shared_ptr<Stmt> Val;
     SourceLocation L;
@@ -224,19 +229,19 @@ public:
     explicit SizeOfAlignOfExpr(EmptyShell Empty)
         : Expr(SizeOfAlignOfExprClass, Empty) { }
     virtual child_iterator child_begin(){
-//        if (isArgumentType()) {
-//          if (VariableArrayType* T = dyn_cast<VariableArrayType>(
-//                                         getArgumentType().getTypePtr()))
-//            return child_iterator(T);
-//          return child_iterator();
-//        }
-//        return child_iterator(&Argument.Ex);
-      }
+        //        if (isArgumentType()) {
+        //          if (VariableArrayType* T = dyn_cast<VariableArrayType>(
+        //                                         getArgumentType().getTypePtr()))
+        //            return child_iterator(T);
+        //          return child_iterator();
+        //        }
+        //        return child_iterator(&Argument.Ex);
+    }
     virtual child_iterator child_end(){
-//        if (isArgumentType())
-//          return child_iterator();
-//        return child_iterator(&Argument.Ex + 1);
-      }
+        //        if (isArgumentType())
+        //          return child_iterator();
+        //        return child_iterator(&Argument.Ex + 1);
+    }
 private:
     bool isSizeof : 1;  // true if sizeof, false if alignof.
     bool isType : 1;    // true if operand is a type, false if an expression
@@ -254,7 +259,7 @@ public:
                        SourceLocation rbracketloc);
     explicit ArraySubscriptExpr(EmptyShell Shell);
     virtual child_iterator child_begin(){return &SubExprs[0];}
-     virtual child_iterator child_end() {return &SubExprs[0]+END_EXPR;}
+    virtual child_iterator child_end() {return &SubExprs[0]+END_EXPR;}
 private:
     enum { LHS, RHS, END_EXPR=2 };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -272,10 +277,10 @@ public:
     CallExpr(StmtClass SC, EmptyShell Empty);
     virtual child_iterator child_begin() {
         return &SubExprs[0];
-      }
+    }
     virtual child_iterator child_end() {
         return &SubExprs[0]+NumArgs+ARGS_START;
-      }
+    }
 protected:
     CallExpr(StmtClass SC,
              std::shared_ptr<Expr> fn,
@@ -317,7 +322,7 @@ public:
                         bool fileScope);
     explicit CompoundLiteralExpr(EmptyShell Empty);
     virtual child_iterator child_begin(){ return &Init; }
-     virtual child_iterator child_end(){ return &Init+1; }
+    virtual child_iterator child_end(){ return &Init+1; }
 private:
     std::shared_ptr<Stmt> Init;
     bool FileScope;
@@ -412,6 +417,11 @@ public:
     BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc, QualType ResTy, SourceLocation opLoc);
 
     explicit BinaryOperator(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> S) {
+        return S->getStmtClass() == BinaryOperatorClass ||
+                S->getStmtClass() == CompoundAssignOperatorClass;
+    }
+    static bool classof(const std::shared_ptr<BinaryOperator>) { return true; }
     virtual child_iterator child_begin() { return &SubExprs[0]; }
     virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
 protected:
@@ -434,6 +444,10 @@ public:
                            SourceLocation OpLoc);
 
     explicit CompoundAssignOperator(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<CompoundAssignOperator>) { return true; }
+    static bool classof(const std::shared_ptr<Stmt> S) {
+        return S->getStmtClass() == CompoundAssignOperatorClass;
+    }
 private:
     QualType ComputationLHSType;
     QualType ComputationResultType;
@@ -446,6 +460,10 @@ public:
                         std::shared_ptr<Expr> rhs, QualType t);
 
     explicit ConditionalOperator(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() == ConditionalOperatorClass;
+    }
+    static bool classof(const std::shared_ptr<ConditionalOperator>) { return true; }
     virtual child_iterator child_begin(){return &SubExprs[0];}
     virtual child_iterator child_end(){return &SubExprs[0]+END_EXPR;}
 private:
@@ -460,6 +478,10 @@ public:
                   QualType t);
 
     explicit AddrLabelExpr(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() == AddrLabelExprClass;
+    }
+    static bool classof(const std::shared_ptr<AddrLabelExpr>) { return true; }
     virtual child_iterator child_begin() { return child_iterator(); }
     virtual child_iterator child_end(){ return child_iterator(); }
 private:
@@ -474,6 +496,10 @@ public:
     StmtExpr(std::shared_ptr<CompoundStmt> substmt, QualType T,
              SourceLocation lp, SourceLocation rp);
     explicit StmtExpr(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+      return T->getStmtClass() == StmtExprClass;
+    }
+    static bool classof(const std::shared_ptr<StmtExpr>) { return true; }
     virtual child_iterator child_begin() { return &SubStmt; }
     virtual child_iterator child_end(){ return &SubStmt+1; }
 private:
@@ -488,6 +514,10 @@ public:
     TypesCompatibleExpr(QualType ReturnType, SourceLocation BLoc,
                         QualType t1, QualType t2, SourceLocation RP);
     explicit TypesCompatibleExpr(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+      return T->getStmtClass() == TypesCompatibleExprClass;
+    }
+    static bool classof(const std::shared_ptr<TypesCompatibleExpr>) { return true; }
     virtual child_iterator child_begin(){return child_iterator();}
     virtual child_iterator child_end(){return child_iterator();}
 private:
@@ -505,6 +535,10 @@ public:
                       SourceLocation RP);
 
     explicit ShuffleVectorExpr(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+      return T->getStmtClass() == ShuffleVectorExprClass;
+    }
+    static bool classof(const std::shared_ptr<ShuffleVectorExpr>) { return true; }
     virtual child_iterator child_begin(){return &SubExprs[0];}
     virtual child_iterator child_end(){return &SubExprs[0]+NumExprs; }
 private:
@@ -521,6 +555,10 @@ public:
                SourceLocation RP);
 
     explicit ChooseExpr(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+      return T->getStmtClass() == ChooseExprClass;
+    }
+    static bool classof(const std::shared_ptr<ChooseExpr>) { return true; }
     virtual child_iterator child_begin(){ return &SubExprs[0]; }
     virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
 
@@ -537,6 +575,10 @@ public:
     GNUNullExpr(QualType Ty, SourceLocation Loc);
 
     explicit GNUNullExpr(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+      return T->getStmtClass() == GNUNullExprClass;
+    }
+    static bool classof(const std::shared_ptr<GNUNullExpr>) { return true; }
     virtual child_iterator child_begin(){return child_iterator();}
     virtual child_iterator child_end(){return child_iterator();}
 private:
@@ -549,6 +591,10 @@ public:
     VAArgExpr(SourceLocation BLoc, std::shared_ptr<Expr> e, QualType t, SourceLocation RPLoc);
 
     explicit VAArgExpr(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+      return T->getStmtClass() == VAArgExprClass;
+    }
+    static bool classof(const std::shared_ptr<VAArgExpr>) { return true; }
     virtual child_iterator child_begin(){return &Val;}
     virtual child_iterator child_end(){return &Val+1;}
 private:
@@ -565,10 +611,14 @@ public:
                  SourceLocation rbraceloc);
 
     explicit InitListExpr(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+      return T->getStmtClass() == InitListExprClass;
+    }
+    static bool classof(const std::shared_ptr<InitListExpr>) { return true; }
     virtual child_iterator child_begin() {
         return InitExprs.size() ? &InitExprs[0] :nullptr;
         }
-    virtual child_iterator child_end(){
+        virtual child_iterator child_end(){
         return InitExprs.size() ? &InitExprs[0] + InitExprs.size() : nullptr;
     }
 private:
@@ -593,6 +643,10 @@ private:
     unsigned NumDesignators : 15;
     std::shared_ptr<Designator> Designators;
     unsigned NumSubExprs : 16;
+    static bool classof(const std::shared_ptr<Stmt> T) {
+      return T->getStmtClass() == DesignatedInitExprClass;
+    }
+    static bool classof(const std::shared_ptr<DesignatedInitExpr>) { return true; }
 
 
     //    DesignatedInitExpr(QualType Ty, unsigned NumDesignators,
@@ -604,14 +658,14 @@ private:
     //    explicit DesignatedInitExpr(unsigned NumSubExprs)
     //        : Expr(DesignatedInitExprClass, EmptyShell()),
     //          NumDesignators(0), Designators(0), NumSubExprs(NumSubExprs) { }
-//    Stmt::child_iterator DesignatedInitExpr::child_begin() {
-//      char* Ptr = static_cast<char*>(static_cast<void *>(this));
-//      Ptr += sizeof(DesignatedInitExpr);
-//      return reinterpret_cast<Stmt**>(reinterpret_cast<void**>(Ptr));
-//    }
-//    Stmt::child_iterator DesignatedInitExpr::child_end() {
-//      return child_iterator(&*child_begin() + NumSubExprs);
-//    }
+    //    Stmt::child_iterator DesignatedInitExpr::child_begin() {
+    //      char* Ptr = static_cast<char*>(static_cast<void *>(this));
+    //      Ptr += sizeof(DesignatedInitExpr);
+    //      return reinterpret_cast<Stmt**>(reinterpret_cast<void**>(Ptr));
+    //    }
+    //    Stmt::child_iterator DesignatedInitExpr::child_end() {
+    //      return child_iterator(&*child_begin() + NumSubExprs);
+    //    }
 
 };
 
@@ -621,6 +675,10 @@ public:
     explicit ImplicitValueInitExpr(QualType ty);
 
     explicit ImplicitValueInitExpr(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+      return T->getStmtClass() == ImplicitValueInitExprClass;
+    }
+    static bool classof(const std::shared_ptr<ImplicitValueInitExpr>) { return true; }
     virtual child_iterator child_begin(){return child_iterator();}
     virtual child_iterator child_end(){return child_iterator();}
 };
@@ -630,6 +688,12 @@ class ParenListExpr : public Expr
 public:
     ParenListExpr(SourceLocation lparenloc, std::vector<std::shared_ptr<Expr>> exprs,
                   unsigned numexprs, SourceLocation rparenloc);
+
+    static bool classof(const std::shared_ptr<Stmt> T) {
+      return T->getStmtClass() == ParenListExprClass;
+    }
+    static bool classof(const std::shared_ptr<ParenListExpr>) { return true; }
+
     virtual child_iterator child_begin(){return &Exprs[0];}
     virtual child_iterator child_end(){return &Exprs[0]+NumExprs;}
 private:

@@ -74,9 +74,12 @@ public:
     };
     struct EmptyShell {};
     Stmt(StmtClass SC);
+    StmtClass getStmtClass() const { return static_cast<StmtClass>(sClass); }
+    static bool classof(const std::shared_ptr<Stmt> ) { return true; }
     virtual ~Stmt(){}
-    typedef Iterator child_iterator;
 
+
+    typedef Iterator child_iterator;
     virtual child_iterator child_begin() = 0;
     virtual child_iterator child_end()   = 0;
 protected:
@@ -211,6 +214,10 @@ class WhileStmt : public Stmt
 public:
     WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body, SourceLocation WL);
     explicit WhileStmt(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() == WhileStmtClass;
+    }
+    static bool classof(const std::shared_ptr<WhileStmt>) { return true; }
     virtual child_iterator child_begin(){ return &SubExprs[0];}
     virtual child_iterator child_end(){return &SubExprs[0]+END_EXPR;}
 private:
@@ -228,6 +235,10 @@ public:
            SourceLocation WL,
            SourceLocation RP);
     explicit DoStmt(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() == DoStmtClass;
+    }
+    static bool classof(const std::shared_ptr<DoStmt>) { return true; }
     virtual child_iterator child_begin(){ return &SubExprs[0]; }
     virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
 private:
@@ -249,6 +260,10 @@ public:
             SourceLocation LP,
             SourceLocation RP);
     explicit ForStmt(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() == ForStmtClass;
+    }
+    static bool classof(const std::shared_ptr<ForStmt>) { return true; }
     virtual child_iterator child_begin(){ return &SubExprs[0]; }
     virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
 private:
@@ -263,6 +278,10 @@ class GotoStmt : public Stmt
 public:
     GotoStmt(std::shared_ptr<LabelStmt> label, SourceLocation GL, SourceLocation LL);
     explicit GotoStmt(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() == GotoStmtClass;
+    }
+    static bool classof(const std::shared_ptr<GotoStmt>) { return true; }
     virtual child_iterator child_begin(){ return child_iterator(); }
     virtual child_iterator child_end(){ return child_iterator(); }
 private:
@@ -277,6 +296,10 @@ public:
     IndirectGotoStmt(SourceLocation gotoLoc, SourceLocation starLoc, std::shared_ptr<Expr> target);
 
     explicit IndirectGotoStmt(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() == IndirectGotoStmtClass;
+    }
+    static bool classof(const std::shared_ptr<IndirectGotoStmt>) { return true; }
     virtual child_iterator child_begin(){ return &Target; }
     virtual child_iterator child_end(){ return &Target+1; }
 private:
@@ -291,6 +314,10 @@ public:
     ContinueStmt(SourceLocation CL);
 
     explicit ContinueStmt(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() == ContinueStmtClass;
+    }
+    static bool classof(const std::shared_ptr<ContinueStmt>) { return true; }
     virtual child_iterator child_begin(){ return child_iterator(); }
     virtual child_iterator child_end(){ return child_iterator(); }
 private:
@@ -302,6 +329,10 @@ class BreakStmt : public Stmt
 public:
     BreakStmt(SourceLocation BL);
     explicit BreakStmt(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() == BreakStmtClass;
+    }
+    static bool classof(const std::shared_ptr<BreakStmt>) { return true; }
     virtual child_iterator child_begin(){ return child_iterator(); }
     virtual child_iterator child_end(){ return child_iterator(); }
 private:
@@ -314,6 +345,10 @@ public:
     ReturnStmt(SourceLocation RL, std::shared_ptr<Expr> E = nullptr);
 
     explicit ReturnStmt(EmptyShell Empty);
+    static bool classof(const std::shared_ptr<Stmt> T) {
+        return T->getStmtClass() == ReturnStmtClass;
+    }
+    static bool classof(const std::shared_ptr<ReturnStmt>) { return true; }
     virtual child_iterator child_begin(){ return &RetExpr; }
     virtual child_iterator child_end() { return RetExpr ? &RetExpr+1 : &RetExpr; }
 private:
@@ -330,6 +365,8 @@ public:
             std::vector<std::shared_ptr<Expr> > exprs, std::shared_ptr<StringLiteral> asmstr, unsigned numclobbers,
             std::vector<std::shared_ptr<StringLiteral> > clobbers, SourceLocation rparenloc);
 
+    static bool classof(const std::shared_ptr<Stmt> T) {return T->getStmtClass() == AsmStmtClass;}
+    static bool classof(const std::shared_ptr<AsmStmt>) { return true; }
     explicit AsmStmt(EmptyShell Empty);
 private:
     SourceLocation AsmLoc, RParenLoc;

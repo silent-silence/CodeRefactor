@@ -19,6 +19,9 @@ using std::make_shared;
 
 int main()
 {
+    string str;
+    std::snprintf(str.data(), 3, "%s", "abcdefg");
+    cout<<str<<endl;
 //    shared_ptr<int> a=make_shared<int>(8);
 //    auto ptr=(&a)+1;
     return 0;
