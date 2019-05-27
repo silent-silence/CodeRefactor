@@ -19,7 +19,7 @@ std::shared_ptr<DeclContext> DeclContextHolder::getContext() const
 	return m_contextRoot;
 }
 
-void DeclContextHolder::createVariable(std::string name, SourceLocation &location, QualType type)
+void DeclContextHolder::createVariable(std::string name, SourceLocation &location, std::shared_ptr<QualType> type)
 {
 	DeclName varName{name};
 	auto decl = make_shared<VariableDecl>(m_contextRoot, location, type, varName);

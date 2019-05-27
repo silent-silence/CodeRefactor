@@ -39,15 +39,6 @@ STMT(SwitchCase      , Stmt)
 // GNU Stmt Extensions
 STMT(AsmStmt         , Stmt)
 
-// Obj-C statements
-STMT(ObjCAtTryStmt        , Stmt)
-STMT(ObjCAtCatchStmt      , Stmt)
-STMT(ObjCAtFinallyStmt    , Stmt)
-STMT(ObjCAtThrowStmt      , Stmt)
-STMT(ObjCAtSynchronizedStmt , Stmt)
-// Obj-C2 statements
-STMT(ObjCForCollectionStmt, Stmt)
-
 // C++ statements
 STMT(CXXCatchStmt, Stmt)
 STMT(CXXTryStmt  , Stmt)
@@ -122,18 +113,6 @@ EXPR(CXXExprWithTemporaries , Expr)
 EXPR(CXXTemporaryObjectExpr , CXXConstructExpr)
 EXPR(CXXUnresolvedConstructExpr, Expr)
 EXPR(CXXUnresolvedMemberExpr, Expr)
-
-// Obj-C Expressions.
-EXPR(ObjCStringLiteral    , Expr)
-EXPR(ObjCEncodeExpr       , Expr)
-EXPR(ObjCMessageExpr      , Expr)
-EXPR(ObjCSelectorExpr     , Expr)
-EXPR(ObjCProtocolExpr     , Expr)
-EXPR(ObjCIvarRefExpr      , Expr)
-EXPR(ObjCPropertyRefExpr  , Expr)
-EXPR(ObjCImplicitSetterGetterRefExpr , Expr)
-EXPR(ObjCSuperExpr        , Expr)
-EXPR(ObjCIsaExpr          , Expr)
 
 // Clang Extensions.
 EXPR(ShuffleVectorExpr    , Expr)

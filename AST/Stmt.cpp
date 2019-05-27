@@ -99,7 +99,7 @@ DoStmt::DoStmt(std::shared_ptr<Stmt> body,
 DoStmt::DoStmt(Stmt::EmptyShell Empty)
     : Stmt(DoStmtClass, Empty) { }
 
-ForStmt::ForStmt(std::shared_ptr<Stmt> Init, std::shared_ptr<Expr> Cond, std::shared_ptr<Expr> Inc, std::shared_ptr<Stmt> Body, SourceLocation FL, SourceLocation LP, SourceLocation RP)
+ForStmt::ForStmt(std::shared_ptr<Stmt> Init, std::shared_ptr<Stmt> Cond, std::shared_ptr<Expr> Inc, std::shared_ptr<Stmt> Body, SourceLocation FL, SourceLocation LP, SourceLocation RP)
     : Stmt(ForStmtClass)
 {
     SubExprs[INIT] = Init;

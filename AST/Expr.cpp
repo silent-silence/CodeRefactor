@@ -117,7 +117,11 @@ ImaginaryLiteral::ImaginaryLiteral(EmptyShell Empty)
     :Expr (ImaginaryLiteralClass,Empty)
 {}
 
-std::shared_ptr<StringLiteral> StringLiteral::Create(const char *StrData, unsigned ByteLength, bool Wide, QualType Ty, const SourceLocation Loc, unsigned NumStrs)
+std::shared_ptr<StringLiteral> StringLiteral::Create(const std::string StrData,
+                                                     unsigned ByteLength,
+                                                     bool Wide, QualType Ty,
+                                                     const SourceLocation Loc,
+                                                     unsigned NumStrs)
 {
 	// TODO: maybe move this into constructor
 	struct PtrMaker : public StringLiteral {
@@ -136,7 +140,7 @@ std::shared_ptr<StringLiteral> StringLiteral::Create(const char *StrData, unsign
 	return stringLiteral;
 }
 
-std::shared_ptr<StringLiteral> StringLiteral::Create(const char *StrData, unsigned ByteLength, bool Wide, QualType Ty, SourceLocation Loc)
+std::shared_ptr<StringLiteral> StringLiteral::Create(const std::string StrData, unsigned ByteLength, bool Wide, QualType Ty, SourceLocation Loc)
 {
     return Create(StrData, ByteLength, Wide, Ty, Loc, 1);
 }

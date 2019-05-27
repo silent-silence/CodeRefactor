@@ -44,13 +44,13 @@ private:
 /// @brief Represent a declaration of variable.
 class VariableDecl : public NamedDecl {
 public:
-	VariableDecl(std::weak_ptr<DeclContext> context, SourceLocation location, QualType type, DeclName name)
+	VariableDecl(std::weak_ptr<DeclContext> context, SourceLocation location, std::shared_ptr<QualType> type, DeclName name)
 		: NamedDecl(context, location, name), m_type{type}
 	{}
 	~VariableDecl() override = default;
 
-	QualType getType() const { return m_type; }
-	void setType(QualType newType) { m_type = newType; }
+	std::shared_ptr<QualType> getType() const { return m_type; }
+	void setType(std::shared_ptr<QualType> newType) { m_type = newType; }
 
 	std::weak_ptr<Expr> getDefaultArg() { return m_initializer; }
 	const std::weak_ptr<Expr> getDefaultArg() const { return m_initializer; }
@@ -59,7 +59,7 @@ public:
 	bool hasDefaultArg() const { return m_initializer.expired(); }
 
 private:
-	QualType m_type;
+	std::shared_ptr<QualType> m_type;
 	std::weak_ptr<Expr> m_initializer;
 };
 
@@ -112,9 +112,9 @@ public:
 	std::weak_ptr<Parameter> getParamDecl(unsigned i) { return m_parameters[i]; }
 	void setParams(std::vector<std::weak_ptr<Parameter>> parameter) { m_parameters = parameter; }
 
-	QualType getResultType() const { return m_returnType; };
+	std::shared_ptr<QualType> getResultType() const { return m_returnType; };
 private:
-	QualType m_returnType;
+	std::shared_ptr<QualType> m_returnType;
 	std::vector<std::weak_ptr<Parameter>> m_parameters;
 	std::weak_ptr<CompoundStmt> m_body;
 	SourceLocation endRangeLoc;
@@ -155,7 +155,7 @@ public:
 private:
 	TagKind m_kind;
 	bool m_isDefinition;
-	QualType m_type;
+	std::shared_ptr<QualType> m_type;
 	SourceLocation TagKeyWordLoc;
 	SourceLocation RBraceLoc;
 };
@@ -180,10 +180,10 @@ class EnumDecl : public TagDecl {
 public:
 	~EnumDecl() override = default;
 
-	QualType getIntegerType() const { return m_integerType; }
-	void setIntegerType(QualType type) { m_integerType = type; }
+	std::shared_ptr<QualType> getIntegerType() const { return m_integerType; }
+	void setIntegerType(std::shared_ptr<QualType> type) { m_integerType = type; }
 
 private:
-	QualType m_integerType;
+	std::shared_ptr<QualType> m_integerType;
 };
 #endif

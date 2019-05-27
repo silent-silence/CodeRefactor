@@ -341,7 +341,7 @@ void YaccAdapter::makeSizeofExpr(yy::location &l, yy::location &r, bool isSizeof
 		sizeofExpr = m_ASTContext.createStmt(
 				Stmt::SizeOfAlignOfExprClass,
 				lp, rp,
-				type->getCanonicalType()
+				type->getCanonicalType().lock()
 		);
 	}
 	else
@@ -418,7 +418,7 @@ void YaccAdapter::makeCStyleCastExpr(yy::location &l, yy::location &r)
 					Stmt::CStyleCastExprClass,
 					CastExpr::CastKind::CK_Unknown,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
-					exprType->getCanonicalType(),
+					exprType->getCanonicalType().lock(),
 					lp, rp
 			)
 	);
@@ -509,8 +509,8 @@ void YaccAdapter::makeConditionalOperator()
 	m_typeStack.push(
 			m_ASTContext.createType(
 					Type::FunctionNoProto,
-					retType->getCanonicalType(),
-					retType->getCanonicalType(),
+					retType->getCanonicalType().lock(),
+					retType->getCanonicalType().lock(),
 					false
 			)
 	);
@@ -589,15 +589,15 @@ void YaccAdapter::makeConstantArrayType()
 	auto elementType = pop_type();
 	auto arrayType = m_ASTContext.createType(
 			Type::Pointer,
-			elementType->getCanonicalType(),
-			elementType->getCanonicalType()
+			elementType->getCanonicalType().lock(),
+			elementType->getCanonicalType().lock()
 	);
 	// TODO Calculate array size
 	m_typeStack.push(
 			m_ASTContext.createType(
 					Type::ConstantArray,
-					elementType->getCanonicalType(),
-					arrayType->getCanonicalType(),
+					elementType->getCanonicalType().lock(),
+					arrayType->getCanonicalType().lock(),
 					dynamic_pointer_cast<Expr>(pop_stmt()),
 					ArrayType::Normal,
 					0
@@ -610,14 +610,14 @@ void YaccAdapter::makeIncompleteArrayType()
 	auto elementType = pop_type();
 	auto arrayType = m_ASTContext.createType(
 			Type::Pointer,
-			elementType->getCanonicalType(),
-			elementType->getCanonicalType()
+			elementType->getCanonicalType().lock(),
+			elementType->getCanonicalType().lock()
 	);
 	m_typeStack.push(
 			m_ASTContext.createType(
 					Type::IncompleteArray,
-					elementType->getCanonicalType(),
-					arrayType->getCanonicalType(),
+					elementType->getCanonicalType().lock(),
+					arrayType->getCanonicalType().lock(),
 					ArrayType::Normal,
 					static_cast<unsigned>(0)
 			)
@@ -635,7 +635,7 @@ void YaccAdapter::makeVariable(std::shared_ptr<Type> type)
 	{
 		auto varName = m_nameStack.top();
 		m_nameStack.pop();
-		m_declContextHolder.createVariable(varName.first, varName.second, type->getCanonicalType());
+		m_declContextHolder.createVariable(varName.first, varName.second, type->getCanonicalType().lock());
 	}
 }
 
