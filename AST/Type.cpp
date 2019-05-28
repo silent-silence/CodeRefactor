@@ -50,14 +50,14 @@ bool QualType::isRestrictQualified() const
     return (getCVRQualifiers() & Restrict) ? true : false;
 }
 
-std::shared_ptr<Type> ExtQualType::creator(shared_ptr<Type> Base,
+std::shared_ptr<QualType> ExtQualType::creator(shared_ptr<Type> Base,
                                            std::shared_ptr<QualType> CanonicalPtr,
                                            unsigned AddrSpace,
                                            QualType::GCAttrTypes gcAttr)
 {
     auto ptr=make_shared<ExtQualType>(Base, AddrSpace, gcAttr);
     ptr->setCanonicalType(CanonicalPtr);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 ExtQualType::ExtQualType(shared_ptr<Type> Base,
@@ -68,34 +68,34 @@ ExtQualType::ExtQualType(shared_ptr<Type> Base,
 {
 }
 
-shared_ptr<Type> BuiltinType::creator(BuiltinType::Kind k)
+std::shared_ptr<QualType> BuiltinType::creator(BuiltinType::Kind k)
 {
     auto ptr=make_shared<BuiltinType>(k);
     ptr->setCanonicalType(std::make_shared<QualType>());
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 BuiltinType::BuiltinType(Kind k)
     :Type(Builtin, (k==Dependent)), TypeKind(k)
 {}
 
-shared_ptr<Type> FixedWidthIntType::creator(unsigned W, bool S)
+shared_ptr<QualType> FixedWidthIntType::creator(unsigned W, bool S)
 {
     auto ptr=make_shared<FixedWidthIntType>(W, S);
     ptr->setCanonicalType(std::make_shared<QualType>());
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 FixedWidthIntType::FixedWidthIntType(unsigned W,bool S)
     :Type(FixedWidthInt, false), Width(W), Signed(S)
 {}
 
-shared_ptr<Type> ComplexType::creator(std::shared_ptr<QualType> Element,
+shared_ptr<QualType> ComplexType::creator(std::shared_ptr<QualType> Element,
                                       std::shared_ptr<QualType> CanonicalPtr)
 {
     auto ptr=make_shared<ComplexType>(Element);
     ptr->setCanonicalType(CanonicalPtr);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 ComplexType::ComplexType(std::shared_ptr<QualType> Element)
@@ -103,11 +103,11 @@ ComplexType::ComplexType(std::shared_ptr<QualType> Element)
       ElementType(Element)
 {}
 
-shared_ptr<Type> PointerType::creator(std::shared_ptr<QualType> Pointee, std::shared_ptr<QualType> CanonicalPtr)
+shared_ptr<QualType> PointerType::creator(std::shared_ptr<QualType> Pointee, std::shared_ptr<QualType> CanonicalPtr)
 {
     auto ptr=make_shared<PointerType>(Pointee);
     ptr->setCanonicalType(CanonicalPtr);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 PointerType::PointerType(std::shared_ptr<QualType> Pointee)
@@ -115,12 +115,12 @@ PointerType::PointerType(std::shared_ptr<QualType> Pointee)
       PointeeType(Pointee)
 {}
 
-shared_ptr<Type> BlockPointerType::creator(std::shared_ptr<QualType> Pointee,
+shared_ptr<QualType> BlockPointerType::creator(std::shared_ptr<QualType> Pointee,
                                            std::shared_ptr<QualType> CanonicalCls)
 {
     auto ptr=make_shared<BlockPointerType>(Pointee);
     ptr->setCanonicalType(CanonicalCls);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 BlockPointerType::BlockPointerType(std::shared_ptr<QualType> Pointee)
@@ -133,35 +133,35 @@ ReferenceType::ReferenceType(TypeClass tc, std::shared_ptr<QualType> Referencee)
       PointeeType(Referencee)
 {}
 
-shared_ptr<Type> LValueReferenceType::creator(std::shared_ptr<QualType> Referencee, std::shared_ptr<QualType> CanonicalRef)
+shared_ptr<QualType> LValueReferenceType::creator(std::shared_ptr<QualType> Referencee, std::shared_ptr<QualType> CanonicalRef)
 {
     auto ptr=make_shared<LValueReferenceType>(Referencee);
     ptr->setCanonicalType(CanonicalRef);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 LValueReferenceType::LValueReferenceType(std::shared_ptr<QualType> Referencee)
     :ReferenceType(LValueReference, Referencee)
 {}
 
-shared_ptr<Type> RValueReferenceType::creator(std::shared_ptr<QualType> Referencee, std::shared_ptr<QualType> CanonicalRef)
+shared_ptr<QualType> RValueReferenceType::creator(std::shared_ptr<QualType> Referencee, std::shared_ptr<QualType> CanonicalRef)
 {
     auto ptr=make_shared<RValueReferenceType>(Referencee);
     ptr->setCanonicalType(CanonicalRef);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 RValueReferenceType::RValueReferenceType(std::shared_ptr<QualType> Referencee)
     :ReferenceType(RValueReference, Referencee)
 {}
 
-shared_ptr<Type> MemberPointerType::creator(std::shared_ptr<QualType> Pointee,
+shared_ptr<QualType> MemberPointerType::creator(std::shared_ptr<QualType> Pointee,
                                             const shared_ptr<Type> Cls,
                                             std::shared_ptr<QualType> CanonicalPtr)
 {
     auto ptr=make_shared<MemberPointerType>(Pointee, Cls);
     ptr->setCanonicalType(CanonicalPtr);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 MemberPointerType::MemberPointerType(std::shared_ptr<QualType> Pointee,
@@ -181,7 +181,7 @@ ConstantArrayType::ConstantArrayType(std::shared_ptr<QualType> et, int size,
     :ArrayType(ConstantArray, et, sm, tq),Size(size)
 {}
 
-shared_ptr<Type> ConstantArrayType::creator(std::shared_ptr<QualType> et,
+shared_ptr<QualType> ConstantArrayType::creator(std::shared_ptr<QualType> et,
                                             std::shared_ptr<QualType> can,
                                             int size,
                                             ArrayType::ArraySizeModifier sm,
@@ -189,7 +189,7 @@ shared_ptr<Type> ConstantArrayType::creator(std::shared_ptr<QualType> et,
 {
     auto ptr=make_shared<ConstantArrayType>(et, size, sm, tq);
     ptr->setCanonicalType(can);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 ConstantArrayType::ConstantArrayType(TypeClass tc, std::shared_ptr<QualType> et,
@@ -197,7 +197,7 @@ ConstantArrayType::ConstantArrayType(TypeClass tc, std::shared_ptr<QualType> et,
     :ArrayType(tc, et, sm, tq), Size(size)
 {}
 
-shared_ptr<Type> ConstantArrayWithExprType::creator(std::shared_ptr<QualType> et,
+shared_ptr<QualType> ConstantArrayWithExprType::creator(std::shared_ptr<QualType> et,
                                                     std::shared_ptr<QualType> can,
                                                     int size,
                                                     shared_ptr<Expr> e,
@@ -206,7 +206,7 @@ shared_ptr<Type> ConstantArrayWithExprType::creator(std::shared_ptr<QualType> et
 {
     auto ptr=make_shared<ConstantArrayWithExprType>(et, size, e, sm, tq);
     ptr->setCanonicalType(can);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 ConstantArrayWithExprType::ConstantArrayWithExprType(std::shared_ptr<QualType> et,
@@ -218,7 +218,7 @@ ConstantArrayWithExprType::ConstantArrayWithExprType(std::shared_ptr<QualType> e
       SizeExpr(e)
 {}
 
-shared_ptr<Type> ConstantArrayWithoutExprType::creator(std::shared_ptr<QualType> et,
+shared_ptr<QualType> ConstantArrayWithoutExprType::creator(std::shared_ptr<QualType> et,
                                                        std::shared_ptr<QualType> can,
                                                        int size,
                                                        ArrayType::ArraySizeModifier sm,
@@ -226,7 +226,7 @@ shared_ptr<Type> ConstantArrayWithoutExprType::creator(std::shared_ptr<QualType>
 {
     auto ptr=make_shared<ConstantArrayWithoutExprType>(et, size, sm, tq);
     ptr->setCanonicalType(can);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 ConstantArrayWithoutExprType::ConstantArrayWithoutExprType(std::shared_ptr<QualType> et,
@@ -236,14 +236,14 @@ ConstantArrayWithoutExprType::ConstantArrayWithoutExprType(std::shared_ptr<QualT
     :ConstantArrayType(ConstantArrayWithoutExpr, et, size, sm, tq)
 {}
 
-shared_ptr<Type> IncompleteArrayType::creator(std::shared_ptr<QualType> et,
+shared_ptr<QualType> IncompleteArrayType::creator(std::shared_ptr<QualType> et,
                                               std::shared_ptr<QualType> can,
                                               ArrayType::ArraySizeModifier sm,
                                               unsigned tq)
 {
     auto ptr=make_shared<IncompleteArrayType>(et, sm, tq);
     ptr->setCanonicalType(can);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 IncompleteArrayType::IncompleteArrayType(std::shared_ptr<QualType> et,
@@ -251,7 +251,7 @@ IncompleteArrayType::IncompleteArrayType(std::shared_ptr<QualType> et,
     :ArrayType(IncompleteArray, et, sm, tq)
 {}
 
-shared_ptr<Type> VariableArrayType::creator(std::shared_ptr<QualType> et,
+shared_ptr<QualType> VariableArrayType::creator(std::shared_ptr<QualType> et,
                                             std::shared_ptr<QualType> can,
                                             shared_ptr<Expr> e,
                                             ArrayType::ArraySizeModifier sm,
@@ -259,7 +259,7 @@ shared_ptr<Type> VariableArrayType::creator(std::shared_ptr<QualType> et,
 {
     auto ptr=make_shared<VariableArrayType>(et, e, sm, tq);
     ptr->setCanonicalType(can);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 VariableArrayType::VariableArrayType(std::shared_ptr<QualType> et,
@@ -268,7 +268,7 @@ VariableArrayType::VariableArrayType(std::shared_ptr<QualType> et,
     :ArrayType(VariableArray, et, sm, tq),SizeExpr(e)
 {}
 
-shared_ptr<Type> DependentSizedArrayType::creator(std::shared_ptr<QualType> et,
+shared_ptr<QualType> DependentSizedArrayType::creator(std::shared_ptr<QualType> et,
                                                   std::shared_ptr<QualType> can,
                                                   shared_ptr<Expr> e,
                                                   ArrayType::ArraySizeModifier sm,
@@ -276,7 +276,7 @@ shared_ptr<Type> DependentSizedArrayType::creator(std::shared_ptr<QualType> et,
 {
     auto ptr=make_shared<DependentSizedArrayType>(et, e, sm, tq);
     ptr->setCanonicalType(can);
-    return move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 DependentSizedArrayType::DependentSizedArrayType(std::shared_ptr<QualType> et,
@@ -285,14 +285,14 @@ DependentSizedArrayType::DependentSizedArrayType(std::shared_ptr<QualType> et,
     :ArrayType(DependentSizedArray, et, sm,tq), SizeExpr(e)
 {}
 
-std::shared_ptr<Type> DependentSizedExtVectorType::creator(std::shared_ptr<QualType> ElementType,
+std::shared_ptr<QualType> DependentSizedExtVectorType::creator(std::shared_ptr<QualType> ElementType,
                                                            std::shared_ptr<QualType> can,
                                                            std::shared_ptr<Expr> SizeExpr,
                                                            SourceLocation loc)
 {
     auto ptr=std::make_shared<DependentSizedExtVectorType>(ElementType, SizeExpr, loc);
     ptr->setCanonicalType(can);
-    return std::move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 DependentSizedExtVectorType::DependentSizedExtVectorType(std::shared_ptr<QualType> ElementType,
@@ -304,11 +304,11 @@ DependentSizedExtVectorType::DependentSizedExtVectorType(std::shared_ptr<QualTyp
       loc(loc)
 {}
 
-std::shared_ptr<Type> VectorType::creator(std::shared_ptr<QualType> vecType, unsigned nElements, std::shared_ptr<QualType> canonType)
+std::shared_ptr<QualType> VectorType::creator(std::shared_ptr<QualType> vecType, unsigned nElements, std::shared_ptr<QualType> canonType)
 {
     auto ptr=std::make_shared<VectorType>(vecType, nElements);
     ptr->setCanonicalType(canonType);
-    return std::move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 VectorType::VectorType(std::shared_ptr<QualType> vecType, unsigned nElements)
@@ -321,11 +321,11 @@ VectorType::VectorType(Type::TypeClass tc, std::shared_ptr<QualType> vecType, un
     : Type(tc, (*vecType)->isDependentType()), ElementType(vecType), NumElements(nElements)
 {}
 
-std::shared_ptr<Type> ExtVectorType::creator(std::shared_ptr<QualType> vecType, unsigned nElements, std::shared_ptr<QualType> canonType)
+std::shared_ptr<QualType> ExtVectorType::creator(std::shared_ptr<QualType> vecType, unsigned nElements, std::shared_ptr<QualType> canonType)
 {
     auto ptr=std::make_shared<ExtVectorType>(vecType, nElements);
     ptr->setCanonicalType(canonType);
-    return std::move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 ExtVectorType::ExtVectorType(std::shared_ptr<QualType> vecType, unsigned nElements)
@@ -341,19 +341,19 @@ FunctionType::FunctionType(Type::TypeClass tc,
       SubClassData(SubclassInfo), TypeQuals(typeQuals), NoReturn(noReturn),
       ResultType(res) {}
 
-std::shared_ptr<Type> FunctionNoProtoType::creator(std::shared_ptr<QualType> Result,
+std::shared_ptr<QualType> FunctionNoProtoType::creator(std::shared_ptr<QualType> Result,
                                                    std::shared_ptr<QualType> Canonical,
                                                    bool NoReturn)
 {
     auto ptr=std::make_shared<FunctionNoProtoType>(Result, NoReturn);
     ptr->setCanonicalType(Canonical);
-    return std::move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 FunctionNoProtoType::FunctionNoProtoType(std::shared_ptr<QualType> Result, bool NoReturn)
     : FunctionType(FunctionNoProto, Result, false, 0, false, NoReturn) {}
 
-std::shared_ptr<Type> FunctionProtoType::creator(std::shared_ptr<QualType> Result,
+std::shared_ptr<QualType> FunctionProtoType::creator(std::shared_ptr<QualType> Result,
                                                  const std::vector<QualType> ArgArray,
                                                  unsigned numArgs, bool isVariadic,
                                                  unsigned typeQuals, bool hasExs,
@@ -373,7 +373,7 @@ std::shared_ptr<Type> FunctionProtoType::creator(std::shared_ptr<QualType> Resul
                                                  numExs,
                                                  NoReturn);
     ptr->setCanonicalType(Canonical);
-    return std::move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 FunctionProtoType::FunctionProtoType(std::shared_ptr<QualType> Result,
@@ -407,11 +407,11 @@ bool FunctionProtoType::hasAnyDependentType(const std::vector<QualType> ArgArray
     return false;
 }
 
-std::shared_ptr<Type> TypeOfExprType::creator(std::shared_ptr<Expr> E, std::shared_ptr<QualType> can)
+std::shared_ptr<QualType> TypeOfExprType::creator(std::shared_ptr<Expr> E, std::shared_ptr<QualType> can)
 {
     auto ptr=std::make_shared<TypeOfExprType>(E);
     ptr->setCanonicalType(can);
-    return std::move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 TypeOfExprType::TypeOfExprType(std::shared_ptr<Expr> E)
@@ -422,22 +422,22 @@ TypeOfExprType::TypeOfExprType(std::shared_ptr<Expr> E)
 DependentTypeOfExprType::DependentTypeOfExprType(std::shared_ptr<Expr> E)
     : TypeOfExprType(E){ }
 
-std::shared_ptr<Type> TypeOfType::creator(std::shared_ptr<QualType> T, QualType can)
+std::shared_ptr<QualType> TypeOfType::creator(std::shared_ptr<QualType> T, QualType can)
 {
     auto ptr=std::make_shared<TypeOfType>(T);
     //ptr->setCanonicalType(can.isNull()?QualType(ptr, 0):can);
-    return std::move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 TypeOfType::TypeOfType(std::shared_ptr<QualType> T)
     : Type(TypeOf, (*T)->isDependentType()), TOType(T) {
 }
 
-std::shared_ptr<Type> DecltypeType::creator(std::shared_ptr<Expr> E, std::shared_ptr<QualType> underlyingType, std::shared_ptr<QualType> can)
+std::shared_ptr<QualType> DecltypeType::creator(std::shared_ptr<Expr> E, std::shared_ptr<QualType> underlyingType, std::shared_ptr<QualType> can)
 {
     auto ptr=std::make_shared<DecltypeType>(E, underlyingType);
     ptr->setCanonicalType(can);
-    return std::move(ptr);
+    return ptr->getCanonicalType().lock();
 }
 
 DecltypeType::DecltypeType(std::shared_ptr<Expr> E, std::shared_ptr<QualType> underlyingType)
