@@ -161,8 +161,6 @@ public:
 			case Type::TemplateSpecialization:break;
 			case Type::QualifiedName:break;
 			case Type::Typename:break;
-			case Type::ObjCInterface:break;
-			case Type::ObjCObjectPointer:break;
 		}
 
 		// silent no return statement warnings

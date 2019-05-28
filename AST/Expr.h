@@ -14,7 +14,7 @@ class IntegerLiteral;
 class CharacterLiteral;
 class FloatingLiteral;
 class ImaginaryLiteral;
-class StringLiteral;
+class StringLiteral;//
 class ParenExpr;
 class UnaryOperator;
 class SizeOfAlignOfExpr;
@@ -24,7 +24,7 @@ class MemberExpr;
 class CompoundLiteralExpr;
 class CastExpr;
 class ImplicitCastExpr;
-class ExplicitCastExpr;//
+class ExplicitCastExpr;
 class CStyleCastExpr;
 
 class BinaryOperator;
@@ -33,7 +33,7 @@ class ConditionalOperator;
 class AddrLabelExpr;
 class StmtExpr;
 class TypesCompatibleExpr;
-class ShuffleVectorExpr;//
+class ShuffleVectorExpr;
 class ChooseExpr;
 class GNUNullExpr;
 class VAArgExpr;
@@ -45,13 +45,15 @@ class ExtVectorElementExpr;
 class BlockExpr;
 class BlockDeclRefExpr;
 
-//Expr  - 这代表一个表达式。
-//Expr是的Stmt子类，这允许表达式在Stmt的任何地方透明地使用。
+/// Expr - This represents one expression.  Note that Expr's are subclasses of
+/// Stmt.  This allows an expression to be transparently used any place a Stmt
+/// is required.
+///
 class Expr : public Stmt
 {
 public:
-    QualType getType() const;
-    void setType(const QualType &value);
+    std::weak_ptr<QualType> getType() const;
+    void setType(const std::shared_ptr<QualType> &value);/**/
 
     bool isTypeDependent() const;
     void setTypeDependent(bool value);
@@ -59,46 +61,61 @@ public:
     bool isValueDependent() const;
     void setValueDependent(bool value);
 
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() >= firstExprConstant &&
-                T->getStmtClass() <= lastExprConstant;
-    }
-    static bool classof(const std::shared_ptr<Expr>) { return true; }
-protected:
-    Expr(StmtClass SC, QualType T);
-    Expr(StmtClass SC, QualType T, bool TD, bool VD);
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<Expr>);
 
+protected:
+    Expr(StmtClass SC, std::shared_ptr<QualType> T);
+    Expr(StmtClass SC, std::shared_ptr<QualType> T, bool TD, bool VD);
+
+    /// \brief Construct an empty expression.
     explicit Expr(StmtClass SC, EmptyShell);
 
-    bool TypeDependent : 1;//TypeDependent  - 此表达式是否依赖于类型
-    bool ValueDependent : 1;//ValueDependent  - 此表达式是否与值有关
+    /// TypeDependent - Whether this expression is type-dependent
+    bool TypeDependent : 1;
+    /// ValueDependent - Whether this expression is value-dependent
+    bool ValueDependent : 1;
 private:
-    QualType TR;
+    std::shared_ptr<QualType> TR;
 };
 
+//===----------------------------------------------------------------------===//
+// Primary Expressions.
+//===----------------------------------------------------------------------===//
 
+/// DeclRefExpr - [C99 6.5.1p2] - A reference to a declared variable, function,
+/// enum, etc.
 class DeclRefExpr : public Expr
 {
 public:
-    DeclRefExpr(std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l);
-    DeclRefExpr(std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l, bool TD, bool VD);
+    DeclRefExpr(std::shared_ptr<NamedDecl> d, std::shared_ptr<QualType> t, SourceLocation l);
+    DeclRefExpr(std::shared_ptr<NamedDecl> d, std::shared_ptr<QualType> t,
+                SourceLocation l, bool TD, bool VD);
     explicit DeclRefExpr(EmptyShell Empty);
 protected:
-    DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l);
-    DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d, QualType t, SourceLocation l, bool TD, bool VD);
-    virtual child_iterator child_begin() { return child_iterator(); }
-    virtual child_iterator child_end(){ return child_iterator(); }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == DeclRefExprClass ||
-             T->getStmtClass() == CXXConditionDeclExprClass ||
-             T->getStmtClass() == QualifiedDeclRefExprClass;
-    }
-     static bool classof(const DeclRefExpr *) { return true; }
+    DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d,
+                std::shared_ptr<QualType> t, SourceLocation l);
+    DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d,
+                std::shared_ptr<QualType> t, SourceLocation l,
+                bool TD, bool VD);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<DeclRefExpr>);
+
+    std::weak_ptr<NamedDecl>getDecl();
+    void setDecl(std::shared_ptr<NamedDecl>NewD);
+
+    SourceLocation getLocation() const;
+    void setLocation(SourceLocation L);
 private:
     std::shared_ptr<NamedDecl> D;
     SourceLocation Loc;
 };
 
+/// PredefinedExpr - [C99 6.4.2.2] - A predefined identifier such as __func__.
 class PredefinedExpr : public Expr
 {
 public:
@@ -107,14 +124,20 @@ public:
         Function,
         PrettyFunction
     };
-    PredefinedExpr(SourceLocation l, QualType type, IdentType IT);
+    PredefinedExpr(SourceLocation l, std::shared_ptr<QualType> type, IdentType IT);
     explicit PredefinedExpr(EmptyShell Empty);
-    virtual child_iterator child_begin(){ return child_iterator(); }
-    virtual child_iterator child_end() { return child_iterator(); }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == PredefinedExprClass;
-    }
-    static bool classof(const PredefinedExpr *) { return true; }
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<PredefinedExpr>);
+
+    IdentType getIdentType() const;
+    void setIdentType(IdentType IT);
+
+    SourceLocation getLocation() const;
+    void setLocation(SourceLocation L);
 
 private:
     IdentType Type;
@@ -124,14 +147,19 @@ private:
 class IntegerLiteral : public Expr
 {
 public:
-    IntegerLiteral(const int &V, QualType type, SourceLocation l);
+    IntegerLiteral(const int &V, std::shared_ptr<QualType> type, SourceLocation l);
     explicit IntegerLiteral(EmptyShell Empty);
-    virtual child_iterator child_begin(){ return child_iterator(); }
-    virtual child_iterator child_end() { return child_iterator(); }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == IntegerLiteralClass;
-    }
-    static bool classof(const IntegerLiteral *) { return true; }
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<IntegerLiteral>);
+
+    const int &getValue() const;
+    SourceLocation getLocation() const;
+    void setValue(const int Val);
+    void setLocation(SourceLocation Location);
 private:
     int Value;
     SourceLocation Loc;
@@ -140,14 +168,23 @@ private:
 class CharacterLiteral : public Expr
 {
 public:
-    CharacterLiteral(unsigned value, bool iswide, QualType type, SourceLocation l);
+    CharacterLiteral(unsigned value, bool iswide,
+                     std::shared_ptr<QualType> type, SourceLocation l);
     CharacterLiteral(EmptyShell Empty);
-    virtual child_iterator child_begin(){ return child_iterator();}
-    virtual child_iterator child_end(){ return child_iterator();}
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == CharacterLiteralClass;
-    }
-    static bool classof(const CharacterLiteral *) { return true; }
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<CharacterLiteral>);
+
+    SourceLocation getLoc() const;
+    bool isWide() const;
+    unsigned getValue() const;
+
+    void setLocation(SourceLocation Location);
+    void setWide(bool W);
+    void setValue(unsigned Val);
 private:
     unsigned Value;
     bool IsWide;
@@ -157,53 +194,82 @@ private:
 class FloatingLiteral : public Expr
 {
 public:
-    FloatingLiteral(const float &V, bool isexact, QualType Type, SourceLocation L);
+    FloatingLiteral(const float &V, bool isexact,
+                    std::shared_ptr<QualType> Type, SourceLocation L);
     explicit FloatingLiteral(EmptyShell Empty);
-    virtual child_iterator child_begin(){ return child_iterator(); }
-    virtual child_iterator child_end(){ return child_iterator(); }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == FloatingLiteralClass;
-    }
-    static bool classof(const FloatingLiteral *) { return true; }
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<FloatingLiteral>);
+
+    const float &getValue() const;
+    void setValue(const float Val);
+
+    bool isExact() const;
+    void setExact(bool E);
+
+    SourceLocation getLocation() const;
+    void setLocation(SourceLocation L);
 private:
     float Value;
     bool IsExact : 1;
     SourceLocation Loc;
 };
 
+/// ImaginaryLiteral - We support imaginary integer and floating point literals,
+/// like "1.0i".  We represent these as a wrapper around FloatingLiteral and
+/// IntegerLiteral classes.  Instances of this class always have a Complex type
+/// whose element type matches the subexpression.
+///
 class ImaginaryLiteral : public Expr
 {
 public:
-    ImaginaryLiteral(std::shared_ptr<Expr> val, QualType Ty);
+    ImaginaryLiteral(std::shared_ptr<Expr> val, std::shared_ptr<QualType> Ty);
     explicit ImaginaryLiteral(EmptyShell Empty);
-    virtual child_iterator child_begin(){ return &Val; }
-    virtual child_iterator child_end(){ return &Val+1; }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == ImaginaryLiteralClass;
-    }
-    static bool classof(const ImaginaryLiteral *) { return true; }
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<ImaginaryLiteral>);
+
+    std::weak_ptr<Expr>getSubExpr();
+    void setSubExpr(std::shared_ptr<Expr>E);
 private:
     std::shared_ptr<Stmt> Val;
 };
 
+/// StringLiteral - This represents a string literal expression, e.g.
 class StringLiteral : public Expr
 {
 public:
-    static std::shared_ptr<StringLiteral> Create(const std::string StrData,
-                                                 unsigned ByteLength, bool Wide, QualType Ty,
-                                                 const SourceLocation Loc, unsigned NumStrs);
-    static std::shared_ptr<StringLiteral> Create(const std::string StrData,
-                                                 unsigned ByteLength,
-                                                 bool Wide, QualType Ty, SourceLocation Loc);
-    virtual child_iterator child_begin(){ return child_iterator(); }
-    virtual child_iterator child_end(){ return child_iterator(); }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == StringLiteralClass;
-    }
-    static bool classof(const StringLiteral *) { return true; }
+    static std::shared_ptr<StringLiteral> Create(
+            const std::string StrData, unsigned ByteLength, bool Wide,
+            std::shared_ptr<QualType> Ty, const SourceLocation Loc, unsigned NumStrs);
+    static std::shared_ptr<StringLiteral> Create(
+            const std::string StrData, unsigned ByteLength, bool Wide,
+            std::shared_ptr<QualType> Ty, SourceLocation Loc);
 
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<StringLiteral>);
+
+    const std::string getStrData() const { return StrData; }
+    unsigned getByteLength() const { return ByteLength; }
+
+    void setStrData(const char *Str, unsigned Len);
+
+    bool isWide() const { return IsWide; }
+    void setWide(bool W) { IsWide = W; }
+    unsigned getNumConcatenated() const { return NumConcatenated; }
+
+    SourceLocation getTokloc() const { return TokLocs; }
 private:
-    StringLiteral(QualType Ty);
+    StringLiteral(std::shared_ptr<QualType> Ty);
 
     std::string StrData;
     unsigned ByteLength;
@@ -217,12 +283,19 @@ class ParenExpr : public Expr
 public:
     ParenExpr(SourceLocation l, SourceLocation r, std::shared_ptr<Expr> val);
     explicit ParenExpr(EmptyShell Empty);
-    virtual child_iterator child_begin(){ return &Val; }
-    virtual child_iterator child_end(){ return &Val+1; }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == ParenExprClass;
-    }
-    static bool classof(const ParenExpr *) { return true; }
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<ParenExpr>);
+
+    std::weak_ptr<Expr>getSubExpr();
+    void setSubExpr(std::shared_ptr<Expr>E);
+    SourceLocation getLParen() const;
+    void setLParen(SourceLocation Loc);
+
+    SourceLocation getRParen() const;
+    void setRParen(SourceLocation Loc);
 private:
     std::shared_ptr<Stmt> Val;
     SourceLocation L;
@@ -242,51 +315,71 @@ public:
         Extension,        // __extension__ marker.
         OffsetOf          // __builtin_offsetof
     };
-    UnaryOperator(std::shared_ptr<Expr> input, Opcode opc, QualType type, SourceLocation l);
+
+    UnaryOperator(std::shared_ptr<Expr> input, Opcode opc,
+                  std::shared_ptr<QualType> type, SourceLocation l);
     explicit UnaryOperator(EmptyShell Empty);
-    virtual child_iterator child_begin(){ return &Val; }
-    virtual child_iterator child_end(){ return &Val+1; }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == UnaryOperatorClass;
-    }
-    static bool classof(const UnaryOperator *) { return true; }
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<UnaryOperator>);
+
+    Opcode getOpcode() const;
+    void setOpcode(Opcode O);
+
+    std::weak_ptr<Expr>getSubExpr() const;
+    void setSubExpr(std::shared_ptr<Expr>E);
+
+    SourceLocation getOperatorLoc() const;
+    void setOperatorLoc(SourceLocation L);
+
+    virtual SourceLocation getExprLoc() const;
 private:
     std::shared_ptr<Stmt> Val;
     Opcode Opc;
     SourceLocation Loc;
 };
 
+/// SizeOfAlignOfExpr - [C99 6.5.3.4] - This is for sizeof/alignof, both of
+/// types and expressions.
 class SizeOfAlignOfExpr : public Expr
 {
 public:
-    SizeOfAlignOfExpr(bool issizeof, QualType T,
-                      QualType resultType, SourceLocation op,
+    SizeOfAlignOfExpr(bool issizeof, std::shared_ptr<QualType> T,
+                      std::shared_ptr<QualType> resultType, SourceLocation op,
                       SourceLocation rp);
 
     SizeOfAlignOfExpr(bool issizeof, std::shared_ptr<Expr> E,
-                      QualType resultType, SourceLocation op,
+                      std::shared_ptr<QualType> resultType, SourceLocation op,
                       SourceLocation rp);
 
-    explicit SizeOfAlignOfExpr(EmptyShell Empty)
-        : Expr(SizeOfAlignOfExprClass, Empty) { }
-    virtual child_iterator child_begin(){
-        //        if (isArgumentType()) {
-        //          if (VariableArrayType* T = dyn_cast<VariableArrayType>(
-        //                                         getArgumentType().getTypePtr()))
-        //            return child_iterator(T);
-        //          return child_iterator();
-        //        }
-        //        return child_iterator(&Argument.Ex);
-    }
-    virtual child_iterator child_end(){
-        //        if (isArgumentType())
-        //          return child_iterator();
-        //        return child_iterator(&Argument.Ex + 1);
-    }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == SizeOfAlignOfExprClass;
-    }
-    static bool classof(const SizeOfAlignOfExpr *) { return true; }
+    explicit SizeOfAlignOfExpr(EmptyShell Empty);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<SizeOfAlignOfExpr>);
+
+    bool isSizeOf() const;
+    void setSizeof(bool S);
+    bool isArgumentType() const;
+
+    SourceLocation getOperatorLoc() const;
+    void setOperatorLoc(SourceLocation L);
+
+    std::weak_ptr<QualType> getArgumentType() const;
+    std::weak_ptr<Expr> getArgumentExpr();
+    const std::weak_ptr<Expr> getArgumentExpr() const;
+
+    std::weak_ptr<QualType> getTypeOfArgument() const;
+    void setArgument(std::shared_ptr<Expr> E);
+    void setArgument(std::shared_ptr<QualType> T);
+
+    SourceLocation getRParenLoc() const;
+    void setRParenLoc(SourceLocation L);
 
 private:
     bool isSizeof : 1;  // true if sizeof, false if alignof.
@@ -296,56 +389,71 @@ private:
     SourceLocation OpLoc, RParenLoc;
 };
 
+//===----------------------------------------------------------------------===//
+// Postfix Operators.
+//===----------------------------------------------------------------------===//
+
+/// ArraySubscriptExpr - [C99 6.5.2.1] Array Subscripting.
 class ArraySubscriptExpr : public Expr
 {
 public:
-    ArraySubscriptExpr(std::shared_ptr<Expr> lhs,
-                       std::shared_ptr<Expr> rhs,
-                       QualType t,
-                       SourceLocation rbracketloc);
+    ArraySubscriptExpr(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs,
+                       std::shared_ptr<QualType> t, SourceLocation rbracketloc);
     explicit ArraySubscriptExpr(EmptyShell Shell);
-    virtual child_iterator child_begin(){return &SubExprs[0];}
-    virtual child_iterator child_end() {return &SubExprs[0]+END_EXPR;}
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == ArraySubscriptExprClass;
-    }
-    static bool classof(const ArraySubscriptExpr *) { return true; }
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<ArraySubscriptExpr>);
+
+    std::weak_ptr<Expr>getLHS();
+    const std::weak_ptr<Expr>getLHS() const;
+    void setLHS(std::shared_ptr<Expr>E);
+
+    std::weak_ptr<Expr>getRHS();
+    const std::weak_ptr<Expr>getRHS() const;
+    void setRHS(std::shared_ptr<Expr>E);
+
+    SourceLocation getRBracketLoc() const;
+    void setRBracketLoc(SourceLocation L);
+
 private:
     enum { LHS, RHS, END_EXPR=2 };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
     SourceLocation RBracketLoc;
 };
 
+/// CallExpr - Represents a function call (C99 6.5.2.2, C++ [expr.call]).
+/// CallExpr itself represents a normal function call, e.g., "f(x, 2)",
+/// while its subclasses may represent alternative syntax that (semantically)
+/// results in a function call.
 class CallExpr : public Expr
 {
 public:
-    CallExpr(std::shared_ptr<Expr> fn,
-             std::vector<std::shared_ptr<Expr>> args,
-             unsigned numargs,
-             QualType t,
-             SourceLocation rparenloc);
+    CallExpr(std::shared_ptr<Expr> fn, std::vector<std::shared_ptr<Expr>> args,
+             unsigned numargs, std::shared_ptr<QualType> t, SourceLocation rparenloc);
     CallExpr(StmtClass SC, EmptyShell Empty);
-    virtual child_iterator child_begin() {
-        return &SubExprs[0];
-    }
-    virtual child_iterator child_end() {
-        return &SubExprs[0]+NumArgs+ARGS_START;
-    }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == CallExprClass ||
-             T->getStmtClass() == CXXOperatorCallExprClass ||
-             T->getStmtClass() == CXXMemberCallExprClass;
-    }
-    static bool classof(const CallExpr *) { return true; }
-//    static bool classof(const CXXOperatorCallExpr *) { return true; }
-//    static bool classof(const CXXMemberCallExpr *) { return true; }
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<CallExpr>);
+
+    const std::weak_ptr<Expr>getCallee() const;
+    std::weak_ptr<Expr>getCallee();
+    void setCallee(std::shared_ptr<Expr>F);
+
+    unsigned getNumArgs() const;
+    void setNumArgs(unsigned NumArgs);
+    SourceLocation getRParenLoc() const;
+    void setRParenLoc(SourceLocation L);
+
 protected:
-    CallExpr(StmtClass SC,
-             std::shared_ptr<Expr> fn,
-             std::vector<std::shared_ptr<Expr>> args,
-             unsigned numargs,
-             QualType t,
-             SourceLocation rparenloc);
+    CallExpr(StmtClass SC, std::shared_ptr<Expr> fn,
+             std::vector<std::shared_ptr<Expr>> args, unsigned numargs,
+             std::shared_ptr<QualType> t, SourceLocation rparenloc);
 private:
     enum { FN=0, ARGS_START=1 };
     std::vector<std::shared_ptr<Stmt>> SubExprs;
@@ -353,21 +461,35 @@ private:
     SourceLocation RParenLoc;
 };
 
+/// MemberExpr - [C99 6.5.2.3] Structure and Union Members.  X->F and X.F.
+///
 class MemberExpr : public Expr
 {
 public:
-    MemberExpr(std::shared_ptr<Expr> base,
-               bool isarrow,
+    MemberExpr(std::shared_ptr<Expr> base, bool isarrow,
                std::shared_ptr<NamedDecl> memberdecl,
-               SourceLocation l,
-               QualType ty);
+               SourceLocation l, std::shared_ptr<QualType> ty);
     explicit MemberExpr(EmptyShell Empty);
-    virtual child_iterator child_begin(){ return &Base; }
-    virtual child_iterator child_end(){ return &Base+1; }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == MemberExprClass;
-    }
-    static bool classof(const MemberExpr *) { return true; }
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<MemberExpr>);
+
+    void setBase(std::shared_ptr<Expr>E);
+    std::weak_ptr<Expr>getBase() const;
+
+    std::weak_ptr<NamedDecl>getMemberDecl() const;
+    void setMemberDecl(std::shared_ptr<NamedDecl>D);
+
+    bool isArrow() const;
+    void setArrow(bool A);
+
+    SourceLocation getMemberLoc() const;
+    void setMemberLoc(SourceLocation L);
+    virtual SourceLocation getExprLoc() const;
+
 private:
     std::shared_ptr<Stmt> Base;
     std::shared_ptr<NamedDecl> MemberDecl;
@@ -375,27 +497,40 @@ private:
     bool IsArrow;
 };
 
+/// CompoundLiteralExpr - [C99 6.5.2.5]
+///
 class CompoundLiteralExpr : public Expr
 {
 public:
-    CompoundLiteralExpr(SourceLocation lparenloc,
-                        QualType ty,
-                        std::shared_ptr<Expr> init,
-                        bool fileScope);
+    CompoundLiteralExpr(SourceLocation lparenloc, std::shared_ptr<QualType> ty,
+                        std::shared_ptr<Expr> init, bool fileScope);
     explicit CompoundLiteralExpr(EmptyShell Empty);
-    virtual child_iterator child_begin(){ return &Init; }
-    virtual child_iterator child_end(){ return &Init+1; }
 
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == CompoundLiteralExprClass;
-    }
-    static bool classof(const CompoundLiteralExpr *) { return true; }
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<CompoundLiteralExpr>);
+
+    const std::weak_ptr<Expr>getInitializer() const;
+    std::weak_ptr<Expr>getInitializer();
+    void setInitializer(std::shared_ptr<Expr>E);
+
+    bool isFileScope() const;
+    void setFileScope(bool FS);
+
+    SourceLocation getLParenLoc() const;
+    void setLParenLoc(SourceLocation L);
 private:
     std::shared_ptr<Stmt> Init;
     bool FileScope;
     SourceLocation LParenLoc;
 };
 
+/// CastExpr - Base class for type casts, including both implicit
+/// casts (ImplicitCastExpr) and explicit casts that have some
+/// representation in the source code (ExplicitCastExpr's derived
+/// classes).
 class CastExpr : public Expr
 {
 public:
@@ -413,22 +548,21 @@ public:
         CastInfo(CastKind Kind)
             : Kind(Kind) { }
     };
-    virtual child_iterator child_begin(){ return &Op; }
-    virtual child_iterator child_end(){ return &Op+1; }
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 protected:
-    CastExpr(StmtClass SC, QualType ty, const CastInfo &info, std::shared_ptr<Expr>op) ;
+    CastExpr(StmtClass SC, std::shared_ptr<QualType> ty, const CastInfo &info, std::shared_ptr<Expr>op) ;
     CastExpr(StmtClass SC, EmptyShell Empty);
-    static bool classof(const Stmt *T) {
-      StmtClass SC = T->getStmtClass();
-      if (SC >= CXXNamedCastExprClass && SC <= CXXFunctionalCastExprClass)
-        return true;
 
-      if (SC >= ImplicitCastExprClass && SC <= CStyleCastExprClass)
-        return true;
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<CastExpr>);
 
-      return false;
-    }
-    static bool classof(const CastExpr *) { return true; }
+    CastKind getCastKind() const;
+    void setCastKind(CastKind K);
+
+    std::weak_ptr<Expr>getSubExpr();
+    void setSubExpr(std::shared_ptr<Expr>E);
+
 private:
     CastKind Kind;
     std::shared_ptr<Stmt> Op;
@@ -437,56 +571,64 @@ private:
 class ImplicitCastExpr : public CastExpr
 {
 public:
-    ImplicitCastExpr(QualType ty, const CastInfo &info, std::shared_ptr<Expr>op, bool Lvalue);
+    ImplicitCastExpr(std::shared_ptr<QualType> ty, const CastInfo &info,
+                     std::shared_ptr<Expr>op, bool Lvalue);
     explicit ImplicitCastExpr(EmptyShell Shell);
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == ImplicitCastExprClass;
-    }
-    static bool classof(const ImplicitCastExpr *) { return true; }
 
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<ImplicitCastExpr>);
+
+    bool isLvalueCast() const;
+    void setLvalueCast(bool Lvalue);
 private:
     bool LvalueCast;
 };
 
+/// ExplicitCastExpr - An explicit cast written in the source
+/// code.
+///
 class ExplicitCastExpr : public CastExpr
 {
 protected:
-    ExplicitCastExpr(StmtClass SC, QualType exprTy, const CastInfo &info,
-                     std::shared_ptr<Expr>op, QualType writtenTy);
+    ExplicitCastExpr(StmtClass SC, std::shared_ptr<QualType> exprTy, const CastInfo &info,
+                     std::shared_ptr<Expr>op, std::shared_ptr<QualType> writtenTy);
     ExplicitCastExpr(StmtClass SC, EmptyShell Shell);
-    static bool classof(const Stmt *T) {
-      StmtClass SC = T->getStmtClass();
-      if (SC >= ExplicitCastExprClass && SC <= CStyleCastExprClass)
-        return true;
-      if (SC >= CXXNamedCastExprClass && SC <= CXXFunctionalCastExprClass)
-        return true;
 
-      return false;
-    }
-    static bool classof(const ExplicitCastExpr *) { return true; }
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::shared_ptr<ExplicitCastExpr>) { return true; }
+
+    std::weak_ptr<QualType> getTypeAsWritten() const;
+    void setTypeAsWritten(std::shared_ptr<QualType> T);
 private:
-    QualType TypeAsWritten;
+    std::shared_ptr<QualType> TypeAsWritten;
 };
 
+/// CStyleCastExpr - An explicit cast in C (C99 6.5.4) or a C-style
+/// cast in C++ (C++ [expr.cast]), which uses the syntax
+/// (Type)expr. For example: @c (int)f.
 class CStyleCastExpr : public ExplicitCastExpr
 {
 public:
-    CStyleCastExpr(QualType exprTy,
-                   CastKind kind,
-                   std::shared_ptr<Expr> op,
-                   QualType writtenTy,
-                   SourceLocation l,
-                   SourceLocation r);
+    CStyleCastExpr(std::shared_ptr<QualType> exprTy, CastKind kind,
+                   std::shared_ptr<Expr> op, std::shared_ptr<QualType> writtenTy,
+                   SourceLocation l, SourceLocation r);
     explicit CStyleCastExpr(EmptyShell Shell);
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == CStyleCastExprClass;
-    }
-    static bool classof(const CStyleCastExpr *) { return true; }
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<CStyleCastExpr>);
+
+    SourceLocation getLParenLoc() const;
+    void setLParenLoc(SourceLocation L);
+
+    SourceLocation getRParenLoc() const;
+    void setRParenLoc(SourceLocation L);
 private:
     SourceLocation LPLoc;
     SourceLocation RPLoc;
 };
 
+/// \brief A builtin binary operation expression such as "x + y" or "x <= y".
+///
 class BinaryOperator : public Expr
 {
 public:
@@ -511,18 +653,29 @@ public:
         OrAssign,
         Comma             // [C99 6.5.17] Comma operator.
     };
-    BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc, QualType ResTy, SourceLocation opLoc);
-
+    BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs,
+                   Opcode opc, std::shared_ptr<QualType> ResTy, SourceLocation opLoc);
     explicit BinaryOperator(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> S) {
-        return S->getStmtClass() == BinaryOperatorClass ||
-                S->getStmtClass() == CompoundAssignOperatorClass;
-    }
-    static bool classof(const std::shared_ptr<BinaryOperator>) { return true; }
-    virtual child_iterator child_begin() { return &SubExprs[0]; }
-    virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
+
+    SourceLocation getOperatorLoc() const;
+    void setOperatorLoc(SourceLocation L);
+
+    Opcode getOpcode() const;
+    void setOpcode(Opcode O);
+
+    std::weak_ptr<Expr> getLHS() const;
+    void setLHS(std::shared_ptr<Expr> E);
+    std::weak_ptr<Expr> getRHS() const;
+    void setRHS(std::shared_ptr<Expr> E);
+
+    static bool classof(const std::weak_ptr<Stmt> S);
+    static bool classof(const std::weak_ptr<BinaryOperator>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 protected:
-    BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc, QualType ResTy, SourceLocation oploc, bool dead);
+    BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc,
+                   std::shared_ptr<QualType> ResTy, SourceLocation oploc, bool dead);
 
     BinaryOperator(StmtClass SC, EmptyShell Empty);
 private:
@@ -532,71 +685,109 @@ private:
     SourceLocation OpLoc;
 };
 
+/// CompoundAssignOperator - For compound assignments (e.g. +=), we keep
+/// track of the type the operation is performed in.
 class CompoundAssignOperator : public BinaryOperator
 {
 public:
     CompoundAssignOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, Opcode opc,
-                           QualType ResType, QualType CompLHSType,
-                           QualType CompResultType,
+                           std::shared_ptr<QualType> ResType, std::shared_ptr<QualType> CompLHSType,
+                           std::shared_ptr<QualType> CompResultType,
                            SourceLocation OpLoc);
-
     explicit CompoundAssignOperator(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<CompoundAssignOperator>) { return true; }
-    static bool classof(const std::shared_ptr<Stmt> S) {
-        return S->getStmtClass() == CompoundAssignOperatorClass;
-    }
+
+    std::weak_ptr<QualType> getComputationLHSType() const;
+    void setComputationLHSType(std::shared_ptr<QualType> T);
+
+    std::weak_ptr<QualType> getComputationResultType() const;
+    void setComputationResultType(std::shared_ptr<QualType> T);
+
+    static bool classof(const std::weak_ptr<CompoundAssignOperator>);
+    static bool classof(const std::weak_ptr<Stmt> S);
 private:
-    QualType ComputationLHSType;
-    QualType ComputationResultType;
+    std::shared_ptr<QualType> ComputationLHSType;
+    std::shared_ptr<QualType> ComputationResultType;
 };
 
+/// ConditionalOperator - The ?: operator.  Note that LHS may be null when the
+/// GNU "missing LHS" extension is in use.
+///
 class ConditionalOperator : public Expr
 {
 public:
     ConditionalOperator(std::shared_ptr<Expr> cond, std::shared_ptr<Expr> lhs,
-                        std::shared_ptr<Expr> rhs, QualType t);
-
+                        std::shared_ptr<Expr> rhs, std::shared_ptr<QualType> t);
     explicit ConditionalOperator(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == ConditionalOperatorClass;
-    }
-    static bool classof(const std::shared_ptr<ConditionalOperator>) { return true; }
-    virtual child_iterator child_begin(){return &SubExprs[0];}
-    virtual child_iterator child_end(){return &SubExprs[0]+END_EXPR;}
+
+    std::weak_ptr<Expr> getCond() const;
+    void setCond(std::shared_ptr<Expr> E);
+
+    std::weak_ptr<Expr> getTrueExpr() const;
+    std::weak_ptr<Expr> getFalseExpr() const;
+
+    std::weak_ptr<Expr> getLHS() const;
+    void setLHS(std::shared_ptr<Expr> E);
+
+    std::weak_ptr<Expr> getRHS() const;
+    void setRHS(std::shared_ptr<Expr> E);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<ConditionalOperator>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     enum { COND, LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
 };
 
+/// AddrLabelExpr - The GNU address of label extension, representing &&label.
 class AddrLabelExpr : public Expr
 {
 public:
-    AddrLabelExpr(SourceLocation AALoc, SourceLocation LLoc, std::shared_ptr<LabelStmt> L,
-                  QualType t);
-
+    AddrLabelExpr(SourceLocation AALoc, SourceLocation LLoc,
+                  std::shared_ptr<LabelStmt> L, std::shared_ptr<QualType> t);
     explicit AddrLabelExpr(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == AddrLabelExprClass;
-    }
-    static bool classof(const std::shared_ptr<AddrLabelExpr>) { return true; }
-    virtual child_iterator child_begin() { return child_iterator(); }
-    virtual child_iterator child_end(){ return child_iterator(); }
+
+    SourceLocation getAmpAmpLoc() const;
+    void setAmpAmpLoc(SourceLocation L);
+    SourceLocation getLabelLoc() const;
+    void setLabelLoc(SourceLocation L);
+
+    std::weak_ptr<LabelStmt> getLabel() const;
+    void setLabel(std::shared_ptr<LabelStmt> S);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<AddrLabelExpr>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     SourceLocation AmpAmpLoc;
     SourceLocation LabelLoc;
     std::shared_ptr<LabelStmt> Label;
 };
 
+/// StmtExpr - This is the GNU Statement Expression extension: ({int X=4; X;}).
 class StmtExpr : public Expr
 {
 public:
-    StmtExpr(std::shared_ptr<CompoundStmt> substmt, QualType T,
+    StmtExpr(std::shared_ptr<CompoundStmt> substmt, std::shared_ptr<QualType> T,
              SourceLocation lp, SourceLocation rp);
     explicit StmtExpr(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-      return T->getStmtClass() == StmtExprClass;
-    }
-    static bool classof(const std::shared_ptr<StmtExpr>) { return true; }
+
+    std::weak_ptr<CompoundStmt> getSubStmt();
+    const std::weak_ptr<CompoundStmt> getSubStmt() const;
+    void setSubStmt(std::shared_ptr<CompoundStmt> S);
+
+    SourceLocation getLParenLoc() const;
+    void setLParenLoc(SourceLocation L);
+    SourceLocation getRParenLoc() const;
+    void setRParenLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<StmtExpr>);
+
     virtual child_iterator child_begin() { return &SubStmt; }
     virtual child_iterator child_end(){ return &SubStmt+1; }
 private:
@@ -605,60 +796,95 @@ private:
     SourceLocation RParenLoc;
 };
 
+/// TypesCompatibleExpr - GNU builtin-in function
 class TypesCompatibleExpr : public Expr
 {
 public:
-    TypesCompatibleExpr(QualType ReturnType, SourceLocation BLoc,
-                        QualType t1, QualType t2, SourceLocation RP);
+    TypesCompatibleExpr(std::shared_ptr<QualType> ReturnType, SourceLocation BLoc,
+                        std::shared_ptr<QualType> t1, std::shared_ptr<QualType> t2, SourceLocation RP);
     explicit TypesCompatibleExpr(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-      return T->getStmtClass() == TypesCompatibleExprClass;
-    }
-    static bool classof(const std::shared_ptr<TypesCompatibleExpr>) { return true; }
-    virtual child_iterator child_begin(){return child_iterator();}
-    virtual child_iterator child_end(){return child_iterator();}
+
+    std::weak_ptr<QualType> getArgType1() const;
+    void setArgType1(std::shared_ptr<QualType> T);
+    std::weak_ptr<QualType> getArgType2() const;
+    void setArgType2(std::shared_ptr<QualType> T);
+
+    SourceLocation getBuiltinLoc() const;
+    void setBuiltinLoc(SourceLocation L);
+
+    SourceLocation getRParenLoc() const;
+    void setRParenLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<TypesCompatibleExpr>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
-    QualType Type1;
-    QualType Type2;
+    std::shared_ptr<QualType> Type1;
+    std::shared_ptr<QualType> Type2;
     SourceLocation BuiltinLoc;
     SourceLocation RParenLoc;
 };
 
+/// ShuffleVectorExpr - clang-specific builtin-in function
 class ShuffleVectorExpr : public Expr
 {
 public:
     ShuffleVectorExpr(std::vector<std::shared_ptr<Expr>> args, unsigned nexpr,
-                      QualType Type, SourceLocation BLoc,
+                      std::shared_ptr<QualType> Type, SourceLocation BLoc,
                       SourceLocation RP);
-
     explicit ShuffleVectorExpr(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-      return T->getStmtClass() == ShuffleVectorExprClass;
-    }
-    static bool classof(const std::shared_ptr<ShuffleVectorExpr>) { return true; }
-    virtual child_iterator child_begin(){return &SubExprs[0];}
-    virtual child_iterator child_end(){return &SubExprs[0]+NumExprs; }
+
+    unsigned getNumSubExprs() const { return NumExprs; }
+
+    std::weak_ptr<Expr> getExpr(unsigned Index);
+    const std::weak_ptr<Expr> getExpr(unsigned Index) const;
+
+    SourceLocation getBuiltinLoc() const;
+    void setBuiltinLoc(SourceLocation L);
+
+    SourceLocation getRParenLoc() const;
+    void setRParenLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<ShuffleVectorExpr>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     SourceLocation BuiltinLoc, RParenLoc;
     std::vector<std::shared_ptr<Stmt>> SubExprs;
     unsigned NumExprs;
 };
 
+/// ChooseExpr - GNU builtin-in function __builtin_choose_expr.
 class ChooseExpr : public Expr
 {
 public:
     ChooseExpr(SourceLocation BLoc, std::shared_ptr<Expr> cond, std::shared_ptr<Expr> lhs,
-               std::shared_ptr<Expr> rhs, QualType t,
+               std::shared_ptr<Expr> rhs, std::shared_ptr<QualType> t,
                SourceLocation RP);
-
     explicit ChooseExpr(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-      return T->getStmtClass() == ChooseExprClass;
-    }
-    static bool classof(const std::shared_ptr<ChooseExpr>) { return true; }
+
+    std::weak_ptr<Expr> getCond() const;
+    void setCond(std::shared_ptr<Expr> E);
+    std::weak_ptr<Expr> getLHS() const;
+    void setLHS(std::shared_ptr<Expr> E);
+    std::weak_ptr<Expr> getRHS() const;
+    void setRHS(std::shared_ptr<Expr> E);
+
+    SourceLocation getBuiltinLoc() const;
+    void setBuiltinLoc(SourceLocation L);
+
+    SourceLocation getRParenLoc() const;
+    void setRParenLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<ChooseExpr>);
+
     virtual child_iterator child_begin(){ return &SubExprs[0]; }
     virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
-
 private:
     enum { COND, LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -666,32 +892,48 @@ private:
     SourceLocation RParenLoc;
 };
 
+/// GNUNullExpr - Implements the GNU __null extension, which is a name
+/// for a null pointer constant that has integral type (e.g., int or
+/// long) and is the same size and alignment as a pointer.
 class GNUNullExpr : public Expr
 {
 public:
-    GNUNullExpr(QualType Ty, SourceLocation Loc);
-
+    GNUNullExpr(std::shared_ptr<QualType> Ty, SourceLocation Loc);
     explicit GNUNullExpr(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-      return T->getStmtClass() == GNUNullExprClass;
-    }
-    static bool classof(const std::shared_ptr<GNUNullExpr>) { return true; }
+
+    SourceLocation getTokenLocation() const;
+    void setTokenLocation(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<GNUNullExpr>);
+
     virtual child_iterator child_begin(){return child_iterator();}
     virtual child_iterator child_end(){return child_iterator();}
 private:
     SourceLocation TokenLoc;
 };
 
+/// VAArgExpr, used for the builtin function __builtin_va_start.
 class VAArgExpr : public Expr
 {
 public:
-    VAArgExpr(SourceLocation BLoc, std::shared_ptr<Expr> e, QualType t, SourceLocation RPLoc);
-
+    VAArgExpr(SourceLocation BLoc, std::shared_ptr<Expr> e,
+              std::shared_ptr<QualType> t, SourceLocation RPLoc);
     explicit VAArgExpr(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-      return T->getStmtClass() == VAArgExprClass;
-    }
-    static bool classof(const std::shared_ptr<VAArgExpr>) { return true; }
+
+    const std::weak_ptr<Expr> getSubExpr() const;
+    std::weak_ptr<Expr> getSubExpr();
+    void setSubExpr(std::shared_ptr<Expr> E);
+
+    SourceLocation getBuiltinLoc() const;
+    void setBuiltinLoc(SourceLocation L);
+
+    SourceLocation getRParenLoc() const;
+    void setRParenLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<VAArgExpr>);
+
     virtual child_iterator child_begin(){return &Val;}
     virtual child_iterator child_end(){return &Val+1;}
 private:
@@ -700,24 +942,27 @@ private:
     SourceLocation RParenLoc;
 };
 
+/// struct foo x = { 1, { 2, 3 } };
 class InitListExpr : public Expr
 {
 public:
-    InitListExpr(SourceLocation lbraceloc,
-                 std::vector<std::shared_ptr<Expr>> initexprs, unsigned numinits,
-                 SourceLocation rbraceloc);
-
+    InitListExpr(SourceLocation lbraceloc, std::vector<std::shared_ptr<Expr>> initexprs,
+                 unsigned numinits, SourceLocation rbraceloc);
     explicit InitListExpr(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-      return T->getStmtClass() == InitListExprClass;
-    }
-    static bool classof(const std::shared_ptr<InitListExpr>) { return true; }
-    virtual child_iterator child_begin() {
-        return InitExprs.size() ? &InitExprs[0] :nullptr;
-        }
-        virtual child_iterator child_end(){
-        return InitExprs.size() ? &InitExprs[0] + InitExprs.size() : nullptr;
-    }
+
+    SourceLocation getLBraceLoc() const;
+    void setLBraceLoc(SourceLocation Loc);
+    SourceLocation getRBraceLoc() const;
+    void setRBraceLoc(SourceLocation Loc);
+
+    std::weak_ptr<InitListExpr> getSyntacticForm() const;
+    void setSyntacticForm(std::shared_ptr<InitListExpr> Init);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<InitListExpr>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     std::vector<std::shared_ptr<Stmt>> InitExprs;
     SourceLocation LBraceLoc;
@@ -730,6 +975,11 @@ private:
     bool HadArrayRangeDesignator;
 };
 
+/// struct point {
+///   double x;
+///   double y;
+/// };
+/// struct point ptarray[10] = { [2].y = 1.0, [2].x = 2.0, [0].x = 1.0 };
 class DesignatedInitExpr : public Expr
 {
 public:
@@ -741,7 +991,7 @@ private:
     std::shared_ptr<Designator> Designators;
     unsigned NumSubExprs : 16;
     static bool classof(const std::shared_ptr<Stmt> T) {
-      return T->getStmtClass() == DesignatedInitExprClass;
+        return T->getStmtClass() == DesignatedInitExprClass;
     }
     static bool classof(const std::shared_ptr<DesignatedInitExpr>) { return true; }
 
@@ -766,18 +1016,19 @@ private:
 
 };
 
+/// \brief Represents an implicitly-generated value initialization of
+/// an object of a given type.
 class ImplicitValueInitExpr : public Expr
 {
 public:
-    explicit ImplicitValueInitExpr(QualType ty);
-
+    explicit ImplicitValueInitExpr(std::shared_ptr<QualType> ty);
     explicit ImplicitValueInitExpr(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-      return T->getStmtClass() == ImplicitValueInitExprClass;
-    }
-    static bool classof(const std::shared_ptr<ImplicitValueInitExpr>) { return true; }
-    virtual child_iterator child_begin(){return child_iterator();}
-    virtual child_iterator child_end(){return child_iterator();}
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<ImplicitValueInitExpr>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 };
 
 class ParenListExpr : public Expr
@@ -786,10 +1037,15 @@ public:
     ParenListExpr(SourceLocation lparenloc, std::vector<std::shared_ptr<Expr>> exprs,
                   unsigned numexprs, SourceLocation rparenloc);
 
-    static bool classof(const std::shared_ptr<Stmt> T) {
-      return T->getStmtClass() == ParenListExprClass;
-    }
-    static bool classof(const std::shared_ptr<ParenListExpr>) { return true; }
+    const std::weak_ptr<Expr> getExpr(unsigned Init) const;
+
+    std::weak_ptr<Expr> getExpr(unsigned Init);
+
+    SourceLocation getLParenLoc() const;
+    SourceLocation getRParenLoc() const;
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<ParenListExpr>);
 
     virtual child_iterator child_begin(){return &Exprs[0];}
     virtual child_iterator child_end(){return &Exprs[0]+NumExprs;}
@@ -798,33 +1054,6 @@ private:
     unsigned NumExprs;
     SourceLocation LParenLoc;
     SourceLocation RParenLoc;
-};
-
-class ExtVectorElementExpr : public Expr
-{
-public:
-    //    ExtVectorElementExpr(QualType ty, std::shared_ptr<Expr> base, IdentifierInfo &accessor,
-    //                           SourceLocation loc)
-    //        : Expr(ExtVectorElementExprClass, ty),
-    //          Base(base), Accessor(&accessor), AccessorLoc(loc) {}
-
-    explicit ExtVectorElementExpr(EmptyShell Empty);
-    virtual child_iterator child_begin() { return &Base; }
-    virtual child_iterator child_end() { return &Base+1; }
-private:
-    std::shared_ptr<Stmt> Base;
-    //      IdentifierInfo *Accessor;
-    SourceLocation AccessorLoc;
-};
-
-class BlockExpr : public Expr
-{
-
-};
-
-class BlockDeclRefExpr : public Expr
-{
-
 };
 
 #endif // AST_EXPR_H
