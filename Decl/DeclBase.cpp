@@ -2,7 +2,7 @@
 // Created by gaojian on 19-5-6.
 //
 
-#include "Errors/SymbolError.hpp"
+#include <Errors/SymbolError.hpp>
 #include "DeclBase.h"
 #include "Decl.h"
 

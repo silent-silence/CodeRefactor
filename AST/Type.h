@@ -13,7 +13,7 @@ class TagDecl;
 class QualType;
 class Type;
 
-class ExtQualType;//例子
+class ExtQualType;
 class QualifierSet;//
 class BuiltinType;//
 class FixedWidthIntType;//
@@ -94,6 +94,7 @@ public:
     };
     Type(){}
     Type(TypeClass tc, bool dependent);
+    virtual ~Type() = default;
     bool isDependentType() const;
 
     std::weak_ptr<QualType> getCanonicalType() const;
@@ -225,6 +226,8 @@ public:
                                          std::shared_ptr<QualType> CanonicalPtr);
 
     PointerType(std::shared_ptr<QualType> Pointee);
+
+    std::weak_ptr<QualType> getPointeeType() const;
 private:
     std::shared_ptr<QualType> PointeeType;
 };

@@ -2,8 +2,11 @@
 
 SourceLocation::SourceLocation()
     :m_file{""}, m_line{0}, m_bytes{0}
-{
-}
+{}
+
+SourceLocation::SourceLocation(std::string fileName, unsigned line, unsigned byte)
+	: m_file{fileName}, m_line{line}, m_bytes{byte}
+{}
 
 bool SourceLocation::operator>(const SourceLocation &sourceLocation) const
 {
@@ -38,12 +41,12 @@ std::string SourceLocation::file() const
     return m_file;
 }
 
-unsigned SourceLocation::line() const
+unsigned int SourceLocation::line() const
 {
     return m_line;
 }
 
-unsigned SourceLocation::bytes() const
+unsigned int SourceLocation::bytes() const
 {
     return m_bytes;
 }

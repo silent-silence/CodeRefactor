@@ -1,5 +1,8 @@
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
+
+using std::dynamic_pointer_cast;
+
 //line 22 61
 Stmt::Stmt(Stmt::StmtClass SC)
     : sClass(SC), RefCount(1)
@@ -890,6 +893,11 @@ ReturnStmt::ReturnStmt(SourceLocation RL, std::shared_ptr<Expr> E)
 
 ReturnStmt::ReturnStmt(Stmt::EmptyShell Empty)
     : Stmt(ReturnStmtClass, Empty) { }
+
+std::weak_ptr<Expr> ReturnStmt::getRetValue()
+{
+	return dynamic_pointer_cast<Expr>(RetExpr);
+}
 
 void ReturnStmt::setRetValue(std::shared_ptr<Expr> E)
 {

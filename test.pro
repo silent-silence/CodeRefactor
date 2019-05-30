@@ -4,9 +4,12 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
+    ASTOperation/Corrector.cpp \
+    ASTOperation/Refactor.cpp \
+    Basic/IdentifierTable.cpp \
     Decl/DeclBase.cpp \
     Decl/DeclContextHolder.cpp \
-    Decl/DeclGroupRef.cpp \
+    Decl/DeclGroup.cpp \
     main.cpp \
     Basic/SourceLocation.cpp \
     AST/Expr.cpp \
@@ -15,6 +18,9 @@ SOURCES += \
     AST/ASTContext.cpp
 
 HEADERS += \
+    ASTOperation/Corrector.h \
+    ASTOperation/Refactor.h \
+    Basic/IdentifierTable.h \
     Basic/SourceLocation.h \
     AST/Expr.h \
     AST/Type.h \
@@ -26,6 +32,6 @@ HEADERS += \
     Decl/Decl.h \
     Decl/DeclBase.h \
     Decl/DeclContextHolder.h \
-    Decl/DeclGroupRef.h \
+    Decl/DeclGroup.h \
     Decl/DeclName.h \
     Errors/SymbolError.hpp

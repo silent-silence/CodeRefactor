@@ -49,12 +49,13 @@ std::shared_ptr<Stmt> ASTContext::createCompoundStmt(std::vector<ASTContext::var
 
 std::shared_ptr<Stmt> ASTContext::createCaseStmt(std::vector<ASTContext::var_t> &value)
 {
+	// TODO: RHS not initialized
 	return make_shared<CaseStmt>(
 					get<shared_ptr<Expr>>(value[0]),
-					get<shared_ptr<Expr>>(value[1]),
+					nullptr,
+					get<SourceLocation>(value[1]),
 					get<SourceLocation>(value[2]),
-					get<SourceLocation>(value[3]),
-					get<SourceLocation>(value[4])
+					get<SourceLocation>(value[3])
 	);
 }
 
@@ -69,11 +70,10 @@ std::shared_ptr<Stmt> ASTContext::createDefaultStmt(std::vector<ASTContext::var_
 
 std::shared_ptr<Stmt> ASTContext::createLabelStmt(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*return make_shared<LabelStmt>(
+	return make_shared<LabelStmt>(
 					get<SourceLocation>(value[0]),
-					pop_stmt()
-	);*/
+					get<shared_ptr<Stmt>>(value[1])
+	);
 }
 
 std::shared_ptr<Stmt> ASTContext::createIfStmt(std::vector<ASTContext::var_t> &value)
@@ -144,6 +144,7 @@ std::shared_ptr<Stmt> ASTContext::createGotoStmt(std::vector<ASTContext::var_t> 
 					pop_stmt<LabelStmt>(),
 					get<SourceLocation>(value[0]),
 					get<SourceLocation>(value[1])));*/
+	return nullptr;
 }
 
 std::shared_ptr<Stmt> ASTContext::createIndirectGotoStmt(std::vector<ASTContext::var_t> &value)
@@ -154,6 +155,7 @@ std::shared_ptr<Stmt> ASTContext::createIndirectGotoStmt(std::vector<ASTContext:
 					get<SourceLocation>(value[0]),
 					get<SourceLocation>(value[1]),
 					pop_stmt<Expr>()));*/
+	return nullptr;
 }
 
 std::shared_ptr<Stmt> ASTContext::createContinueStmt(std::vector<ASTContext::var_t> &value)
@@ -182,7 +184,7 @@ std::shared_ptr<Stmt> ASTContext::createDeclRefExpr(std::vector<ASTContext::var_
 {
 	return make_shared<DeclRefExpr>(
 			get<shared_ptr<NamedDecl>>(value[0]),
-			get<QualType>(value[1]),
+			get<shared_ptr<QualType>>(value[1]),
 			get<SourceLocation>(value[2])
 	);
 }
@@ -195,12 +197,12 @@ std::shared_ptr<Stmt> ASTContext::createPredefinedExpr(std::vector<ASTContext::v
 					get<SourceLocation>(value[0]),
 					get<QualType>(value[1]),
 					get<PredefinedExpr::IdentType>(value[2])));*/
+	return nullptr;
 }
 
 std::shared_ptr<Stmt> ASTContext::createIntegerLiteral(std::vector<ASTContext::var_t> &value)
 {
-	// TODO: make default integer type
-	QualType type(make_shared<Type>(), 0);
+	auto type = BuiltinType::creator(BuiltinType::Int);
 	return make_shared<IntegerLiteral>(
 					get<int>(value[0]),
 					type,
@@ -210,8 +212,7 @@ std::shared_ptr<Stmt> ASTContext::createIntegerLiteral(std::vector<ASTContext::v
 
 std::shared_ptr<Stmt> ASTContext::createCharacterLiteral(std::vector<ASTContext::var_t> &value)
 {
-	// TODO: make default character type
-	QualType type(make_shared<Type>(), 0);
+	auto type = BuiltinType::creator(BuiltinType::SChar);
 	return make_shared<CharacterLiteral>(
 					get<unsigned>(value[0]),
 					get<bool>(value[1]),
@@ -222,8 +223,7 @@ std::shared_ptr<Stmt> ASTContext::createCharacterLiteral(std::vector<ASTContext:
 
 std::shared_ptr<Stmt> ASTContext::createFloatingLiteral(std::vector<ASTContext::var_t> &value)
 {
-	// TODO: make default floating type
-	QualType type(make_shared<Type>(), 0);
+	auto type = BuiltinType::creator(BuiltinType::Double);
 	return make_shared<FloatingLiteral>(
 					get<float>(value[0]),
 					get<bool>(value[1]),
@@ -239,17 +239,19 @@ std::shared_ptr<Stmt> ASTContext::createImaginaryLiteral(std::vector<ASTContext:
 			make_shared<ImaginaryLiteral>(
 					pop_stmt<Expr>(),
 					get<QualType>(value[0])));*/
+	return nullptr;
 }
 
 std::shared_ptr<Stmt> ASTContext::createStringLiteral(std::vector<ASTContext::var_t> &value)
 {
 	// TODO: make default string type
-	QualType type(make_shared<Type>(), 0);
+	auto type = BuiltinType::creator(BuiltinType::SChar);
+	auto pType = PointerType::creator(type, type);
 	return StringLiteral::Create(
 			get<char *>(value[0]),
 			get<unsigned long>(value[1]),
 			get<bool>(value[2]),
-			type,
+			pType,
 			get<SourceLocation>(value[3]),
 			get<unsigned long>(value[4])
 	);
@@ -266,10 +268,10 @@ std::shared_ptr<Stmt> ASTContext::createParenExpr(std::vector<ASTContext::var_t>
 
 std::shared_ptr<Stmt> ASTContext::createUnaryOperator(std::vector<ASTContext::var_t> &value)
 {
-	// TODO: get operator type
-	QualType type(make_shared<Type>(), 0);
+	auto expr = get<shared_ptr<Expr>>(value[0]);
+	auto type = expr->getType().lock();
 	return make_shared<UnaryOperator>(
-					get<shared_ptr<Expr>>(value[0]),
+					expr,
 					get<UnaryOperator::Opcode>(value[1]),
 					type,
 					get<SourceLocation>(value[2])
@@ -279,12 +281,12 @@ std::shared_ptr<Stmt> ASTContext::createUnaryOperator(std::vector<ASTContext::va
 std::shared_ptr<Stmt> ASTContext::createSizeOfAlignOfExpr(std::vector<ASTContext::var_t> &value)
 {
 	//TODO: set return type
-	QualType retType(make_shared<Type>(), 0);
-	if(holds_alternative<QualType>(value[2]))
+	auto retType = BuiltinType::creator(BuiltinType::UInt);
+	if(holds_alternative<shared_ptr<QualType>>(value[2]))
 	{
 		return make_shared<SizeOfAlignOfExpr>(
 						true,
-						get<QualType>(value[2]),
+						get<shared_ptr<QualType>>(value[2]),
 						retType,
 						get<SourceLocation>(value[0]),
 						get<SourceLocation>(value[1])
@@ -304,8 +306,10 @@ std::shared_ptr<Stmt> ASTContext::createSizeOfAlignOfExpr(std::vector<ASTContext
 
 std::shared_ptr<Stmt> ASTContext::createArraySubscriptExpr(std::vector<ASTContext::var_t> &value)
 {
-	// TODO: get array elements' type
-	QualType arrayType(make_shared<Type>(), 0);
+	auto lhs = get<shared_ptr<Expr>>(value[0]);
+	shared_ptr<QualType> arrayType = lhs->getType().lock();
+	shared_ptr<Type> arrayElementBaseType = arrayType->getTypePtr();
+	shared_ptr<PointerType> arrayElementType = dynamic_pointer_cast<PointerType>(arrayElementBaseType);
 	return make_shared<ArraySubscriptExpr>(
 					get<shared_ptr<Expr>>(value[0]),
 					get<shared_ptr<Expr>>(value[1]),
@@ -316,8 +320,8 @@ std::shared_ptr<Stmt> ASTContext::createArraySubscriptExpr(std::vector<ASTContex
 
 std::shared_ptr<Stmt> ASTContext::createCallExpr(std::vector<ASTContext::var_t> &value)
 {
-	// TODO: get return type
-	QualType retType(make_shared<Type>(), 0);
+	auto fn = get<shared_ptr<Expr>>(value[0]);
+	auto retType = fn->getType().lock();
 	auto args = get<vector<shared_ptr<Expr>>>(value[1]);
 	return make_shared<CallExpr>(
 					get<shared_ptr<Expr>>(value[0]),
@@ -330,8 +334,9 @@ std::shared_ptr<Stmt> ASTContext::createCallExpr(std::vector<ASTContext::var_t> 
 
 std::shared_ptr<Stmt> ASTContext::createMemberExpr(std::vector<ASTContext::var_t> &value)
 {
-	// TODO: Get type here
-	QualType memberType(make_shared<Type>(), 0);
+	// TODO: Get type from symbol table
+	auto expr = get<shared_ptr<Expr>>(value[0]);
+	auto memberType = expr->getType().lock();
 	return make_shared<MemberExpr>(
 					get<shared_ptr<Expr>>(value[0]),
 					get<bool>(value[1]),
@@ -350,6 +355,7 @@ std::shared_ptr<Stmt> ASTContext::createCompoundLiteralExpr(std::vector<ASTConte
 					pop_stmt<Expr>(),
 					get<bool>(value[2])
 	);*/
+	return nullptr;
 }
 
 std::shared_ptr<Stmt> ASTContext::createImplicitCastExpr(std::vector<ASTContext::var_t> &value)
@@ -361,17 +367,18 @@ std::shared_ptr<Stmt> ASTContext::createImplicitCastExpr(std::vector<ASTContext:
 					pop_stmt<Expr>(),
 					get<bool>(value[2])
 	);*/
+	return nullptr;
 }
 
 std::shared_ptr<Stmt> ASTContext::createCStyleCastExpr(std::vector<ASTContext::var_t> &value)
 {
 	auto expr = get<shared_ptr<Expr>>(value[1]);
-	QualType exprType = expr->getType();
+	auto exprType = expr->getType().lock();
 	return make_shared<CStyleCastExpr>(
 					exprType,
 					get<CastExpr::CastKind>(value[0]),
 					expr,
-					get<QualType>(value[2]),
+					get<shared_ptr<QualType>>(value[2]),
 					get<SourceLocation>(value[3]),
 					get<SourceLocation>(value[4])
 	);
@@ -379,11 +386,13 @@ std::shared_ptr<Stmt> ASTContext::createCStyleCastExpr(std::vector<ASTContext::v
 
 std::shared_ptr<Stmt> ASTContext::createBinaryOperator(std::vector<ASTContext::var_t> &value)
 {
-	// TODO Get operation type
-	QualType exprType(make_shared<Type>(), 0);
+	auto lhs = get<shared_ptr<Expr>>(value[0]);
+	auto rhs = get<shared_ptr<Expr>>(value[1]);
+	// TODO Compare and get operation type
+	auto exprType = lhs->getType().lock();
 	return make_shared<BinaryOperator>(
-					get<shared_ptr<Expr>>(value[0]),
-					get<shared_ptr<Expr>>(value[1]),
+					lhs,
+					rhs,
 					get<BinaryOperator::Opcode>(value[2]),
 					exprType,
 					get<SourceLocation>(value[3])
@@ -393,28 +402,34 @@ std::shared_ptr<Stmt> ASTContext::createBinaryOperator(std::vector<ASTContext::v
 std::shared_ptr<Stmt> ASTContext::createCompoundAssignOperator(std::vector<ASTContext::var_t> &value)
 {
 	// TODO Get types
-	QualType ResType(make_shared<Type>(), 0);
-	QualType CompLHSType(make_shared<Type>(), 0);
-	QualType CompResultType(make_shared<Type>(), 0);
+	auto lhs = get<shared_ptr<Expr>>(value[0]);
+	auto rhs = get<shared_ptr<Expr>>(value[1]);
+
+	auto resultType = lhs->getType().lock();
+	auto comLhsType = lhs->getType().lock();
+	// TODO Compare and get operation type
+	auto comResultType = lhs->getType().lock();
 	return make_shared<CompoundAssignOperator>(
-					get<shared_ptr<Expr>>(value[0]),
-					get<shared_ptr<Expr>>(value[1]),
+					lhs,
+					rhs,
 					get<CompoundAssignOperator::Opcode>(value[2]),
-					ResType,
-					CompLHSType,
-					CompResultType,
+					resultType,
+					comLhsType,
+					comResultType,
 					get<SourceLocation>(value[3])
 	);
 }
 
 std::shared_ptr<Stmt> ASTContext::createConditionalOperator(std::vector<ASTContext::var_t> &value)
 {
-	// TODO Get type here
-	QualType type(make_shared<Type>(), 0);
+	// TODO Compare and get type here
+	auto lhs = get<shared_ptr<Expr>>(value[1]);
+	auto rhs = get<shared_ptr<Expr>>(value[2]);
+	auto type = lhs->getType().lock();
 	return make_shared<ConditionalOperator>(
 					get<shared_ptr<Expr>>(value[0]),
-					get<shared_ptr<Expr>>(value[1]),
-					get<shared_ptr<Expr>>(value[2]),
+					lhs,
+					rhs,
 					type
 	);
 }
@@ -494,6 +509,7 @@ std::shared_ptr<Stmt> ASTContext::createVAArgExpr(std::vector<ASTContext::var_t>
 					pop_stmt<Expr>(),
 					get<QualType>(value[1]),
 					get<SourceLocation>(value[2])));*/
+	return nullptr;
 }
 
 std::shared_ptr<Stmt> ASTContext::createInitListExpr(std::vector<ASTContext::var_t> &value)
@@ -508,6 +524,7 @@ std::shared_ptr<Stmt> ASTContext::createInitListExpr(std::vector<ASTContext::var
 					exprs,
 					get<unsigned>(value[1]),
 					get<SourceLocation>(value[2])));*/
+	return nullptr;
 }
 
 std::shared_ptr<Stmt> ASTContext::createParenListExpr(std::vector<ASTContext::var_t> &value)
@@ -522,6 +539,7 @@ std::shared_ptr<Stmt> ASTContext::createParenListExpr(std::vector<ASTContext::va
 					exprs,
 					get<unsigned>(value[1]),
 					get<SourceLocation>(value[2])));*/
+	return nullptr;
 }
 
 /*void ASTContext::createExtQualType(std::vector<ASTContext::var_t> &value)
@@ -534,7 +552,7 @@ std::shared_ptr<Stmt> ASTContext::createParenListExpr(std::vector<ASTContext::va
 					static_cast<QualType::GCAttrTypes>(get<int>(value[2]))));
 }*/
 
-std::shared_ptr<Type> ASTContext::createBuiltinType(std::vector<ASTContext::var_t> &value)
+std::shared_ptr<QualType> ASTContext::createBuiltinType(std::vector<ASTContext::var_t> &value)
 {
 	return BuiltinType::creator(get<BuiltinType::Kind>(value[0]));
 }
@@ -555,11 +573,11 @@ std::shared_ptr<Type> ASTContext::createBuiltinType(std::vector<ASTContext::var_
 	);
 }*/
 
-std::shared_ptr<Type> ASTContext::createPointerType(std::vector<ASTContext::var_t> &value)
+std::shared_ptr<QualType> ASTContext::createPointerType(std::vector<ASTContext::var_t> &value)
 {
 	return PointerType::creator(
-					get<QualType>(value[0]),
-					get<QualType>(value[1])
+					get<shared_ptr<QualType>>(value[0]),
+					get<shared_ptr<QualType>>(value[1])
 	);
 }
 
@@ -605,11 +623,11 @@ std::shared_ptr<Type> ASTContext::createPointerType(std::vector<ASTContext::var_
 					get<QualType>(value[1])));
 }*/
 
-std::shared_ptr<Type> ASTContext::createConstantArrayType(std::vector<ASTContext::var_t> &value)
+std::shared_ptr<QualType> ASTContext::createConstantArrayType(std::vector<ASTContext::var_t> &value)
 {
 	return ConstantArrayType::creator(
-					get<QualType>(value[0]),
-					get<QualType>(value[1]),
+					get<shared_ptr<QualType>>(value[0]),
+					get<shared_ptr<QualType>>(value[1]),
 					get<int>(value[2]),
 					get<ArrayType::ArraySizeModifier>(value[3]),
 					get<unsigned>(value[4])
@@ -639,11 +657,11 @@ std::shared_ptr<Type> ASTContext::createConstantArrayType(std::vector<ASTContext
 	);
 }*/
 
-std::shared_ptr<Type> ASTContext::createIncompleteArrayType(std::vector<ASTContext::var_t> &value)
+std::shared_ptr<QualType> ASTContext::createIncompleteArrayType(std::vector<ASTContext::var_t> &value)
 {
 	return IncompleteArrayType::creator(
-					get<QualType>(value[0]),
-					get<QualType>(value[1]),
+					get<shared_ptr<QualType>>(value[0]),
+					get<shared_ptr<QualType>>(value[1]),
 					get<ArrayType::ArraySizeModifier>(value[2]),
 					get<unsigned>(value[3])
 	);
@@ -689,14 +707,14 @@ std::shared_ptr<Type> ASTContext::createIncompleteArrayType(std::vector<ASTConte
 					get<QualType>(value[2])));
 }*/
 
-/*std::shared_ptr<Type> ASTContext::createFunctionNoProtoType(std::vector<ASTContext::var_t> &value)
+std::shared_ptr<QualType> ASTContext::createFunctionNoProtoType(std::vector<ASTContext::var_t> &value)
 {
-	return FunctionNoProtoType(
-					get<QualType>(value[0]),
-					get<QualType>(value[1]),
+	return FunctionNoProtoType::creator(
+					get<shared_ptr<QualType>>(value[0]),
+					get<shared_ptr<QualType>>(value[1]),
 					get<bool>(value[2])
 	);
-}*/
+}
 
 /*std::shared_ptr<Type> ASTContext::createFunctionProtoType(std::vector<ASTContext::var_t> &value)
 {

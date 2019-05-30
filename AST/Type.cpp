@@ -71,8 +71,9 @@ ExtQualType::ExtQualType(shared_ptr<Type> Base,
 std::shared_ptr<QualType> BuiltinType::creator(BuiltinType::Kind k)
 {
     auto ptr=make_shared<BuiltinType>(k);
-    ptr->setCanonicalType(std::make_shared<QualType>());
-    return ptr->getCanonicalType().lock();
+    auto ptr_qual=make_shared<QualType>(ptr, 0);
+    ptr->setCanonicalType(ptr_qual);
+    return ptr_qual;
 }
 
 BuiltinType::BuiltinType(Kind k)
@@ -82,8 +83,9 @@ BuiltinType::BuiltinType(Kind k)
 shared_ptr<QualType> FixedWidthIntType::creator(unsigned W, bool S)
 {
     auto ptr=make_shared<FixedWidthIntType>(W, S);
-    ptr->setCanonicalType(std::make_shared<QualType>());
-    return ptr->getCanonicalType().lock();
+    auto ptr_qual=make_shared<QualType>(ptr, 0);
+    ptr->setCanonicalType(ptr_qual);
+    return ptr_qual;
 }
 
 FixedWidthIntType::FixedWidthIntType(unsigned W,bool S)
@@ -114,6 +116,11 @@ PointerType::PointerType(std::shared_ptr<QualType> Pointee)
     :Type(Pointer, (*Pointee)->isDependentType()),
       PointeeType(Pointee)
 {}
+
+std::weak_ptr<QualType> PointerType::getPointeeType() const
+{
+	return PointeeType;
+}
 
 shared_ptr<QualType> BlockPointerType::creator(std::shared_ptr<QualType> Pointee,
                                            std::shared_ptr<QualType> CanonicalCls)

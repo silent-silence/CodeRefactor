@@ -16,13 +16,10 @@ using std::string;
 using std::weak_ptr;
 using std::shared_ptr;
 using std::make_shared;
+using std::dynamic_pointer_cast;
+using std::reinterpret_pointer_cast;
 
 int main()
 {
-    string str;
-    std::snprintf(str.data(), 3, "%s", "abcdefg");
-    cout<<str<<endl;
-//    shared_ptr<int> a=make_shared<int>(8);
-//    auto ptr=(&a)+1;
     return 0;
 }

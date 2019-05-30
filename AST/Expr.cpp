@@ -33,7 +33,7 @@ weak_ptr<QualType> Expr::getType() const
 
 void Expr::setType(const std::shared_ptr<QualType> &value)
 {
-    if(TR->isNull() || !TR->isRestrictQualified())
+    if(TR && (TR->isNull() || !TR->isRestrictQualified()))
         throw "Expressions can't have reference type";
     TR = value;
 }

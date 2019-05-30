@@ -92,24 +92,24 @@ public:
     DeclRefExpr(std::shared_ptr<NamedDecl> d, std::shared_ptr<QualType> t,
                 SourceLocation l, bool TD, bool VD);
     explicit DeclRefExpr(EmptyShell Empty);
+
+	virtual child_iterator child_begin();
+	virtual child_iterator child_end();
+
+	static bool classof(const std::weak_ptr<Stmt>T);
+	static bool classof(const std::weak_ptr<DeclRefExpr>);
+
+	std::weak_ptr<NamedDecl>getDecl();
+	void setDecl(std::shared_ptr<NamedDecl>NewD);
+
+	SourceLocation getLocation() const;
+	void setLocation(SourceLocation L);
 protected:
     DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d,
                 std::shared_ptr<QualType> t, SourceLocation l);
     DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d,
                 std::shared_ptr<QualType> t, SourceLocation l,
                 bool TD, bool VD);
-
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
-
-    static bool classof(const std::weak_ptr<Stmt>T);
-    static bool classof(const std::weak_ptr<DeclRefExpr>);
-
-    std::weak_ptr<NamedDecl>getDecl();
-    void setDecl(std::shared_ptr<NamedDecl>NewD);
-
-    SourceLocation getLocation() const;
-    void setLocation(SourceLocation L);
 private:
     std::shared_ptr<NamedDecl> D;
     SourceLocation Loc;
