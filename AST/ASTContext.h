@@ -25,7 +25,6 @@ public:
 			bool,
 			char *,
 			SourceLocation,
-			QualType,
 			UnaryOperator::Opcode,
 			BinaryOperator::Opcode,
 			PredefinedExpr::IdentType,
@@ -125,7 +124,7 @@ public:
 	}
 
 	template<typename... Args>
-	std::shared_ptr<Type> createType(Type::TypeClass type, Args... args)
+	std::shared_ptr<QualType> createType(Type::TypeClass type, Args... args)
 	{
 		std::vector<var_t> value;
 		(value.push_back(var_t{args}), ...);
@@ -179,41 +178,41 @@ public:
 
 private:
 	std::shared_ptr<Stmt> createDeclStmt(std::vector<var_t> &value);
-	std::shared_ptr<Stmt> createNullStmt(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createCompoundStmt(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createCaseStmt(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createDefaultStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createNullStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createCompoundStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createCaseStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createDefaultStmt(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createLabelStmt(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createIfStmt(std::vector<var_t> &value);
-	std::shared_ptr<Stmt> createSwitchStmt(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createWhileStmt(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createDoStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createSwitchStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createWhileStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createDoStmt(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createForStmt(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createGotoStmt(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createIndirectGotoStmt(std::vector<var_t> &value);
-	std::shared_ptr<Stmt> createContinueStmt(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createBreakStmt(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createReturnStmt(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createContinueStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createBreakStmt(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createReturnStmt(std::vector<var_t> &value);
 
 	std::shared_ptr<Stmt> createDeclRefExpr(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createPredefinedExpr(std::vector<var_t> &value);
-	std::shared_ptr<Stmt> createIntegerLiteral(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createIntegerLiteral(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createCharacterLiteral(std::vector<var_t> &value);
-	std::shared_ptr<Stmt> createFloatingLiteral(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createFloatingLiteral(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createImaginaryLiteral(std::vector<var_t> &value);
-	std::shared_ptr<Stmt> createStringLiteral(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createParenExpr(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createUnaryOperator(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createSizeOfAlignOfExpr(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createArraySubscriptExpr(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createStringLiteral(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createParenExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createUnaryOperator(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createSizeOfAlignOfExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createArraySubscriptExpr(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createCallExpr(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createMemberExpr(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createCompoundLiteralExpr(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createImplicitCastExpr(std::vector<var_t> &value);
-	std::shared_ptr<Stmt> createCStyleCastExpr(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createBinaryOperator(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createCompoundAssignOperator(std::vector<var_t> &value);//done
-	std::shared_ptr<Stmt> createConditionalOperator(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createCStyleCastExpr(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createBinaryOperator(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createCompoundAssignOperator(std::vector<var_t> &value);
+	std::shared_ptr<Stmt> createConditionalOperator(std::vector<var_t> &value);
 	//std::shared_ptr<Stmt> createAddrLabelExpr(std::vector<var_t> &value);///gun extension
 	//std::shared_ptr<Stmt> createStmtExpr(std::vector<var_t> &value);///gun extension
 	//std::shared_ptr<Stmt> createTypesCompatibleExpr(std::vector<var_t> &value);///gun extension
@@ -222,24 +221,24 @@ private:
 	//std::shared_ptr<Stmt> createGNUNullExpr(std::vector<var_t> &value);///gun extension
 	std::shared_ptr<Stmt> createVAArgExpr(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createInitListExpr(std::vector<var_t> &value);
-	std::shared_ptr<Stmt> createParenListExpr(std::vector<var_t> &value);//done
+	std::shared_ptr<Stmt> createParenListExpr(std::vector<var_t> &value);
 
 	//std::shared_ptr<Type> createExtQualType(std::vector<var_t> &value);
 //    void createQualifierSet(std::vector<var_t> &value);
-	std::shared_ptr<Type> createBuiltinType(std::vector<var_t> &value);//
-	std::shared_ptr<Type> createFixedWidthIntType(std::vector<var_t> &value);
-	std::shared_ptr<Type> createComplexType(std::vector<var_t> &value);
-	std::shared_ptr<Type> createPointerType(std::vector<var_t> &value);
-	std::shared_ptr<Type> createBlockPointerType(std::vector<var_t> &value);
+	std::shared_ptr<QualType> createBuiltinType(std::vector<var_t> &value);//
+	std::shared_ptr<QualType> createFixedWidthIntType(std::vector<var_t> &value);
+	std::shared_ptr<QualType> createComplexType(std::vector<var_t> &value);
+	std::shared_ptr<QualType> createPointerType(std::vector<var_t> &value);
+	std::shared_ptr<QualType> createBlockPointerType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createReferenceType(std::vector<var_t> &value);//
 	//std::shared_ptr<Type> createLValueReferenceType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createRValueReferenceType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createMemberPointerType(std::vector<var_t> &value);
 //    void createArrayType(std::vector<var_t> &value);      protected
-	std::shared_ptr<Type> createConstantArrayType(std::vector<var_t> &value);//
-	std::shared_ptr<Type> createConstantArrayWithExprType(std::vector<var_t> &value);//
-	std::shared_ptr<Type> createConstantArrayWithoutExprType(std::vector<var_t> &value);//
-	std::shared_ptr<Type> createIncompleteArrayType(std::vector<var_t> &value);//
+	std::shared_ptr<QualType> createConstantArrayType(std::vector<var_t> &value);//
+	std::shared_ptr<QualType> createConstantArrayWithExprType(std::vector<var_t> &value);//
+	std::shared_ptr<QualType> createConstantArrayWithoutExprType(std::vector<var_t> &value);//
+	std::shared_ptr<QualType> createIncompleteArrayType(std::vector<var_t> &value);//
 	//std::shared_ptr<Type> createVariableArrayType(std::vector<var_t> &value);//
 	//std::shared_ptr<Type> createDependentSizedArrayType(std::vector<var_t> &value);//
 
@@ -247,8 +246,8 @@ private:
 	//std::shared_ptr<Type> createVectorType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createExtVectorType(std::vector<var_t> &value);
 
-	std::shared_ptr<Type> createFunctionNoProtoType(std::vector<var_t> &value);
-	std::shared_ptr<Type> createFunctionProtoType(std::vector<var_t> &value);
+	std::shared_ptr<QualType> createFunctionNoProtoType(std::vector<var_t> &value);
+	std::shared_ptr<QualType> createFunctionProtoType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createTypeOfExprType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createDependentTypeOfExprType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createTypeOfType(std::vector<var_t> &value);

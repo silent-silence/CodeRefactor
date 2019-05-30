@@ -37,26 +37,19 @@ public:
     Iterator(std::shared_ptr<Stmt> *ptr)
         :m_ptr(ptr)
     {}
-    Iterator& operator++() { ++m_ptr; return *this; }
-    Iterator operator-(size_t i) { return m_ptr-i; }
-    Iterator operator+(size_t i) { return m_ptr+i; }
-    std::shared_ptr<Stmt> operator[](size_t idx){
-        return m_ptr[idx];
-    }
+    Iterator& operator++();
+    Iterator operator-(size_t i);
+    Iterator operator+(size_t i);
+    std::shared_ptr<Stmt> operator[](size_t idx);
 
-    signed operator-(const Iterator& R) const{
-        return static_cast<signed>(m_ptr - R.m_ptr);
-    }
-    std::shared_ptr<Stmt> operator*() const{
-        return *m_ptr;
-    }
-    std::shared_ptr<Stmt> operator->() const{
-        return *m_ptr;
-    }
-    bool operator==(const Iterator& R) const { return m_ptr == R.m_ptr; }
-    bool operator!=(const Iterator& R) const { return m_ptr != R.m_ptr; }
-    bool operator>(const Iterator& R) const { return m_ptr > R.m_ptr; }
-    bool operator>=(const Iterator& R) const { return m_ptr >= R.m_ptr; }
+    signed operator-(const Iterator& R) const;
+    std::shared_ptr<Stmt> operator*() const;
+    std::shared_ptr<Stmt> operator->() const;
+
+    bool operator==(const Iterator& R) const;
+    bool operator!=(const Iterator& R) const;
+    bool operator>(const Iterator& R) const ;
+    bool operator>=(const Iterator& R) const;
 };
 
 //Stmt - This represents one statement.
@@ -74,8 +67,8 @@ public:
     };
     struct EmptyShell {};
     Stmt(StmtClass SC);
-    StmtClass getStmtClass() const { return static_cast<StmtClass>(sClass); }
-    static bool classof(const std::shared_ptr<Stmt> ) { return true; }
+    StmtClass getStmtClass() const;
+    static bool classof(const std::shared_ptr<Stmt> );
     virtual ~Stmt(){}
 
 
@@ -95,12 +88,18 @@ class DeclStmt : public Stmt
 public:
     DeclStmt(SourceLocation startLoc, SourceLocation endLoc);
     explicit DeclStmt(EmptyShell Empty);
-    virtual child_iterator child_begin(){return child_iterator();}
-    virtual child_iterator child_end(){return child_iterator();}
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == DeclStmtClass;
-    }
-    static bool classof(const DeclStmt *) { return true; }
+
+    SourceLocation getStartLoc() const;
+    SourceLocation getEndLoc() const;
+
+    void setStartLoc(SourceLocation L);
+    void setEndLoc(SourceLocation L) ;
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<DeclStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     SourceLocation StartLoc;
     SourceLocation EndLoc;
@@ -112,12 +111,15 @@ class NullStmt : public Stmt
 public:
     NullStmt(SourceLocation L);
     explicit NullStmt(EmptyShell Empty);
-    virtual child_iterator child_begin(){return child_iterator();}
-    virtual child_iterator child_end(){return child_iterator();}
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == NullStmtClass;
-    }
-    static bool classof(const NullStmt *) { return true; }
+
+    SourceLocation getSemiLoc() const;
+    void setSemiLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<NullStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     SourceLocation SemiLoc;
 };
@@ -127,13 +129,18 @@ class CompoundStmt : public Stmt
 public:
     CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, SourceLocation LB, SourceLocation RB);
     explicit CompoundStmt(EmptyShell Empty);
-    virtual child_iterator child_begin(){ return &Body[0]; }
-    virtual child_iterator child_end(){ return &Body[Body.size()]; }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == CompoundStmtClass;
-    }
-    static bool classof(const CompoundStmt *) { return true; }
 
+    SourceLocation getLBracLoc() const;
+    SourceLocation getRBracLoc() const;
+
+    void setLBracLoc(SourceLocation L);
+    void setRBracLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<CompoundStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     std::vector<std::shared_ptr<Stmt>> Body;
     SourceLocation LBracLoc, RBracLoc;
@@ -142,11 +149,12 @@ private:
 class SwitchCase : public Stmt
 {
 public:
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == CaseStmtClass ||
-      T->getStmtClass() == DefaultStmtClass;
-    }
-    static bool classof(const SwitchCase *) { return true; }
+    std::weak_ptr<SwitchCase> getNextSwitchCase();
+
+    void setNextSwitchCase(std::shared_ptr<SwitchCase> SC);
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<SwitchCase>);
 protected:
     SwitchCase(StmtClass SC);
     std::shared_ptr<SwitchCase> NextSwitchCase;
@@ -155,20 +163,32 @@ protected:
 class CaseStmt : public SwitchCase
 {
 public:
-    // Iterators
-    virtual child_iterator child_begin(){ return &SubExprs[0]; }
-    virtual child_iterator child_end(){ return &SubExprs[END_EXPR]; }
-    CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, SourceLocation caseLoc,
-             SourceLocation ellipsisLoc, SourceLocation colonLoc);
-    explicit CaseStmt(EmptyShell Empty);
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == CaseStmtClass;
-    }
-    static bool classof(const CaseStmt *) { return true; }
 
-    std::shared_ptr<Stmt> getSubStmt() const { return SubExprs[SUBSTMT]; }
-    std::shared_ptr<Stmt> getLHS() const { return SubExprs[LHS]; }
-    std::shared_ptr<Stmt> getRHS() const { return SubExprs[RHS]; }
+    CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, SourceLocation caseLoc,SourceLocation ellipsisLoc, SourceLocation colonLoc);
+    explicit CaseStmt(EmptyShell Empty);
+
+    SourceLocation getCaseLoc() const;
+    SourceLocation getEllipsisLoc() const;
+    SourceLocation getColonLoc() const;
+
+    void setCaseLoc(SourceLocation L);
+    void setEllipsisLoc(SourceLocation L);
+    void setColonLoc(SourceLocation L);
+
+    std::weak_ptr<Expr>getLHS();
+    std::weak_ptr<Expr>getRHS();
+    std::weak_ptr<Stmt>getSubStmt();
+
+    void setSubStmt(std::shared_ptr<Stmt>S);
+    void setLHS(std::shared_ptr<Expr>Val);
+    void setRHS(std::shared_ptr<Expr>Val);
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<CaseStmt>);
+
+    // Iterators
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 
 private:
     enum { SUBSTMT, LHS, RHS, END_EXPR };
@@ -183,12 +203,21 @@ class DefaultStmt : public SwitchCase
 public:
     DefaultStmt(SourceLocation DL, SourceLocation CL, std::shared_ptr<Stmt> substmt);
     explicit DefaultStmt(EmptyShell);
-    virtual child_iterator child_begin() { return &SubStmt; }
-    virtual child_iterator child_end() { return &SubStmt+1; }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == DefaultStmtClass;
-    }
-    static bool classof(const DefaultStmt *) { return true; }
+
+    std::weak_ptr<Stmt>getSubStmt();
+    SourceLocation getDefaultLoc() const;
+    SourceLocation getColonLoc() const;
+
+    void setSubStmt(std::shared_ptr<Stmt>S);
+    void setDefaultLoc(SourceLocation L);
+    void setColonLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<DefaultStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
+
 private:
     std::shared_ptr<Stmt> SubStmt;
     SourceLocation DefaultLoc;
@@ -198,15 +227,25 @@ private:
 class LabelStmt : public Stmt
 {
 public:
-    virtual child_iterator child_begin() { return &SubStmt; }
-    virtual child_iterator child_end() { return &SubStmt+1; }
     LabelStmt(SourceLocation IL, std::shared_ptr<Stmt> substmt);
     explicit LabelStmt(EmptyShell Empty);
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == LabelStmtClass;
-    }
-    static bool classof(const LabelStmt *) { return true; }
 
+    SourceLocation getIdentLoc() const;
+ //    IdentifierInfo *getID() const { return Label; }
+    std::weak_ptr<Stmt>getSubStmt();
+
+
+
+    void setIdentLoc(SourceLocation L);
+//    void setID(IdentifierInfo *II) { Label = II; }
+    void setSubStmt(std::shared_ptr<Stmt> SS);
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<LabelStmt>);
+
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     std::shared_ptr<Stmt> SubStmt;
     SourceLocation IdentLoc;
@@ -216,20 +255,30 @@ private:
 class IfStmt : public Stmt
 {
 public:
+
     IfStmt(SourceLocation IL, std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> then,
            SourceLocation EL = SourceLocation(), std::shared_ptr<Stmt> elsev= nullptr);
     explicit IfStmt(EmptyShell Empty);
-    virtual child_iterator child_begin() { return &SubExprs[0]; }
-    virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == IfStmtClass;
-    }
-    static bool classof(const IfStmt *) { return true; }
 
-    std::shared_ptr<Stmt> getCond() const { return SubExprs[COND]; }
-	std::shared_ptr<Stmt> getThen() const { return SubExprs[THEN]; }
-	std::shared_ptr<Stmt> getElse() const { return SubExprs[ELSE]; }
+    std::weak_ptr<Expr>getCond();
+    std::weak_ptr<Stmt>getThen();
+    std::weak_ptr<Stmt>getElse();
 
+    void setCond(std::shared_ptr<Expr>E);
+    void setThen(std::shared_ptr<Stmt>S);
+    void setElse(std::shared_ptr<Stmt>S);
+
+    SourceLocation getIfLoc() const;
+    SourceLocation getElseLoc() const;
+
+    void setIfLoc(SourceLocation L);
+    void setElseLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<IfStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     enum { COND, THEN, ELSE, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -242,13 +291,26 @@ class SwitchStmt : public Stmt
 public:
     SwitchStmt(SourceLocation SL, std::shared_ptr<Expr> cond);
     explicit SwitchStmt(EmptyShell Empty);
-    virtual child_iterator child_begin(){return &SubExprs[0];}
-    virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
-    static bool classof(const Stmt *T) {
-      return T->getStmtClass() == SwitchStmtClass;
-    }
-    static bool classof(const SwitchStmt *) { return true; }
 
+    std::weak_ptr<Expr>getCond();
+    std::weak_ptr<Stmt>getBody();
+    std::weak_ptr<SwitchCase>getSwitchCaseList();
+
+    void setCond(std::shared_ptr<Expr>E);
+    void setBody(std::shared_ptr<Stmt>S);
+    void setSwitchCaseList(std::shared_ptr<SwitchCase>SC);
+
+    SourceLocation getSwitchLoc() const ;
+
+    void setSwitchLoc(SourceLocation L);
+    void setBody(std::shared_ptr<Stmt>S, SourceLocation SL);
+
+
+    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<SwitchStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -261,16 +323,21 @@ class WhileStmt : public Stmt
 public:
     WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body, SourceLocation WL);
     explicit WhileStmt(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == WhileStmtClass;
-    }
-    static bool classof(const std::shared_ptr<WhileStmt>) { return true; }
-    virtual child_iterator child_begin(){ return &SubExprs[0];}
-    virtual child_iterator child_end(){return &SubExprs[0]+END_EXPR;}
 
-    std::shared_ptr<Stmt> getCond() const { return SubExprs[COND]; }
-    std::shared_ptr<Stmt> getBody() const { return SubExprs[BODY]; }
+    std::weak_ptr<Expr> getCond();
+    std::weak_ptr<Stmt> getBody();
 
+    void setCond(std::shared_ptr<Expr> E);
+    void setBody(std::shared_ptr<Stmt> S);
+
+    SourceLocation getWhileLoc() const;
+    void setWhileLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<WhileStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -286,16 +353,26 @@ public:
            SourceLocation WL,
            SourceLocation RP);
     explicit DoStmt(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == DoStmtClass;
-    }
-    static bool classof(const std::shared_ptr<DoStmt>) { return true; }
-    virtual child_iterator child_begin(){ return &SubExprs[0]; }
-    virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
 
-    std::shared_ptr<Stmt> getCond() const { return SubExprs[COND]; }
-    std::shared_ptr<Stmt> getBody() const { return SubExprs[BODY]; }
+    std::weak_ptr<Expr> getCond();
+     std::weak_ptr<Stmt> getBody();
 
+    void setCond(std::shared_ptr<Expr> E);
+    void setBody(std::shared_ptr<Stmt> S);
+
+    SourceLocation getDoLoc() const;
+    SourceLocation getWhileLoc() const;
+    SourceLocation getRParenLoc() const;
+
+    void setDoLoc(SourceLocation L);
+    void setWhileLoc(SourceLocation L);
+    void setRParenLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<DoStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -315,18 +392,30 @@ public:
             SourceLocation LP,
             SourceLocation RP);
     explicit ForStmt(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == ForStmtClass;
-    }
-    static bool classof(const std::shared_ptr<ForStmt>) { return true; }
-    virtual child_iterator child_begin(){ return &SubExprs[0]; }
-    virtual child_iterator child_end() { return &SubExprs[0]+END_EXPR; }
 
-    std::shared_ptr<Stmt> getInit() const { return SubExprs[INIT]; }
-	std::shared_ptr<Stmt> getCond() const { return SubExprs[COND]; }
-	std::shared_ptr<Stmt> getInc() const { return SubExprs[INC]; }
-	std::shared_ptr<Stmt> getBody() const { return SubExprs[BODY]; }
+    std::weak_ptr<Stmt> getInit();
+    std::weak_ptr<Expr> getCond();
+    std::weak_ptr<Expr> getInc();
+    std::weak_ptr<Stmt> getBody();
 
+    void setInit(std::shared_ptr<Stmt> S);
+    void setCond(std::shared_ptr<Expr> E);
+    void setInc(std::shared_ptr<Expr> E);
+    void setBody(std::shared_ptr<Stmt> S);
+
+    SourceLocation getForLoc() const;
+    SourceLocation getLParenLoc() const;
+    SourceLocation getRParenLoc() const;
+
+    void setForLoc(SourceLocation L);
+    void setLParenLoc(SourceLocation L);
+    void setRParenLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<ForStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     enum { INIT, COND, INC, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -339,12 +428,21 @@ class GotoStmt : public Stmt
 public:
     GotoStmt(std::shared_ptr<LabelStmt> label, SourceLocation GL, SourceLocation LL);
     explicit GotoStmt(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == GotoStmtClass;
-    }
-    static bool classof(const std::shared_ptr<GotoStmt>) { return true; }
-    virtual child_iterator child_begin(){ return child_iterator(); }
-    virtual child_iterator child_end(){ return child_iterator(); }
+
+    std::weak_ptr<LabelStmt> getLabel() const;
+    void setLabel(std::shared_ptr<LabelStmt> S);
+
+    SourceLocation getGotoLoc() const;
+    SourceLocation getLabelLoc() const;
+
+    void setGotoLoc(SourceLocation L);
+    void setLabelLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<GotoStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     std::shared_ptr<LabelStmt> Label;
     SourceLocation GotoLoc;
@@ -355,14 +453,22 @@ class IndirectGotoStmt : public Stmt
 {
 public:
     IndirectGotoStmt(SourceLocation gotoLoc, SourceLocation starLoc, std::shared_ptr<Expr> target);
-
     explicit IndirectGotoStmt(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == IndirectGotoStmtClass;
-    }
-    static bool classof(const std::shared_ptr<IndirectGotoStmt>) { return true; }
-    virtual child_iterator child_begin(){ return &Target; }
-    virtual child_iterator child_end(){ return &Target+1; }
+
+    SourceLocation getGotoLoc() const;
+    SourceLocation getStarLoc() const;
+
+    void setGotoLoc(SourceLocation L);
+    void setStarLoc(SourceLocation L);
+
+    std::weak_ptr<Expr> getTarget();
+    void setTarget(std::shared_ptr<Expr> E);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<IndirectGotoStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     SourceLocation GotoLoc;
     SourceLocation StarLoc;
@@ -373,14 +479,16 @@ class ContinueStmt : public Stmt
 {
 public:
     ContinueStmt(SourceLocation CL);
-
     explicit ContinueStmt(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == ContinueStmtClass;
-    }
-    static bool classof(const std::shared_ptr<ContinueStmt>) { return true; }
-    virtual child_iterator child_begin(){ return child_iterator(); }
-    virtual child_iterator child_end(){ return child_iterator(); }
+
+    SourceLocation getContinueLoc() const;
+    void setContinueLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<ContinueStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     SourceLocation ContinueLoc;
 };
@@ -390,12 +498,15 @@ class BreakStmt : public Stmt
 public:
     BreakStmt(SourceLocation BL);
     explicit BreakStmt(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == BreakStmtClass;
-    }
-    static bool classof(const std::shared_ptr<BreakStmt>) { return true; }
-    virtual child_iterator child_begin(){ return child_iterator(); }
-    virtual child_iterator child_end(){ return child_iterator(); }
+
+    SourceLocation getBreakLoc() const;
+    void setBreakLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<BreakStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     SourceLocation BreakLoc;
 };
@@ -404,17 +515,19 @@ class ReturnStmt : public Stmt
 {
 public:
     ReturnStmt(SourceLocation RL, std::shared_ptr<Expr> E = nullptr);
-
     explicit ReturnStmt(EmptyShell Empty);
-    static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == ReturnStmtClass;
-    }
-    static bool classof(const std::shared_ptr<ReturnStmt>) { return true; }
-    virtual child_iterator child_begin(){ return &RetExpr; }
-    virtual child_iterator child_end() { return RetExpr ? &RetExpr+1 : &RetExpr; }
 
-    std::shared_ptr<Expr> getRetValue() const { return std::dynamic_pointer_cast<Expr>(RetExpr); }
+    std::weak_ptr<Expr> getRetValue();
+    void setRetValue(std::shared_ptr<Expr> E);
 
+    SourceLocation getReturnLoc() const;
+    void setReturnLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<ReturnStmt>);
+
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     std::shared_ptr<Stmt> RetExpr;
     SourceLocation RetLoc;
@@ -428,10 +541,18 @@ public:
             std::vector<std::string> names, std::vector<std::shared_ptr<StringLiteral> > constraints,
             std::vector<std::shared_ptr<Expr> > exprs, std::shared_ptr<StringLiteral> asmstr, unsigned numclobbers,
             std::vector<std::shared_ptr<StringLiteral> > clobbers, SourceLocation rparenloc);
-
-    static bool classof(const std::shared_ptr<Stmt> T) {return T->getStmtClass() == AsmStmtClass;}
-    static bool classof(const std::shared_ptr<AsmStmt>) { return true; }
     explicit AsmStmt(EmptyShell Empty);
+
+    SourceLocation getAsmLoc() const;
+    SourceLocation getRParenLoc() const;
+
+    void setAsmLoc(SourceLocation L);
+    void setRParenLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<AsmStmt>);
+
+
 private:
     SourceLocation AsmLoc, RParenLoc;
     std::shared_ptr<StringLiteral> AsmStr;

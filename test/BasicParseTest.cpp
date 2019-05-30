@@ -22,7 +22,10 @@ using std::dynamic_pointer_cast;	using std::weak_ptr;
 class BasicParseTest : public testing::Test {
 protected:
 	void SetUp() override {}
-	void TearDown() override {}
+	void TearDown() override {
+		printer.resetPrinter();
+		adapter.clean();
+	}
 
 	void reset() {
 		printer.resetPrinter();

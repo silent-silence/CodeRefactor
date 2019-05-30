@@ -20,13 +20,13 @@ TEST(DelcarationTest, Decls)
 	SourceLocation location;
 
 	DeclName name("variable");
-	auto variable = make_shared<VariableDecl>(context, location, QualType(), name);
+	auto variable = make_shared<VariableDecl>(context, location, make_shared<QualType>(), name);
 	context->addDecl(variable);
 
 	auto look = context->lookup(name);
 	EXPECT_EQ(look.lock(), variable);
 
-	auto variableRename = make_shared<VariableDecl>(context, location, QualType(), name);
+	auto variableRename = make_shared<VariableDecl>(context, location, make_shared<QualType>(), name);
 	context->addDecl(variableRename);
 	auto lookRename = context->lookup(name);
 	EXPECT_NE(lookRename.lock(), variable);

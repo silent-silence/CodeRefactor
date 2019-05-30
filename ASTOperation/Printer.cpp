@@ -107,16 +107,26 @@ void Printer::print(std::shared_ptr<Stmt> s)
 	}
 }
 
+#ifdef ENV_TEST
 void Printer::resetPrinter()
 {
 	m_tabNum = 0;
 }
+#endif
 
-void Printer::childIteration(std::shared_ptr<Stmt> &root)
+void Printer::formatExprAsStmt(std::shared_ptr<Stmt> s)
+{
+	print(s);
+	// if is a expr
+	if(dynamic_pointer_cast<Expr>(s))
+			m_openHelper.getOutputStream() << ";\n";
+}
+
+/*void Printer::childIteration(std::shared_ptr<Stmt> &root)
 {
 	for(auto s = root->child_begin(); s != root->child_end(); ++s)
 		print(*s);
-}
+}*/
 
 void Printer::processNullStmt(std::shared_ptr<Stmt> &s)
 {
@@ -127,7 +137,8 @@ void Printer::processCompoundStmt(std::shared_ptr<Stmt> &s)
 {
 	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "{\n";
 	++m_tabNum;
-	childIteration(s);
+	for(auto stmt = s->child_begin(); stmt != s->child_end(); ++stmt)
+		formatExprAsStmt(*stmt);
 	--m_tabNum;
 	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "}\n";
 }
@@ -135,47 +146,48 @@ void Printer::processCompoundStmt(std::shared_ptr<Stmt> &s)
 void Printer::processUnaryOperator(std::shared_ptr<Stmt> &s)
 {
 	auto unary = dynamic_pointer_cast<UnaryOperator>(s);
+	auto subExpr = unary->getSubExpr().lock();
 	switch (unary->getOpcode())
 	{
 		case UnaryOperator::PostInc:
-			childIteration(s);
+			print(subExpr);
 			m_openHelper.getOutputStream() << "++";
 			break;
 		case UnaryOperator::PostDec:
-			childIteration(s);
+			print(subExpr);
 			m_openHelper.getOutputStream() << "--";
 			break;
 		case UnaryOperator::PreInc:
 			m_openHelper.getOutputStream() << "++";
-			childIteration(s);
+			print(subExpr);
 			break;
 		case UnaryOperator::PreDec:
 			m_openHelper.getOutputStream() << "--";
-			childIteration(s);
+			print(subExpr);
 			break;
 		case UnaryOperator::AddrOf:
 			m_openHelper.getOutputStream() << "&";
-			childIteration(s);
+			print(subExpr);
 			break;
 		case UnaryOperator::Deref:
 			m_openHelper.getOutputStream() << "*";
-			childIteration(s);
+			print(subExpr);
 			break;
 		case UnaryOperator::Plus:
 			m_openHelper.getOutputStream() << "+";
-			childIteration(s);
+			print(subExpr);
 			break;
 		case UnaryOperator::Minus:
 			m_openHelper.getOutputStream() << "-";
-			childIteration(s);
+			print(subExpr);
 			break;
 		case UnaryOperator::Not:
 			m_openHelper.getOutputStream() << "!";
-			childIteration(s);
+			print(subExpr);
 			break;
 		case UnaryOperator::LNot:
 			m_openHelper.getOutputStream() << "~";
-			childIteration(s);
+			print(subExpr);
 			break;
 		case UnaryOperator::Real:break;
 		case UnaryOperator::Imag:break;
@@ -199,128 +211,63 @@ void Printer::processFloatingLiteral(std::shared_ptr<Stmt> &s)
 void Printer::processBinaryOperator(std::shared_ptr<Stmt> &s)
 {
 	auto binary = dynamic_pointer_cast<BinaryOperator>(s);
-	print(binary->getLHS());
+	print(binary->getLHS().lock());
 	switch (binary->getOpcode())
 	{
-		case BinaryOperator::PtrMemD:
-			m_openHelper.getOutputStream() << ".";
-			break;
-		case BinaryOperator::PtrMemI:
-			m_openHelper.getOutputStream() << "->";
-			break;
-		case BinaryOperator::Mul:
-			m_openHelper.getOutputStream() << "*";
-			break;
-		case BinaryOperator::Div:
-			m_openHelper.getOutputStream() << "/";
-			break;
-		case BinaryOperator::Rem:
-			m_openHelper.getOutputStream() << "%";
-			break;
-		case BinaryOperator::Add:
-			m_openHelper.getOutputStream() << "+";
-			break;
-		case BinaryOperator::Sub:
-			m_openHelper.getOutputStream() << "-";
-			break;
-		case BinaryOperator::Shl:
-			m_openHelper.getOutputStream() << "<<";
-			break;
-		case BinaryOperator::Shr:
-			m_openHelper.getOutputStream() << ">>";
-			break;
-		case BinaryOperator::LT:
-			m_openHelper.getOutputStream() << "<";
-			break;
-		case BinaryOperator::GT:
-			m_openHelper.getOutputStream() << ">";
-			break;
-		case BinaryOperator::LE:
-			m_openHelper.getOutputStream() << "<=";
-			break;
-		case BinaryOperator::GE:
-			m_openHelper.getOutputStream() << ">=";
-			break;
-		case BinaryOperator::EQ:
-			m_openHelper.getOutputStream() << "==";
-			break;
-		case BinaryOperator::NE:
-			m_openHelper.getOutputStream() << "!=";
-			break;
-		case BinaryOperator::And:
-			m_openHelper.getOutputStream() << "&";
-			break;
-		case BinaryOperator::Xor:
-			m_openHelper.getOutputStream() << "^";
-			break;
-		case BinaryOperator::Or:
-			m_openHelper.getOutputStream() << "|";
-			break;
-		case BinaryOperator::LAnd:
-			m_openHelper.getOutputStream() << "&&";
-			break;
-		case BinaryOperator::LOr:
-			m_openHelper.getOutputStream() << "||";
-			break;
-
-		case BinaryOperator::Comma:
-			m_openHelper.getOutputStream() << ",";
-			break;
+		case BinaryOperator::PtrMemD:	m_openHelper.getOutputStream() << ".";	break;
+		case BinaryOperator::PtrMemI:	m_openHelper.getOutputStream() << "->";	break;
+		case BinaryOperator::Mul:		m_openHelper.getOutputStream() << "*";	break;
+		case BinaryOperator::Div:		m_openHelper.getOutputStream() << "/";	break;
+		case BinaryOperator::Rem:		m_openHelper.getOutputStream() << "%";	break;
+		case BinaryOperator::Add:		m_openHelper.getOutputStream() << "+";	break;
+		case BinaryOperator::Sub:		m_openHelper.getOutputStream() << "-";	break;
+		case BinaryOperator::Shl:		m_openHelper.getOutputStream() << "<<";	break;
+		case BinaryOperator::Shr:		m_openHelper.getOutputStream() << ">>";	break;
+		case BinaryOperator::LT:		m_openHelper.getOutputStream() << "<";	break;
+		case BinaryOperator::GT:		m_openHelper.getOutputStream() << ">";	break;
+		case BinaryOperator::LE:		m_openHelper.getOutputStream() << "<=";	break;
+		case BinaryOperator::GE:		m_openHelper.getOutputStream() << ">=";	break;
+		case BinaryOperator::EQ:		m_openHelper.getOutputStream() << "==";	break;
+		case BinaryOperator::NE:		m_openHelper.getOutputStream() << "!=";	break;
+		case BinaryOperator::And:		m_openHelper.getOutputStream() << "&";	break;
+		case BinaryOperator::Xor:		m_openHelper.getOutputStream() << "^";	break;
+		case BinaryOperator::Or:		m_openHelper.getOutputStream() << "|";	break;
+		case BinaryOperator::LAnd:		m_openHelper.getOutputStream() << "&&";	break;
+		case BinaryOperator::LOr:		m_openHelper.getOutputStream() << "||";	break;
+		case BinaryOperator::Comma:		m_openHelper.getOutputStream() << ",";	break;
 	}
-	print(binary->getRHS());
+	print(binary->getRHS().lock());
 }
 
 void Printer::processCompoundAssignOperator(std::shared_ptr<Stmt> &s)
 {
 	auto binary = dynamic_pointer_cast<BinaryOperator>(s);
-	print(binary->getLHS());
+	print(binary->getLHS().lock());
 	switch (binary->getOpcode())
 	{
-		case BinaryOperator::Assign:
-			m_openHelper.getOutputStream() << "=";
-			break;
-		case BinaryOperator::MulAssign:
-			m_openHelper.getOutputStream() << "*=";
-			break;
-		case BinaryOperator::DivAssign:
-			m_openHelper.getOutputStream() << "/=";
-			break;
-		case BinaryOperator::RemAssign:
-			m_openHelper.getOutputStream() << "%=";
-			break;
-		case BinaryOperator::AddAssign:
-			m_openHelper.getOutputStream() << "+=";
-			break;
-		case BinaryOperator::SubAssign:
-			m_openHelper.getOutputStream() << "-=";
-			break;
-		case BinaryOperator::ShlAssign:
-			m_openHelper.getOutputStream() << "<<=";
-			break;
-		case BinaryOperator::ShrAssign:
-			m_openHelper.getOutputStream() << ">>=";
-			break;
-		case BinaryOperator::AndAssign:
-			m_openHelper.getOutputStream() << "&=";
-			break;
-		case BinaryOperator::XorAssign:
-			m_openHelper.getOutputStream() << "^=";
-			break;
-		case BinaryOperator::OrAssign:
-			m_openHelper.getOutputStream() << "|=";
-			break;
+		case BinaryOperator::Assign:	m_openHelper.getOutputStream() << "=";	break;
+		case BinaryOperator::MulAssign:	m_openHelper.getOutputStream() << "*=";	break;
+		case BinaryOperator::DivAssign:	m_openHelper.getOutputStream() << "/=";	break;
+		case BinaryOperator::RemAssign:	m_openHelper.getOutputStream() << "%=";	break;
+		case BinaryOperator::AddAssign:	m_openHelper.getOutputStream() << "+=";	break;
+		case BinaryOperator::SubAssign:	m_openHelper.getOutputStream() << "-=";	break;
+		case BinaryOperator::ShlAssign:	m_openHelper.getOutputStream() << "<<=";break;
+		case BinaryOperator::ShrAssign:	m_openHelper.getOutputStream() << ">>=";break;
+		case BinaryOperator::AndAssign:	m_openHelper.getOutputStream() << "&=";	break;
+		case BinaryOperator::XorAssign:	m_openHelper.getOutputStream() << "^=";	break;
+		case BinaryOperator::OrAssign:	m_openHelper.getOutputStream() << "|=";	break;
 	}
-	print(binary->getRHS());
+	print(binary->getRHS().lock());
 }
 
 void Printer::processConditionalOperator(std::shared_ptr<Stmt> &s)
 {
 	auto condition = dynamic_pointer_cast<ConditionalOperator>(s);
-	print(condition->getCond());
+	print(condition->getCond().lock());
 	m_openHelper.getOutputStream() << "?";
-	print(condition->getLHS());
+	print(condition->getLHS().lock());
 	m_openHelper.getOutputStream() << ":";
-	print(condition->getRHS());
+	print(condition->getRHS().lock());
 }
 
 void Printer::processContinueStmt(std::shared_ptr<Stmt> &s)
@@ -337,15 +284,16 @@ void Printer::processReturnStmt(std::shared_ptr<Stmt> &s)
 {
 	auto ret = dynamic_pointer_cast<ReturnStmt>(s);
 	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "return ";
-	if(ret->getRetValue())
-		print(ret->getRetValue());
+	if(ret->getRetValue().lock())
+		print(ret->getRetValue().lock());
 	m_openHelper.getOutputStream() << ";\n";
 }
 
 void Printer::processParenExpr(std::shared_ptr<Stmt> &s)
 {
+	auto paren = dynamic_pointer_cast<ParenExpr>(s);
 	m_openHelper.getOutputStream() << "(";
-	childIteration(s);
+	print(paren->getSubExpr().lock());
 	m_openHelper.getOutputStream() << ")";
 }
 
@@ -356,15 +304,15 @@ void Printer::processSizeOfAlignOfExpr(std::shared_ptr<Stmt> &s)
 	if(sizeofExp->isArgumentType())
 		;		// TODO: sizeof type
 	else
-		print(sizeofExp->getArgumentExpr());
+		print(sizeofExp->getArgumentExpr().lock());
 }
 
 void Printer::processArraySubscriptExpr(std::shared_ptr<Stmt> &s)
 {
 	auto arr = dynamic_pointer_cast<ArraySubscriptExpr>(s);
-	print(arr->getLHS());
+	print(arr->getLHS().lock());
 	m_openHelper.getOutputStream() << "[";
-	print(arr->getRHS());
+	print(arr->getRHS().lock());
 	m_openHelper.getOutputStream() << "]";
 }
 
@@ -384,22 +332,22 @@ void Printer::processWhileStmt(std::shared_ptr<Stmt> &s)
 {
 	auto whileStmt = dynamic_pointer_cast<WhileStmt>(s);
 	m_openHelper.getOutputStream() << "while(";
-	print(whileStmt->getCond());
+	print(whileStmt->getCond().lock());
 	m_openHelper.getOutputStream() << ")\n";
-	print(whileStmt->getBody());
+	formatExprAsStmt(whileStmt->getBody().lock());
 }
 
 void Printer::processIfStmt(std::shared_ptr<Stmt> &s)
 {
 	auto ifStmt = dynamic_pointer_cast<IfStmt>(s);
 	m_openHelper.getOutputStream() << "if(";
-	print(ifStmt->getCond());
+	print(ifStmt->getCond().lock());
 	m_openHelper.getOutputStream() << ")\n";
-	print(ifStmt->getThen());
-	if(ifStmt->getElse())
+	formatExprAsStmt(ifStmt->getThen().lock());
+	if(ifStmt->getElse().lock())
 	{
 		m_openHelper.getOutputStream() << "else ";
-		print(ifStmt->getElse());
+		print(ifStmt->getElse().lock());
 	}
 }
 
@@ -407,9 +355,9 @@ void Printer::processDoStmt(std::shared_ptr<Stmt> &s)
 {
 	auto doStmt = dynamic_pointer_cast<DoStmt>(s);
 	m_openHelper.getOutputStream() << "do\n";
-	print(doStmt->getBody());
+	formatExprAsStmt(doStmt->getBody().lock());
 	m_openHelper.getOutputStream() << "while(";
-	print(doStmt->getCond());
+	print(doStmt->getCond().lock());
 	m_openHelper.getOutputStream() << ")\n";
 }
 
@@ -417,30 +365,30 @@ void Printer::processForStmt(std::shared_ptr<Stmt> &s)
 {
 	auto forStmt = dynamic_pointer_cast<ForStmt>(s);
 	m_openHelper.getOutputStream() << "for(";
-	print(forStmt->getInit());
-	print(forStmt->getCond());
-	if(forStmt->getInc())
-		print(forStmt->getInc());
+	print(forStmt->getInit().lock());
+	print(forStmt->getCond().lock());
+	if(forStmt->getInc().lock())
+		print(forStmt->getInc().lock());
 	m_openHelper.getOutputStream() << ")\n";
-	print(forStmt->getBody());
+	formatExprAsStmt(forStmt->getBody().lock());
 }
 
 void Printer::processCaseStmt(std::shared_ptr<Stmt> &s)
 {
 	auto caseStmt = dynamic_pointer_cast<CaseStmt>(s);
 	m_openHelper.getOutputStream() << "case ";
-	print(caseStmt->getLHS());
+	print(caseStmt->getLHS().lock());
 	m_openHelper.getOutputStream() << ":\n";
-	if(caseStmt->getSubStmt())
+	/*if(caseStmt->getSubStmt())
 	{
 		++m_tabNum;
 		print(caseStmt->getSubStmt());
 		--m_tabNum;
-	}
+	}*/
 }
 
 void Printer::processRefExpr(std::shared_ptr<Stmt> &s)
 {
 	auto ref = dynamic_pointer_cast<DeclRefExpr>(s);
-	m_openHelper.getOutputStream() << ref->getDecl()->getIdentifier();
+	m_openHelper.getOutputStream() << ref->getDecl().lock()->getIdentifier();
 }

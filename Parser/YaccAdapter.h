@@ -10,7 +10,7 @@
 #include "parser.hpp"
 
 class Stmt;
-class Type;
+class QualType;
 class SourceLocation;
 class ASTContext;
 class DeclContextHolder;
@@ -129,11 +129,8 @@ public:
 	void makeIncompleteArrayType();//
 	//void makeVariableArrayType(std::vector<var_t> &value);//
 	//void makeDependentSizedArrayType(std::vector<var_t> &value);//
-
-
 	//void makeVectorType(std::vector<var_t> &value);
 	//void makeExtVectorType(std::vector<var_t> &value);
-
 	void makeFunctionNoProtoType();
 	void makeFunctionProtoType();
 	//void makeTypeOfExprType(std::vector<var_t> &value);
@@ -143,10 +140,13 @@ public:
 	//void makeDependentDecltypeType(std::vector<var_t> &value);
 
 	/// @brief Symbol table
+	/// @brief Temporary save the variable name
 	void storeVariable(std::string name, yy::location &l);
-	void makeVariable(std::shared_ptr<Type> type);
 
 private:
+	/// @brief This method should be called by makeDeclStmt() only
+	void makeVariable(std::shared_ptr<QualType> type);
+
 	/// @brief Check if type specifier is allowed
 	bool isTypeSpecifierNotIllegal();
 
@@ -154,7 +154,7 @@ private:
 
 	/// @brief Pop a Stmt/Type from the stack
 	std::shared_ptr<Stmt> pop_stmt();
-	std::shared_ptr<Type> pop_type();
+	std::shared_ptr<QualType> pop_type();
 
 	ASTContext &m_ASTContext;
 	DeclContextHolder &m_declContextHolder;
@@ -167,7 +167,7 @@ private:
 
 	/// @brief The stack of Stmt/Type
 	std::stack<std::shared_ptr<Stmt>> m_stmtStack;
-	std::stack<std::shared_ptr<Type>> m_typeStack;
+	std::stack<std::shared_ptr<QualType>> m_typeStack;
 	std::stack<std::pair<std::string, SourceLocation>> m_nameStack;
 
 	/*template<typename T=Stmt>

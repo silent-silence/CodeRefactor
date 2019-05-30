@@ -78,10 +78,15 @@ void YaccAdapter::makeCaseStmt(yy::location &l, yy::location &r, yy::location &c
 	SourceLocation lp = toSourceLocation(l);
 	SourceLocation rp = toSourceLocation(r);
 	SourceLocation cp = toSourceLocation(c);
+	// pop statement
+	auto stmt = pop_stmt();
+	auto lhs = dynamic_pointer_cast<Expr>(pop_stmt());
+	// push statement back
+	m_stmtStack.push(stmt);
 	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::CaseStmtClass,
-					dynamic_pointer_cast<Expr>(pop_stmt()),
+					lhs,
 					lp, rp, cp
 			)
 	);
@@ -233,7 +238,8 @@ void YaccAdapter::makeDeclRefExpr(std::string &name, yy::location &l)
 	std::shared_ptr<NamedDecl> decl = dynamic_pointer_cast<NamedDecl>(
 			m_declContextHolder.getContext()->lookup(name).lock()
 	);
-	QualType declType;
+	// TODO: get decl type
+	auto declType = m_ASTContext.createType(Type::Builtin, BuiltinType::Int);
 	SourceLocation lp = toSourceLocation(l);
 	m_stmtStack.push(
 			m_ASTContext.createStmt(
@@ -341,15 +347,17 @@ void YaccAdapter::makeSizeofExpr(yy::location &l, yy::location &r, bool isSizeof
 		sizeofExpr = m_ASTContext.createStmt(
 				Stmt::SizeOfAlignOfExprClass,
 				lp, rp,
-				type->getCanonicalType().lock()
+				type
 		);
 	}
 	else
+	{
 		sizeofExpr = m_ASTContext.createStmt(
 				Stmt::SizeOfAlignOfExprClass,
 				lp, rp,
 				dynamic_pointer_cast<Expr>(pop_stmt())
 		);
+	}
 	m_stmtStack.push(sizeofExpr);
 }
 
@@ -418,7 +426,7 @@ void YaccAdapter::makeCStyleCastExpr(yy::location &l, yy::location &r)
 					Stmt::CStyleCastExprClass,
 					CastExpr::CastKind::CK_Unknown,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
-					exprType->getCanonicalType().lock(),
+					exprType,
 					lp, rp
 			)
 	);
@@ -429,25 +437,25 @@ void YaccAdapter::makeBinaryOperator(int opc, yy::location &location)
 	BinaryOperator::Opcode operatorCode;
 	switch(opc)
 	{
-		case token::TOK_OR_OP:				operatorCode = BinaryOperator::LOr;			break;
-		case token::TOK_AND_OP:				operatorCode = BinaryOperator::LAnd;		break;
-		case '|':							operatorCode = BinaryOperator::Or;			break;
-		case '^':							operatorCode = BinaryOperator::Xor;			break;
-		case '&':							operatorCode = BinaryOperator::And;			break;
-		case token::TOK_EQ_OP:				operatorCode = BinaryOperator::EQ;			break;
-		case token::TOK_NE_OP:				operatorCode = BinaryOperator::NE;			break;
-		case '<':							operatorCode = BinaryOperator::LT;			break;
-		case '>':							operatorCode = BinaryOperator::GT;			break;
-		case token::TOK_LE_OP:				operatorCode = BinaryOperator::LE;			break;
-		case token::TOK_GE_OP:				operatorCode = BinaryOperator::GE;			break;
-		case token::TOK_LEFT_SHIFT_OP:		operatorCode = BinaryOperator::Shl;			break;
-		case token::TOK_RIGHT_SHIFT_OP:		operatorCode = BinaryOperator::Shr;			break;
-		case '+':							operatorCode = BinaryOperator::Add;			break;
-		case '-':							operatorCode = BinaryOperator::Sub;			break;
-		case '*':							operatorCode = BinaryOperator::Mul;			break;
-		case '/':							operatorCode = BinaryOperator::Div;			break;
-		case '%':							operatorCode = BinaryOperator::Rem;			break;
-		case ',':							operatorCode = BinaryOperator::Comma;		break;
+		case token::TOK_OR_OP:				operatorCode = BinaryOperator::LOr;		break;
+		case token::TOK_AND_OP:				operatorCode = BinaryOperator::LAnd;	break;
+		case '|':							operatorCode = BinaryOperator::Or;		break;
+		case '^':							operatorCode = BinaryOperator::Xor;		break;
+		case '&':							operatorCode = BinaryOperator::And;		break;
+		case token::TOK_EQ_OP:				operatorCode = BinaryOperator::EQ;		break;
+		case token::TOK_NE_OP:				operatorCode = BinaryOperator::NE;		break;
+		case '<':							operatorCode = BinaryOperator::LT;		break;
+		case '>':							operatorCode = BinaryOperator::GT;		break;
+		case token::TOK_LE_OP:				operatorCode = BinaryOperator::LE;		break;
+		case token::TOK_GE_OP:				operatorCode = BinaryOperator::GE;		break;
+		case token::TOK_LEFT_SHIFT_OP:		operatorCode = BinaryOperator::Shl;		break;
+		case token::TOK_RIGHT_SHIFT_OP:		operatorCode = BinaryOperator::Shr;		break;
+		case '+':							operatorCode = BinaryOperator::Add;		break;
+		case '-':							operatorCode = BinaryOperator::Sub;		break;
+		case '*':							operatorCode = BinaryOperator::Mul;		break;
+		case '/':							operatorCode = BinaryOperator::Div;		break;
+		case '%':							operatorCode = BinaryOperator::Rem;		break;
+		case ',':							operatorCode = BinaryOperator::Comma;	break;
 	}
 	SourceLocation l = toSourceLocation(location);
 	/// @note Type of the operation should by found by ASTContext
@@ -543,42 +551,76 @@ void YaccAdapter::makeBuiltinType()
 		throw TypeError("??");
 	}
 
-	if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & CHAR)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UChar));
+	auto doCreate = [&](BuiltinType::Kind kind)->shared_ptr<QualType>{ return m_ASTContext.createType(Type::Builtin, kind); };
+	unsigned types = m_typeSpecifier & (
+			VOID | CHAR | SHORT | INT | FLOAT | DOUBLE | SIGNED | UNSIGNED | LONG | LONGLONG
+	);
+	switch(types)
+	{
+		case UNSIGNED | CHAR:			m_typeStack.push(doCreate(BuiltinType::UChar));		break;
+		case UNSIGNED | SHORT:			m_typeStack.push(doCreate(BuiltinType::UShort));	break;
+		case UNSIGNED | INT:			m_typeStack.push(doCreate(BuiltinType::UInt));		break;
+		case UNSIGNED | LONG:			m_typeStack.push(doCreate(BuiltinType::ULong));		break;
+		case UNSIGNED | LONG | INT:		m_typeStack.push(doCreate(BuiltinType::ULong));		break;
+		case UNSIGNED | LONGLONG:		m_typeStack.push(doCreate(BuiltinType::ULongLong));	break;
+		case UNSIGNED | LONGLONG | INT:	m_typeStack.push(doCreate(BuiltinType::ULongLong));	break;
+		case SIGNED | CHAR:				m_typeStack.push(doCreate(BuiltinType::SChar));		break;
+		case SIGNED | SHORT:			m_typeStack.push(doCreate(BuiltinType::Short));		break;
+		case SIGNED | INT:				m_typeStack.push(doCreate(BuiltinType::Int));		break;
+		case SIGNED | LONG:				m_typeStack.push(doCreate(BuiltinType::Long));		break;
+		case SIGNED | LONGLONG:			m_typeStack.push(doCreate(BuiltinType::LongLong));	break;
+		case SHORT | INT:				m_typeStack.push(doCreate(BuiltinType::Short));		break;
+		case LONGLONG | INT:			m_typeStack.push(doCreate(BuiltinType::LongLong));	break;
+		case LONG | DOUBLE:				m_typeStack.push(doCreate(BuiltinType::LongDouble));break;
+		case LONG | INT:				m_typeStack.push(doCreate(BuiltinType::Long));		break;
+		case VOID:						m_typeStack.push(doCreate(BuiltinType::Void));		break;
+		case CHAR:						m_typeStack.push(doCreate(BuiltinType::Char_S));	break;
+		case SHORT:						m_typeStack.push(doCreate(BuiltinType::Short));		break;
+		case INT:						m_typeStack.push(doCreate(BuiltinType::Int));		break;
+		case FLOAT:						m_typeStack.push(doCreate(BuiltinType::Float));		break;
+		case DOUBLE:					m_typeStack.push(doCreate(BuiltinType::Double));	break;
+		case SIGNED:					m_typeStack.push(doCreate(BuiltinType::Int));		break;
+		case UNSIGNED:					m_typeStack.push(doCreate(BuiltinType::UInt));		break;
+		case LONG:						m_typeStack.push(doCreate(BuiltinType::Long));		break;
+		case LONGLONG:					m_typeStack.push(doCreate(BuiltinType::LongLong));	break;
+		default:						break;
+	}
+/*	if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & CHAR)
+		m_typeStack.push(doCreate(BuiltinType::UChar));
 	else if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & SHORT)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UShort));
+		m_typeStack.push(doCreate(BuiltinType::UShort));
 	else if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & INT)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UInt));
+		m_typeStack.push(doCreate(BuiltinType::UInt));
 	else if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & LONG)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::ULong));
+		m_typeStack.push(doCreate(BuiltinType::ULong));
 	else if(m_typeSpecifier & UNSIGNED && m_typeSpecifier & LONGLONG)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::ULongLong));
+		m_typeStack.push(doCreate(BuiltinType::ULongLong));
 	else if(m_typeSpecifier & SIGNED && m_typeSpecifier & CHAR)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::SChar));
+		m_typeStack.push(doCreate(BuiltinType::SChar));
 	else if(m_typeSpecifier & LONG && m_typeSpecifier & DOUBLE)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::LongDouble));
+		m_typeStack.push(doCreate(BuiltinType::LongDouble));
 	else if(m_typeSpecifier & LONG && m_typeSpecifier & INT)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Long));
+		m_typeStack.push(doCreate(BuiltinType::Long));
 	else if(m_typeSpecifier & VOID)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Void));
+		m_typeStack.push(doCreate(BuiltinType::Void));
 	else if(m_typeSpecifier & CHAR)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Char_S));
+		m_typeStack.push(doCreate(BuiltinType::Char_S));
 	else if(m_typeSpecifier & SHORT)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Short));
+		m_typeStack.push(doCreate(BuiltinType::Short));
 	else if(m_typeSpecifier & INT)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Int));
+		m_typeStack.push(doCreate(BuiltinType::Int));
 	else if(m_typeSpecifier & FLOAT)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Float));
+		m_typeStack.push(doCreate(BuiltinType::Float));
 	else if(m_typeSpecifier & DOUBLE)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Double));
+		m_typeStack.push(doCreate(BuiltinType::Double));
 	else if(m_typeSpecifier & SIGNED)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Int));
+		m_typeStack.push(doCreate(BuiltinType::Int));
 	else if(m_typeSpecifier & UNSIGNED)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::UInt));
+		m_typeStack.push(doCreate(BuiltinType::UInt));
 	else if(m_typeSpecifier & LONG)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::Long));
+		m_typeStack.push(doCreate(BuiltinType::Long));
 	else if(m_typeSpecifier & LONGLONG)
-		m_typeStack.push(m_ASTContext.createType(Type::Builtin, BuiltinType::LongLong));
+		m_typeStack.push(doCreate(BuiltinType::LongLong));*/
 
 	// reset specifiers after built
 	m_typeSpecifier = 0;
@@ -589,15 +631,15 @@ void YaccAdapter::makeConstantArrayType()
 	auto elementType = pop_type();
 	auto arrayType = m_ASTContext.createType(
 			Type::Pointer,
-			elementType->getCanonicalType().lock(),
-			elementType->getCanonicalType().lock()
+			elementType,
+			elementType
 	);
 	// TODO Calculate array size
 	m_typeStack.push(
 			m_ASTContext.createType(
 					Type::ConstantArray,
-					elementType->getCanonicalType().lock(),
-					arrayType->getCanonicalType().lock(),
+					elementType,
+					arrayType,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
 					ArrayType::Normal,
 					0
@@ -610,14 +652,14 @@ void YaccAdapter::makeIncompleteArrayType()
 	auto elementType = pop_type();
 	auto arrayType = m_ASTContext.createType(
 			Type::Pointer,
-			elementType->getCanonicalType().lock(),
-			elementType->getCanonicalType().lock()
+			elementType,
+			elementType
 	);
 	m_typeStack.push(
 			m_ASTContext.createType(
 					Type::IncompleteArray,
-					elementType->getCanonicalType().lock(),
-					arrayType->getCanonicalType().lock(),
+					elementType,
+					arrayType,
 					ArrayType::Normal,
 					static_cast<unsigned>(0)
 			)
@@ -629,13 +671,13 @@ void YaccAdapter::storeVariable(std::string name, yy::location &l)
 	m_nameStack.push(make_pair(name, toSourceLocation(l)));
 }
 
-void YaccAdapter::makeVariable(std::shared_ptr<Type> type)
+void YaccAdapter::makeVariable(std::shared_ptr<QualType> type)
 {
 	while(!m_nameStack.empty())
 	{
 		auto varName = m_nameStack.top();
 		m_nameStack.pop();
-		m_declContextHolder.createVariable(varName.first, varName.second, type->getCanonicalType().lock());
+		m_declContextHolder.createVariable(varName.first, varName.second, type);
 	}
 }
 
@@ -687,11 +729,11 @@ std::shared_ptr<Stmt> YaccAdapter::pop_stmt()
 	return ptr;
 }
 
-std::shared_ptr<Type> YaccAdapter::pop_type()
+std::shared_ptr<QualType> YaccAdapter::pop_type()
 {
 	if(m_typeStack.empty())
 		throw std::range_error("Type queue empty");
-	std::shared_ptr<Type> ptr = m_typeStack.top();
+	std::shared_ptr<QualType> ptr = m_typeStack.top();
 	m_typeStack.pop();
 	return ptr;
 }

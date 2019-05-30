@@ -22,7 +22,10 @@ public:
 #endif
 
 private:
-	void childIteration(std::shared_ptr<Stmt> &root);
+	//void childIteration(std::shared_ptr<Stmt> &root);
+	/// @brief Out put a expr as a stmt(add ';\n' at end)
+	/// 		if s is a stmt type, just pass the parameter
+	void formatExprAsStmt(std::shared_ptr<Stmt> s);
 
 	void processNullStmt(std::shared_ptr<Stmt> &s);
 	void processCompoundStmt(std::shared_ptr<Stmt> &s);

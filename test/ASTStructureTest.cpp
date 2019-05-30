@@ -22,7 +22,11 @@ using std::dynamic_pointer_cast;	using std::weak_ptr;
 class ASTStructureTest : public testing::Test {
 protected:
 	void SetUp() override {}
-	void TearDown() override {}
+	void TearDown() override {
+		printer.resetPrinter();
+		output.clear();
+		adapter.clean();
+	}
 
 	void reset() {
 		printer.resetPrinter();
@@ -157,7 +161,8 @@ TEST_F(ASTStructureTest, CompoundStmt)
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
 "{\n"
-"  123}\n"
+"  123;\n"
+"}\n"
 ));
 	reset();
 
@@ -168,7 +173,9 @@ TEST_F(ASTStructureTest, CompoundStmt)
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
 "{\n"
-"  123  1234}\n"
+"  123;\n"
+"  1234;\n"
+"}\n"
 ));
 	reset();
 
@@ -311,7 +318,9 @@ TEST_F(ASTStructureTest, IfTest)
 	EXPECT_EQ(output, string(
 "if(1)\n"
 "{\n"
-"  123  23452}\n"
+"  123;\n"
+"  23452;\n"
+"}\n"
 ));
 	reset();
 
@@ -326,9 +335,11 @@ TEST_F(ASTStructureTest, IfTest)
 "if(2)\n"
 ";\n"
 "else {\n"
-"  123}\n"
+"  123;\n"
+"}\n"
 "else {\n"
-"  345}\n"
+"  345;\n"
+"}\n"
 ));
 	reset();
 
@@ -403,7 +414,7 @@ TEST_F(ASTStructureTest, DoWhileTest)
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
 "do\n"
-"12"
+"12;\n"
 "while(1)\n"
 ));
 	reset();
@@ -416,7 +427,7 @@ TEST_F(ASTStructureTest, DoWhileTest)
 	EXPECT_EQ(output, string(
 "do\n"
 "{\n"
-"  12"
+"  12;\n"
 "}\n"
 "while(1)\n"
 ));
@@ -431,9 +442,8 @@ TEST_F(ASTStructureTest, CaseTest)
 	printer.print(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-			"case 1:\n"
-			"  12"
-	));
+"case 1:\n"
+));
 	reset();
 }
 
