@@ -24,8 +24,8 @@ Stmt::Stmt(Stmt::StmtClass SC, Stmt::EmptyShell)
 {
 }
 
-DeclStmt::DeclStmt(SourceLocation startLoc, SourceLocation endLoc)
-    : Stmt(DeclStmtClass), StartLoc(startLoc), EndLoc(endLoc) {}
+DeclStmt::DeclStmt(std::shared_ptr<DeclGroupRef> dg, SourceLocation startLoc, SourceLocation endLoc)
+    : Stmt(DeclStmtClass), m_dg{dg}, StartLoc(startLoc), EndLoc(endLoc) {}
 
 DeclStmt::DeclStmt(EmptyShell Empty) : Stmt(DeclStmtClass, Empty) { }
 
@@ -49,6 +49,11 @@ void DeclStmt::setEndLoc(SourceLocation L)
     EndLoc = L;
 }
 
+std::weak_ptr<DeclGroupRef> DeclStmt::getDeclGroup()
+{
+	return m_dg;
+}
+
 bool DeclStmt::classof(const std::weak_ptr<Stmt> T)
 {
     return T.lock()->getStmtClass() == DeclStmtClass;
@@ -61,12 +66,12 @@ bool DeclStmt::classof(const std::weak_ptr<DeclStmt>)
 
 Stmt::child_iterator DeclStmt::child_begin()
 {
-    return child_iterator();
+    return child_iterator(nullptr);
 }
 
 Stmt::child_iterator DeclStmt::child_end()
 {
-    return child_iterator();
+    return child_iterator(nullptr);
 }
 
 NullStmt::NullStmt(SourceLocation L) : Stmt(NullStmtClass), SemiLoc(L) {}
@@ -95,15 +100,16 @@ bool NullStmt::classof(const std::weak_ptr<NullStmt>)
 
 Stmt::child_iterator NullStmt::child_begin()
 {
-    return child_iterator();
+    return child_iterator(nullptr);
 }
 
 Stmt::child_iterator NullStmt::child_end()
 {
-    return child_iterator();
+    return child_iterator(nullptr);
 }
 
-CompoundStmt::CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, SourceLocation LB, SourceLocation RB)
+CompoundStmt::CompoundStmt(std::list<std::shared_ptr<Stmt>> StmtStart,
+                           SourceLocation LB, SourceLocation RB)
     :Stmt (CompoundStmtClass), Body{StmtStart}, LBracLoc(LB), RBracLoc(RB)
 {
 
@@ -112,6 +118,11 @@ CompoundStmt::CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, SourceL
 
 CompoundStmt::CompoundStmt(EmptyShell Empty):Stmt(CompoundStmtClass, Empty)
 {}
+
+void CompoundStmt::setStmts(std::list<std::shared_ptr<Stmt> > Stmts)
+{
+    this->Body=Stmts;
+}
 
 SourceLocation CompoundStmt::getLBracLoc() const
 {
@@ -145,12 +156,12 @@ bool CompoundStmt::classof(const std::weak_ptr<CompoundStmt>)
 
 Stmt::child_iterator CompoundStmt::child_begin()
 {
-    return &Body[0];
+    return child_iterator(std::make_shared<ListIterator>(Body.begin()));
 }
 
 Stmt::child_iterator CompoundStmt::child_end()
 {
-    return &Body[Body.size()];
+    return child_iterator(std::make_shared<ListIterator>(Body.end()));
 }
 
 std::weak_ptr<SwitchCase> SwitchCase::getNextSwitchCase()
@@ -178,7 +189,9 @@ SwitchCase::SwitchCase(StmtClass SC)
     : Stmt(SC), NextSwitchCase(nullptr)
 {}
 
-CaseStmt::CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs, SourceLocation caseLoc, SourceLocation ellipsisLoc, SourceLocation colonLoc)
+CaseStmt::CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs,
+                   SourceLocation caseLoc, SourceLocation ellipsisLoc,
+                   SourceLocation colonLoc)
     : SwitchCase(CaseStmtClass)
 {
     SubExprs[SUBSTMT] = nullptr;
@@ -245,12 +258,12 @@ void CaseStmt::setSubStmt(std::shared_ptr<Stmt> S)
 
 void CaseStmt::setLHS(std::shared_ptr<Expr> Val)
 {
-    SubExprs[LHS] = std::reinterpret_pointer_cast<Stmt>(Val);
+    SubExprs[LHS] = std::dynamic_pointer_cast<Stmt>(Val);
 }
 
 void CaseStmt::setRHS(std::shared_ptr<Expr> Val)
 {
-    SubExprs[RHS] = std::reinterpret_pointer_cast<Stmt>(Val);
+    SubExprs[RHS] = std::dynamic_pointer_cast<Stmt>(Val);
 }
 
 bool CaseStmt::classof(const std::weak_ptr<Stmt> T)
@@ -265,12 +278,20 @@ bool CaseStmt::classof(const std::weak_ptr<CaseStmt>)
 
 Stmt::child_iterator CaseStmt::child_begin()
 {
-    return &SubExprs[0];
+    return child_iterator(std::make_shared<
+                          ArrayIterator<
+                          std::array<
+                          std::shared_ptr<Stmt>,
+                          END_EXPR>::iterator>>(SubExprs.begin()));
 }
 
 Stmt::child_iterator CaseStmt::child_end()
 {
-     return &SubExprs[END_EXPR];
+    return child_iterator(std::make_shared<
+                          ArrayIterator<
+                          std::array<
+                          std::shared_ptr<Stmt>,
+                          END_EXPR>::iterator>>(SubExprs.end()));
 }
 
 DefaultStmt::DefaultStmt(SourceLocation DL, SourceLocation CL, std::shared_ptr<Stmt> substmt)
@@ -323,12 +344,12 @@ bool DefaultStmt::classof(const std::weak_ptr<DefaultStmt>)
 
 Stmt::child_iterator DefaultStmt::child_begin()
 {
-    return &SubStmt;
+    return child_iterator(std::make_shared<PtrIterator>(SubStmt));
 }
 
 Stmt::child_iterator DefaultStmt::child_end()
 {
-     return &SubStmt+1;
+     return child_iterator(std::make_shared<PtrIterator>(nullptr));
 }
 
 LabelStmt::LabelStmt(SourceLocation IL, std::shared_ptr<Stmt> substmt)
@@ -371,19 +392,19 @@ bool LabelStmt::classof(const std::weak_ptr<LabelStmt>)
 
 Stmt::child_iterator LabelStmt::child_begin()
 {
-    return &SubStmt;
+    return child_iterator(std::make_shared<PtrIterator>(SubStmt));
 }
 
 Stmt::child_iterator LabelStmt::child_end()
 {
-   return &SubStmt+1;
+   return child_iterator(std::make_shared<PtrIterator>(nullptr));
 }
 
 SwitchStmt::SwitchStmt(SourceLocation SL, std::shared_ptr<Expr> cond)
     :Stmt (SwitchStmtClass),FirstCase(0), SwitchLoc{SL}
 {
     SubExprs[COND]=cond;
-    SubExprs[BODY]=NULL;
+    SubExprs[BODY]=nullptr;
 }
 
 SwitchStmt::SwitchStmt(EmptyShell Empty)
@@ -407,7 +428,7 @@ std::weak_ptr<SwitchCase> SwitchStmt::getSwitchCaseList()
 
 void SwitchStmt::setCond(std::shared_ptr<Expr> E)
 {
-    SubExprs[COND] =std::reinterpret_pointer_cast<Expr>(E);
+    SubExprs[COND] =std::dynamic_pointer_cast<Expr>(E);
 }
 
 void SwitchStmt::setBody(std::shared_ptr<Stmt> S)
@@ -448,12 +469,22 @@ bool SwitchStmt::classof(const std::weak_ptr<SwitchStmt>)
 
 Stmt::child_iterator SwitchStmt::child_begin()
 {
-    return &SubExprs[0];
+    return child_iterator(
+                std::make_shared<
+                ArrayIterator<
+                std::array<
+                std::shared_ptr<Stmt>,
+                END_EXPR>::iterator>>(SubExprs.begin()));
 }
 
 Stmt::child_iterator SwitchStmt::child_end()
 {
-     return &SubExprs[0]+END_EXPR;
+    return child_iterator(
+                std::make_shared<
+                ArrayIterator<
+                std::array<
+                std::shared_ptr<Stmt>,
+                END_EXPR>::iterator>>(SubExprs.end()));
 }
 WhileStmt::WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body, SourceLocation WL)
     : Stmt(WhileStmtClass)
@@ -478,7 +509,7 @@ std::weak_ptr<Stmt> WhileStmt::getBody()
 
 void WhileStmt::setCond(std::shared_ptr<Expr> E)
 {
-    SubExprs[COND] = std::reinterpret_pointer_cast<Stmt>(E);
+    SubExprs[COND] = std::dynamic_pointer_cast<Stmt>(E);
 }
 
 void WhileStmt::setBody(std::shared_ptr<Stmt> S)
@@ -508,12 +539,22 @@ bool WhileStmt::classof(const std::weak_ptr<WhileStmt>)
 
 Stmt::child_iterator WhileStmt::child_begin()
 {
-    return &SubExprs[0];
+    return child_iterator(
+                std::make_shared<
+                ArrayIterator<
+                std::array<
+                std::shared_ptr<Stmt>,
+                END_EXPR>::iterator>>(SubExprs.begin()));
 }
 
 Stmt::child_iterator WhileStmt::child_end()
 {
-    return &SubExprs[0]+END_EXPR;
+    return child_iterator(
+                std::make_shared<
+                ArrayIterator<
+                std::array<
+                std::shared_ptr<Stmt>,
+                END_EXPR>::iterator>>(SubExprs.end()));
 }
 
 DoStmt::DoStmt(std::shared_ptr<Stmt> body,
@@ -541,7 +582,7 @@ std::weak_ptr<Stmt> DoStmt::getBody()
 
 void DoStmt::setCond(std::shared_ptr<Expr> E)
 {
-    SubExprs[COND] = std::reinterpret_pointer_cast<Stmt>(E);
+    SubExprs[COND] = std::dynamic_pointer_cast<Stmt>(E);
 }
 
 void DoStmt::setBody(std::shared_ptr<Stmt> S)
@@ -591,12 +632,22 @@ bool DoStmt::classof(const std::weak_ptr<DoStmt>)
 
 Stmt::child_iterator DoStmt::child_begin()
 {
-    return &SubExprs[0];
+    return child_iterator(
+                std::make_shared<
+                ArrayIterator<
+                std::array<
+                std::shared_ptr<Stmt>,
+                END_EXPR>::iterator>>(SubExprs.begin()));
 }
 
 Stmt::child_iterator DoStmt::child_end()
 {
-    return &SubExprs[0]+END_EXPR;
+    return child_iterator(
+                std::make_shared<
+                ArrayIterator<
+                std::array<
+                std::shared_ptr<Stmt>,
+                END_EXPR>::iterator>>(SubExprs.end()));
 }
 
 ForStmt::ForStmt(std::shared_ptr<Stmt> Init, std::shared_ptr<Stmt> Cond, std::shared_ptr<Expr> Inc, std::shared_ptr<Stmt> Body, SourceLocation FL, SourceLocation LP, SourceLocation RP)
@@ -619,9 +670,9 @@ std::weak_ptr<Stmt> ForStmt::getInit()
     return SubExprs[INIT];
 }
 
-std::weak_ptr<Expr> ForStmt::getCond()
+std::weak_ptr<Stmt> ForStmt::getCond()
 {
-    return std::dynamic_pointer_cast<Expr>(SubExprs[COND]);
+    return std::dynamic_pointer_cast<Stmt>(SubExprs[COND]);
 }
 
 std::weak_ptr<Expr> ForStmt::getInc()
@@ -641,12 +692,12 @@ void ForStmt::setInit(std::shared_ptr<Stmt> S)
 
 void ForStmt::setCond(std::shared_ptr<Expr> E)
 {
-    SubExprs[COND] = std::reinterpret_pointer_cast<Stmt>(E);
+    SubExprs[COND] = std::dynamic_pointer_cast<Stmt>(E);
 }
 
 void ForStmt::setInc(std::shared_ptr<Expr> E)
 {
-    SubExprs[INC] = std::reinterpret_pointer_cast<Stmt>(E);
+    SubExprs[INC] = std::dynamic_pointer_cast<Stmt>(E);
 }
 
 void ForStmt::setBody(std::shared_ptr<Stmt> S)
@@ -696,12 +747,22 @@ bool ForStmt::classof(const std::weak_ptr<ForStmt>)
 
 Stmt::child_iterator ForStmt::child_begin()
 {
-    return &SubExprs[0];
+    return child_iterator(
+                std::make_shared<
+                ArrayIterator<
+                std::array<
+                std::shared_ptr<Stmt>,
+                END_EXPR>::iterator>>(SubExprs.begin()));
 }
 
 Stmt::child_iterator ForStmt::child_end()
 {
-   return &SubExprs[0]+END_EXPR;
+    return child_iterator(
+                std::make_shared<
+                ArrayIterator<
+                std::array<
+                std::shared_ptr<Stmt>,
+                END_EXPR>::iterator>>(SubExprs.end()));
 }
 
 GotoStmt::GotoStmt(std::shared_ptr<LabelStmt> label, SourceLocation GL, SourceLocation LL)
@@ -752,12 +813,12 @@ bool GotoStmt::classof(const std::weak_ptr<GotoStmt>)
 
 Stmt::child_iterator GotoStmt::child_begin()
 {
-    return child_iterator();
+    return child_iterator(nullptr);
 }
 
 Stmt::child_iterator GotoStmt::child_end()
 {
-  return child_iterator();
+  return child_iterator(nullptr);
 }
 
 IndirectGotoStmt::IndirectGotoStmt(SourceLocation gotoLoc, SourceLocation starLoc, std::shared_ptr<Expr> target)
@@ -791,7 +852,7 @@ void IndirectGotoStmt::setStarLoc(SourceLocation L)
 
 void IndirectGotoStmt::setTarget(std::shared_ptr<Expr> E)
 {
-    Target = std::reinterpret_pointer_cast<Stmt>(E);
+    Target = std::dynamic_pointer_cast<Stmt>(E);
 }
 
 bool IndirectGotoStmt::classof(const std::weak_ptr<Stmt> T)
@@ -806,12 +867,12 @@ bool IndirectGotoStmt::classof(const std::weak_ptr<IndirectGotoStmt>)
 
 Stmt::child_iterator IndirectGotoStmt::child_begin()
 {
-    return &Target;
+    return child_iterator(std::make_shared<PtrIterator>(Target));
 }
 
 Stmt::child_iterator IndirectGotoStmt::child_end()
 {
-    return &Target+1;
+    return child_iterator(std::make_shared<PtrIterator>(nullptr));
 }
 
 ContinueStmt::ContinueStmt(SourceLocation CL)
@@ -842,12 +903,12 @@ bool ContinueStmt::classof(const std::weak_ptr<ContinueStmt>)
 
 Stmt::child_iterator ContinueStmt::child_begin()
 {
-    return child_iterator();
+    return child_iterator(nullptr);
 }
 
 Stmt::child_iterator ContinueStmt::child_end()
 {
-    return child_iterator();
+    return child_iterator(nullptr);
 }
 
 BreakStmt::BreakStmt(SourceLocation BL)
@@ -878,12 +939,12 @@ bool BreakStmt::classof(const std::weak_ptr<BreakStmt>)
 
 Stmt::child_iterator BreakStmt::child_begin()
 {
-    return child_iterator();
+    return child_iterator(nullptr);
 }
 
 Stmt::child_iterator BreakStmt::child_end()
 {
-  return child_iterator();
+  return child_iterator(nullptr);
 }
 
 ReturnStmt::ReturnStmt(SourceLocation RL, std::shared_ptr<Expr> E)
@@ -901,7 +962,7 @@ std::weak_ptr<Expr> ReturnStmt::getRetValue()
 
 void ReturnStmt::setRetValue(std::shared_ptr<Expr> E)
 {
-    RetExpr = std::reinterpret_pointer_cast<Stmt>(E);
+    RetExpr = std::dynamic_pointer_cast<Stmt>(E);
 }
 
 SourceLocation ReturnStmt::getReturnLoc() const
@@ -926,29 +987,29 @@ bool ReturnStmt::classof(const std::weak_ptr<ReturnStmt>)
 
 Stmt::child_iterator ReturnStmt::child_begin()
 {
-    return &RetExpr;
+    return child_iterator(std::make_shared<PtrIterator>(RetExpr));
 }
 
 Stmt::child_iterator ReturnStmt::child_end()
 {
-    return RetExpr ? &RetExpr+1 : &RetExpr;
+    return child_iterator(std::make_shared<PtrIterator>(nullptr));
 }
 
 AsmStmt::AsmStmt(SourceLocation asmloc, bool issimple, bool isvolatile,
                  unsigned numoutputs, unsigned numinputs,
-                 std::vector<std::string> names, std::vector<std::shared_ptr<StringLiteral>> constraints,
-                 std::vector<std::shared_ptr<Expr>> exprs, std::shared_ptr<StringLiteral> asmstr, unsigned numclobbers,
-                 std::vector<std::shared_ptr<StringLiteral>> clobbers, SourceLocation rparenloc)
+                 std::list<std::string> names, std::list<std::shared_ptr<StringLiteral>> constraints,
+                 std::list<std::shared_ptr<Expr>> exprs, std::shared_ptr<StringLiteral> asmstr, unsigned numclobbers,
+                 std::list<std::shared_ptr<StringLiteral>> clobbers, SourceLocation rparenloc)
     : Stmt(AsmStmtClass), AsmLoc(asmloc), RParenLoc(rparenloc), AsmStr(asmstr),
       IsSimple(issimple), IsVolatile(isvolatile), NumOutputs(numoutputs), NumInputs(numinputs)
 {
-    for (unsigned i = 0, e = numinputs + numoutputs; i != e; i++) {
-        Names[i]=names[i];
-        Exprs[i]=exprs[i];
-        Constraints[i]=constraints[i];
-    }
-    for (unsigned i = 0; i != numclobbers; i++)
-        Clobbers[i]=clobbers[i];
+//    for (unsigned i = 0, e = numinputs + numoutputs; i != e; i++) {
+//        Names[i]=names[i];
+//        Exprs[i]=exprs[i];
+//        Constraints[i]=constraints[i];
+//    }
+//    for (unsigned i = 0; i != numclobbers; i++)
+//        Clobbers[i]=clobbers[i];
 }
 
 SourceLocation AsmStmt::getAsmLoc() const
@@ -1015,7 +1076,7 @@ std::weak_ptr<Stmt> IfStmt::getElse()
 
 void IfStmt::setCond(std::shared_ptr<Expr> E)
 {
-    SubExprs[COND] =std::reinterpret_pointer_cast<Stmt>(E);
+    SubExprs[COND] =std::dynamic_pointer_cast<Stmt>(E);
 }
 
 void IfStmt::setThen(std::shared_ptr<Stmt> S)
@@ -1060,65 +1121,20 @@ bool IfStmt::classof(const std::weak_ptr<IfStmt>)
 
 Stmt::child_iterator IfStmt::child_begin()
 {
-    return &SubExprs[0];
+    return child_iterator(
+                std::make_shared<
+                ArrayIterator<
+                std::array<
+                std::shared_ptr<Stmt>,
+                END_EXPR>::iterator>>(SubExprs.begin()));
 }
 
 Stmt::child_iterator IfStmt::child_end()
 {
-     return &SubExprs[0]+END_EXPR;
-}
-
-Iterator &Iterator::operator++()
-{
-    ++m_ptr; return *this;
-}
-
-Iterator Iterator::operator+(size_t i)
-{
-    return m_ptr+i;
-}
-
-std::shared_ptr<Stmt> Iterator::operator[](size_t idx)
-{
-    return m_ptr[idx];
-}
-
-signed Iterator::operator-(const Iterator &R) const
-{
-    return static_cast<signed>(m_ptr - R.m_ptr);
-}
-
-std::shared_ptr<Stmt> Iterator::operator*() const
-{
-    return *m_ptr;
-}
-
-std::shared_ptr<Stmt> Iterator::operator->() const
-{
-    return *m_ptr;
-}
-
-bool Iterator::operator==(const Iterator &R) const
-{
-    return m_ptr == R.m_ptr;
-}
-
-bool Iterator::operator!=(const Iterator &R) const
-{
-    return m_ptr != R.m_ptr;
-}
-
-bool Iterator::operator>(const Iterator &R) const
-{
-    return m_ptr > R.m_ptr;
-}
-
-bool Iterator::operator>=(const Iterator &R) const
-{
-    return m_ptr >= R.m_ptr;
-}
-
-Iterator Iterator::operator-(size_t i)
-{
-    return m_ptr-i;
+    return child_iterator(
+                std::make_shared<
+                ArrayIterator<
+                std::array<
+                std::shared_ptr<Stmt>,
+                END_EXPR>::iterator>>(SubExprs.end()));
 }

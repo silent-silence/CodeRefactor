@@ -9,6 +9,7 @@ class Expr;
 class Stmt;
 class ASTContext;
 class TagDecl;
+class TypedefDecl;
 
 class QualType;
 class Type;
@@ -54,12 +55,14 @@ class TypenameType;
 
 class QualType
 {
+	friend class ASTContext;
 public:
     enum TQ {
-        Const    = 0x1,
-        Restrict = 0x2,
-        Volatile = 0x4,
-        CVRFlags = Const|Restrict|Volatile
+    	None		= 0,
+        Const		= 0x1,
+        Restrict	= 0x2,
+        Volatile	= 0x4,
+        CVRFlags	= Const|Restrict|Volatile
     };
 
     enum GCAttrTypes {
@@ -99,6 +102,8 @@ public:
 
     std::weak_ptr<QualType> getCanonicalType() const;
     void setCanonicalType(const std::weak_ptr<QualType> &value);
+
+	TypeClass getTypeClass() const { return static_cast<TypeClass>(TC); };
 
 protected:
     enum { TypeClassBitSize = 6 };
@@ -189,8 +194,11 @@ public:
     };
     static std::shared_ptr<QualType> creator(Kind k);
     BuiltinType(Kind k);
-private:
+    ~BuiltinType() override = default;
 
+	Kind getKind() const { return TypeKind; }
+
+private:
     Kind TypeKind;
 };
 
@@ -222,7 +230,7 @@ private:
 class PointerType : public Type
 {
 public:
-    static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> Pointee,
+    static std::shared_ptr<Type> creator(std::shared_ptr<QualType> Pointee,
                                          std::shared_ptr<QualType> CanonicalPtr);
 
     PointerType(std::shared_ptr<QualType> Pointee);
@@ -533,7 +541,7 @@ protected:
         : Type(tc, (*can)->isDependentType()){
     }
 private:
-    //TypedefDecl *Decl;
+    std::shared_ptr<TypedefDecl> Decl;
 };
 
 /// @extends

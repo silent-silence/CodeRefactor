@@ -10,25 +10,27 @@
 #include "Decl/DeclContextHolder.h"
 #include "Decl/Decl.h"
 #include "Decl/DeclBase.h"
+#include "Basic/IdentifierTable.h"
 
 using std::shared_ptr;				using std::make_shared;
 using std::dynamic_pointer_cast;
 
 TEST(DelcarationTest, Decls)
 {
-	auto context = make_shared<DeclContext>();
+	auto context = make_shared<TranslationUnitDecl>();
 	SourceLocation location;
 
-	DeclName name("variable");
-	auto variable = make_shared<VariableDecl>(context, location, make_shared<QualType>(), name);
+	DeclName name(make_shared<IdentifierInfo>("variable"));
+	auto type = BuiltinType::creator(BuiltinType::Int);
+	auto variable = make_shared<VarDecl>(Decl::Kind::Var, context, location, name, type, VarDecl::StorageClass::None);
 	context->addDecl(variable);
 
-	auto look = context->lookup(name);
+	auto look = context->lookup("variable");
 	EXPECT_EQ(look.lock(), variable);
 
-	auto variableRename = make_shared<VariableDecl>(context, location, make_shared<QualType>(), name);
+	auto variableRename = make_shared<VarDecl>(Decl::Kind::Var, context, location, name, type, VarDecl::StorageClass::None);
 	context->addDecl(variableRename);
-	auto lookRename = context->lookup(name);
+	auto lookRename = context->lookup("variable");
 	EXPECT_NE(lookRename.lock(), variable);
 	EXPECT_EQ(lookRename.lock(), variableRename);
 	/*auto enumConstant = make_shared<EnumConstantDecl>();
@@ -45,26 +47,118 @@ protected:
 
 	StringStreamOpenHelper openHelper;
 	ASTContext astContext;
-	DeclContextHolder declContext;
-	YaccAdapter adapter{astContext, declContext, openHelper};
+	DeclContextHolder declContextHolder;
+	YaccAdapter adapter{astContext, declContextHolder, openHelper};
 	Driver driver{openHelper, adapter};
 };
 
-TEST_F(SymbolTableTest, DeclFindTest)
+TEST_F(SymbolTableTest, SimpleDeclTest)
 {
 	openHelper << "int a; a;";
 	EXPECT_NO_THROW(driver.parse());
-	EXPECT_NO_THROW(declContext.getContext()->lookup("a"));
-	EXPECT_THROW(declContext.getContext()->lookup("b"), SymbolNotFound);
-	adapter.clean();
-	declContext.clean();
+	EXPECT_NO_THROW(declContextHolder.getContext()->lookup("a"));
+	EXPECT_THROW(declContextHolder.getContext()->lookup("b"), SymbolNotFound);
+}
 
+TEST_F(SymbolTableTest, SimpleDeclNotFindTest)
+{
 	openHelper << "int b; a;";
 	EXPECT_THROW(driver.parse(), SymbolNotFound);
-	EXPECT_THROW(declContext.getContext()->lookup("a"), SymbolNotFound);
-	EXPECT_NO_THROW(declContext.getContext()->lookup("b"));
-	adapter.clean();
-	declContext.clean();
+	EXPECT_THROW(declContextHolder.getContext()->lookup("a"), SymbolNotFound);
+	EXPECT_NO_THROW(declContextHolder.getContext()->lookup("b"));
+}
+
+TEST_F(SymbolTableTest, MultipleTest)
+{
+	openHelper << "int a, b, c;";
+	EXPECT_NO_THROW(driver.parse());
+	EXPECT_NO_THROW(declContextHolder.getContext()->lookup("a"));
+	EXPECT_NO_THROW(declContextHolder.getContext()->lookup("b"));
+	EXPECT_NO_THROW(declContextHolder.getContext()->lookup("c"));
+	EXPECT_THROW(declContextHolder.getContext()->lookup("d"), SymbolNotFound);
+
+	auto varDeclA = dynamic_pointer_cast<VarDecl>(declContextHolder.getContext()->lookup("a").lock());
+	EXPECT_EQ(dynamic_pointer_cast<BuiltinType>(varDeclA->getType().lock()->getTypePtr())->getKind(), BuiltinType::Int);
+	auto varDeclB = dynamic_pointer_cast<VarDecl>(declContextHolder.getContext()->lookup("b").lock());
+	EXPECT_EQ(dynamic_pointer_cast<BuiltinType>(varDeclB->getType().lock()->getTypePtr())->getKind(), BuiltinType::Int);
+	auto varDeclC = dynamic_pointer_cast<VarDecl>(declContextHolder.getContext()->lookup("c").lock());
+	EXPECT_EQ(dynamic_pointer_cast<BuiltinType>(varDeclC->getType().lock()->getTypePtr())->getKind(), BuiltinType::Int);
+}
+
+TEST_F(SymbolTableTest, InDifferentBlocks)
+{
+	openHelper <<
+"{"
+"	int a = 1;"
+"	int b = 3;"
+"	{"
+"		int c = a + b;"
+"	}"
+"	a = 11;"
+"}";
+	EXPECT_NO_THROW(driver.parse());
+}
+
+TEST_F(SymbolTableTest, InDifferentBlocksNotFoundSymbol)
+{
+	openHelper <<
+"{"
+"	int a = 1;"
+"	int b = 3;"
+"	{"
+"		int c = a + b;"
+"	}"
+"	c = 2;"
+"}";
+	EXPECT_THROW(driver.parse(), SymbolNotFound);
+}
+
+TEST_F(SymbolTableTest, DeclsInDifferentBlocks)
+{
+	openHelper <<
+"{"
+"	int a = 1;"
+"	int b = 3;"
+"	{"
+"		int c = a + b;"
+"		{"
+"			int d = c;"
+"		}"
+"		c = 1;"
+"	}"
+"	{"
+"		a + b;"
+"	}"
+"	b = a;"
+"}";
+	EXPECT_NO_THROW(driver.parse());
+}
+
+TEST_F(SymbolTableTest, VarRedeclInDifferentBlockTest)
+{
+	openHelper <<
+"{"
+"	int a = 1;"
+"	int b = 3;"
+"	{"
+"		int a = 1 + b;"
+"		{"
+"			int b = 3;"
+"		}"
+"		a = 1;"
+"	}"
+"}";
+	EXPECT_NO_THROW(driver.parse());
+}
+
+TEST_F(SymbolTableTest, VarRedeclInSameBlockTest)
+{
+	openHelper <<
+"{"
+ "	int a = 1;"
+ "	int a = 3;"
+ "}";
+	EXPECT_THROW(driver.parse(), SymbolAlreadyExist);
 }
 
 #endif

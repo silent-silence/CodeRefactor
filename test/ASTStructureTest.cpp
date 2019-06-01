@@ -179,19 +179,27 @@ TEST_F(ASTStructureTest, CompoundStmt)
 ));
 	reset();
 
-	openHelper << "1; { 123; 1234; }";
+	openHelper << "{ 123; 1234; 123; { 123; 123; } { 13; } { } }";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<CompoundStmt>(astContext.getRoot().lock()));
-	reset();
-
-	openHelper << "{ 123; 1234; } 1;";
-	driver.parse();
-	EXPECT_TRUE(dynamic_pointer_cast<IntegerLiteral>(astContext.getRoot().lock()));
-	reset();
-
-	openHelper << "{ 123; 1234; 123; { 123; 123; } { 13; } { } } 1;";
-	driver.parse();
-	EXPECT_TRUE(dynamic_pointer_cast<IntegerLiteral>(astContext.getRoot().lock()));
+	printer.print(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"{\n"
+"  123;\n"
+"  1234;\n"
+"  123;\n"
+"  {\n"
+"    123;\n"
+"    123;\n"
+"  }\n"
+"  {\n"
+"    13;\n"
+"  }\n"
+"  {\n"
+"  }\n"
+"}\n"
+));
 	reset();
 }
 
@@ -270,6 +278,17 @@ TEST_F(ASTStructureTest, SizeofTest)
 	printer.print(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string("sizeof 1"));
+	reset();
+}
+
+TEST_F(ASTStructureTest, CastTest)
+{
+	openHelper << "(int)43;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<CStyleCastExpr>(astContext.getRoot().lock()));
+	printer.print(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string("(int)43"));
 	reset();
 }
 
@@ -361,18 +380,18 @@ TEST_F(ASTStructureTest, IfTest)
 
 TEST_F(ASTStructureTest, ForTest)
 {
-	/*openHelper << "for(;;) ;";
+	openHelper << "for(;;) ;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<ForStmt>(astContext.getRoot().lock()));
 	printer.print(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"for(; ; )\n"
-";"
+"for(;;)\n"
+";\n"
 ));
 	reset();
 
-	openHelper << "for(int a;;) ;";
+	/*openHelper << "for(int a;;) ;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<ForStmt>(astContext.getRoot().lock()));
 	reset();
@@ -436,7 +455,7 @@ TEST_F(ASTStructureTest, DoWhileTest)
 
 TEST_F(ASTStructureTest, CaseTest)
 {
-	openHelper << "case 1: 12;";
+	openHelper << "case 1:";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<CaseStmt>(astContext.getRoot().lock()));
 	printer.print(astContext.getRoot().lock());
@@ -447,5 +466,80 @@ TEST_F(ASTStructureTest, CaseTest)
 	reset();
 }
 
+TEST_F(ASTStructureTest, DefaultTest)
+{
+	openHelper << "default:";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<DefaultStmt>(astContext.getRoot().lock()));
+	printer.print(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"default:\n"
+));
+	reset();
+}
+
+TEST_F(ASTStructureTest, SwitchTest)
+{
+	openHelper << "switch(1) {}";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<SwitchStmt>(astContext.getRoot().lock()));
+	printer.print(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"switch(1)\n"
+"{\n"
+"}\n"
+));
+	reset();
+
+	openHelper << ""
+"switch(1)"
+"{"
+"	case 0:"
+"	case 1:"
+"		break;"
+"	default:"
+"		break;"
+"}";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<SwitchStmt>(astContext.getRoot().lock()));
+	printer.print(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"switch(1)\n"
+"{\n"
+"  case 0:\n"
+"  case 1:\n"
+"  break;\n"
+"  default:\n"
+"  break;\n"
+"}\n"
+));
+	reset();
+}
+
+TEST_F(ASTStructureTest, DeclStmtTest)
+{
+	openHelper << "int a;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<DeclStmt>(astContext.getRoot().lock()));
+	printer.print(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"int a;\n"
+));
+	reset();
+
+	openHelper << "int b, c, d;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<DeclStmt>(astContext.getRoot().lock()));
+	printer.print(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"int b, c, d;\n"
+));
+	reset();
+}
 
 #endif

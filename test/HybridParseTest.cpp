@@ -2,6 +2,8 @@
 // Created by gaojian on 19-5-24.
 //
 
+#ifdef ENV_TEST
+
 #include <gtest/gtest.h>
 #include <string>
 #include "OpenHelper/StringStreamOpenHelper.h"
@@ -35,5 +37,7 @@ TEST_F(HybridParseTest, Sequenced)
 "	}"
 "}";
 	openHelper << input;
-	driver.parse();
+	EXPECT_NO_THROW(driver.parse());
 }
+
+#endif

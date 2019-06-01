@@ -218,12 +218,12 @@ TEST_F(BasicParseTest, ArraySubscriptTest)
 
 TEST_F(BasicParseTest, MemberExprTest)
 {
-	openHelper << "int a; a.a;";
+	openHelper << "int a; a.b;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<MemberExpr>(astContext.getRoot().lock()));
 	reset();
 
-	openHelper << "a->a;";
+	openHelper << "a->b;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<MemberExpr>(astContext.getRoot().lock()));
 	reset();
@@ -334,7 +334,7 @@ TEST_F(BasicParseTest, SwitchTest)
 
 TEST_F(BasicParseTest, CaseTest)
 {
-	openHelper << "case 1: 12;";
+	openHelper << "case 1:";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<CaseStmt>(astContext.getRoot().lock()));
 	reset();
@@ -342,7 +342,7 @@ TEST_F(BasicParseTest, CaseTest)
 
 TEST_F(BasicParseTest, DefaultTest)
 {
-	openHelper << "default : 12;";
+	openHelper << "default:";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<DefaultStmt>(astContext.getRoot().lock()));
 	reset();
@@ -453,42 +453,51 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 	EXPECT_THROW(driver.parse(), TypeError);
 }
 
+TEST_F(BasicParseTest, PointerTypeTest)
+{
+	openHelper << "int * a;";
+	driver.parse();
+	EXPECT_EQ(
+			dynamic_pointer_cast<VarDecl>(
+					declContext.getContext()->lookup("a").lock()
+			)->getType().lock()->getTypePtr()->getTypeClass(),
+			Type::Pointer
+	);
+}
+
 TEST_F(BasicParseTest, VariableTest)
 {
 	openHelper << "long int a;";
 	driver.parse();
 	EXPECT_EQ(
-			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("a").lock())->getIdentifier(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("a").lock())->getNameAsString(),
 			string("a")
 	);
-	astContext.cleanAST();
-	declContext.clean();
+	reset();
 
 	openHelper << "long int b[][];";
 	driver.parse();
 	EXPECT_EQ(
-			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("b").lock())->getIdentifier(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("b").lock())->getNameAsString(),
 			string("b")
 	);
-	astContext.cleanAST();
-	declContext.clean();
+	reset();
 
 	openHelper << "long int c, d, e;";
 	driver.parse();
 	EXPECT_EQ(
-			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("c").lock())->getIdentifier(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("c").lock())->getNameAsString(),
 			string("c")
 	);
 	EXPECT_EQ(
-			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("d").lock())->getIdentifier(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("d").lock())->getNameAsString(),
 			string("d")
 	);
 	EXPECT_EQ(
-			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("e").lock())->getIdentifier(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("e").lock())->getNameAsString(),
 			string("e")
 	);
-	astContext.cleanAST();
-	declContext.clean();
+	reset();
 }
 
 TEST_F(BasicParseTest, FunctionTest)
@@ -496,10 +505,9 @@ TEST_F(BasicParseTest, FunctionTest)
 	openHelper << "int a();";
 	driver.parse();
 	EXPECT_EQ(
-			dynamic_pointer_cast<VariableDecl>(declContext.getContext()->lookup("a").lock())->getIdentifier(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("a").lock())->getNameAsString(),
 			string("a")
 	);
-	astContext.cleanAST();
-	declContext.clean();
+	reset();
 }
 #endif

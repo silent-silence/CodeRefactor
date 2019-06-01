@@ -3,34 +3,24 @@
 
 #include <string>
 
+class IdentifierInfo;
+
 /// @brief The identity of a declaration
 class DeclName {
 public:
-	DeclName() = default;
-	explicit DeclName(const char *s)
-		: m_identity{s}
+	DeclName(const std::shared_ptr<IdentifierInfo> id)
+		: m_storedIdentifier{id}
 	{}
-	explicit DeclName(const std::string &s)
-		: m_identity{s}
-	{}
-	std::string getIdentifier() const { return m_identity; }
-	std::string getStoredName() const { return m_storedName; }
+	virtual ~DeclName() = default;
 
-	bool operator==(const DeclName &name2) const {
-		return m_storedName == name2.m_storedName;
-	}
+	virtual std::string getAsString() const;
+	virtual std::weak_ptr<IdentifierInfo> getAsIdentifierInfo() const;
+
+protected:
+	DeclName() = default;
 
 private:
-	std::string m_identity;
-	std::string m_storedName;
+	std::shared_ptr<IdentifierInfo> m_storedIdentifier;
 };
-
-class DeclarationNameHash {
-public:
-	size_t operator()(const DeclName &name) const {
-		return std::hash<std::string>()(name.getIdentifier());
-	};
-};
-
 
 #endif

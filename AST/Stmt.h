@@ -2,9 +2,11 @@
 #define AST_STMT_H
 
 #include <array>
-#include <vector>
 #include <memory>
+#include <list>
 #include "Basic/SourceLocation.h"
+
+class DeclGroupRef;
 
 class Expr;
 class Stmt;
@@ -30,26 +32,295 @@ class BreakStmt;
 class ReturnStmt;
 class AsmStmt;//GNU内联汇编语句扩展
 
-class Iterator{
-    std::shared_ptr<Stmt> *m_ptr;
+class Iterator
+{
 public:
-    Iterator():m_ptr(nullptr){}
-    Iterator(std::shared_ptr<Stmt> *ptr)
-        :m_ptr(ptr)
-    {}
-    Iterator& operator++();
-    Iterator operator-(size_t i);
-    Iterator operator+(size_t i);
-    std::shared_ptr<Stmt> operator[](size_t idx);
+	virtual Iterator &operator++() = 0;
+	virtual Iterator &operator -(size_t i) = 0;
+	virtual Iterator &operator +(size_t i) = 0;
+	virtual std::shared_ptr<Stmt> operator[](size_t idx) = 0;
+	virtual signed operator -(const Iterator &R) = 0;
 
-    signed operator-(const Iterator& R) const;
-    std::shared_ptr<Stmt> operator*() const;
-    std::shared_ptr<Stmt> operator->() const;
+	virtual std::shared_ptr<Stmt> operator*() const = 0;
+	virtual std::shared_ptr<Stmt> operator->() const = 0;
 
-    bool operator==(const Iterator& R) const;
-    bool operator!=(const Iterator& R) const;
-    bool operator>(const Iterator& R) const ;
-    bool operator>=(const Iterator& R) const;
+	virtual void operator =(std::shared_ptr<Stmt> stmt) const = 0;
+	virtual bool operator ==(const Iterator &R) const = 0;
+	virtual bool operator !=(const Iterator &R) const = 0;
+	virtual bool operator >=(const Iterator &R) const = 0;
+	virtual bool operator >(const Iterator &R) const = 0;
+
+	virtual ~Iterator(){}
+};
+
+class StmtIterator : public Iterator
+{
+public:
+	StmtIterator(std::shared_ptr<Iterator> iterator)
+			: iterator_(iterator)
+	{}
+	Iterator &operator++() {
+		return iterator_->operator++();
+	}
+	Iterator &operator -(size_t i) {
+		return iterator_->operator-(i);
+	}
+	Iterator &operator +(size_t i) {
+		return iterator_->operator+(i);
+	}
+	std::shared_ptr<Stmt> operator[](size_t idx)  {
+		return iterator_->operator[](idx);
+	}
+	signed operator - (const Iterator &R)  {
+		auto r =dynamic_cast<const StmtIterator &>(R);
+		return iterator_->operator-(*r.iterator_);
+	}
+
+	void operator =(std::shared_ptr<Stmt> stmt) const {
+		iterator_->operator=(stmt);
+	}
+
+	std::shared_ptr<Stmt> operator*() const  {
+		return iterator_->operator*();
+	}
+	std::shared_ptr<Stmt> operator->() const  {
+		return iterator_->operator->();
+	}
+
+	bool operator ==(const Iterator &R) const  {
+		auto r =dynamic_cast<const StmtIterator &>(R);
+		if(iterator_==nullptr&&r.iterator_==nullptr)
+			return false;
+		return iterator_->operator==(*r.iterator_);
+	}
+	bool operator !=(const Iterator &R) const  {
+		auto r =dynamic_cast<const StmtIterator &>(R);
+		if(iterator_==nullptr&&r.iterator_==nullptr)
+			return false;
+		return iterator_->operator!=(*r.iterator_);
+	}
+	bool operator >=(const Iterator &R) const  {
+		auto r =dynamic_cast<const StmtIterator &>(R);
+		return iterator_->operator>=(*r.iterator_);
+	}
+	bool operator >(const Iterator &R) const  {
+		auto r =dynamic_cast<const StmtIterator &>(R);
+		return iterator_->operator>(*r.iterator_);
+	}
+
+private:
+	std::shared_ptr<Iterator> iterator_;
+};
+
+class ListIterator : public Iterator
+{
+public:
+	ListIterator(std::list<std::shared_ptr<Stmt>>::iterator iterator)
+			: iterator_(iterator)
+	{}
+	Iterator &operator++() override{
+		++iterator_;
+		return *this;
+	}
+	Iterator &operator - (size_t i) override{
+		ListIterator r(iterator_);
+		while (i--) {
+			--r.iterator_;
+		}
+		return r;
+	}
+	Iterator &operator + (size_t i) override{
+		ListIterator r(iterator_);
+		while (i++) {
+			++r.iterator_;
+		}
+		return r;
+	}
+	std::shared_ptr<Stmt> operator[](size_t idx) override{
+		while (idx++) {
+			++iterator_;
+		}
+		return *iterator_;
+	}
+	signed operator - (const Iterator &R) override{
+		signed t = 0;
+		ListIterator r1(iterator_);
+		ListIterator r2(dynamic_cast<const ListIterator &>(R).iterator_);
+		if(r1.iterator_ == r2.iterator_)
+			return t;
+
+		return t;
+	}
+
+	std::shared_ptr<Stmt> operator*() const override{
+		return *iterator_;
+	}
+	std::shared_ptr<Stmt> operator->() const override{
+		return *iterator_;
+	}
+
+	void operator =(std::shared_ptr<Stmt> stmt) const {
+		*iterator_=stmt;
+	}
+
+	bool operator ==(const Iterator &R) const override{
+		auto r =dynamic_cast<const ListIterator &>(R);
+		return iterator_ == r.iterator_;
+	}
+	bool operator !=(const Iterator &R) const override{
+		auto r =dynamic_cast<const ListIterator &>(R);
+		return iterator_ != r.iterator_;
+	}
+	bool operator >=(const Iterator &R) const override{
+		auto r =dynamic_cast<const ListIterator &>(R);
+		//return iterator_ >= r.iterator_;
+		return false;
+	}
+	bool operator >(const Iterator &R) const override{
+		auto r =dynamic_cast<const ListIterator &>(R);
+		//return iterator_ > r.iterator_;
+		return false;
+	}
+
+	~ListIterator(){}
+
+private:
+	std::list<std::shared_ptr<Stmt>>::iterator iterator_;
+};
+
+class PtrIterator : public Iterator
+{
+public:
+	PtrIterator(std::shared_ptr<Stmt> iterator)
+			: iterator_{iterator}
+	{}
+
+	Iterator &operator++() override{
+		iterator_ = nullptr;
+		return *this;
+	}
+	Iterator &operator -(size_t i) override{
+		PtrIterator r(iterator_);
+		r.iterator_=nullptr;
+		return r;
+	}
+	Iterator &operator +(size_t i) override{
+		PtrIterator r(iterator_);
+		r.iterator_=nullptr;
+		return r;
+	}
+	std::shared_ptr<Stmt> operator[](size_t idx) override{
+		if(iterator_ && idx == 0)
+			return iterator_;
+		else {
+			return nullptr;
+		}
+	}
+	signed operator -(const Iterator &R){
+		return 0;
+	}
+
+	std::shared_ptr<Stmt> operator*() const {
+		return iterator_;
+	}
+	std::shared_ptr<Stmt> operator->() const {
+		return iterator_;
+	}
+
+	void operator =(std::shared_ptr<Stmt> stmt) const {
+		iterator_=stmt;
+	}
+
+	bool operator ==(const Iterator &R) const override{
+		auto r =dynamic_cast<const PtrIterator &>(R);
+		return iterator_ == r.iterator_;
+	}
+	bool operator !=(const Iterator &R) const override{
+		auto r =dynamic_cast<const PtrIterator &>(R);
+		return iterator_ != r.iterator_;
+	}
+	bool operator >=(const Iterator &R) const{
+		return false;
+	}
+	bool operator >(const Iterator &R) const {
+		return false;
+	}
+private:
+	std::shared_ptr<Stmt> &iterator_;
+};
+
+template <typename T>
+class ArrayIterator : public Iterator
+{
+public:
+	ArrayIterator(T iterator)
+			: iterator_{iterator}
+	{}
+
+	Iterator &operator++() override{
+		++iterator_;
+		return *this;
+	}
+	Iterator &operator - (size_t i) override{
+		ArrayIterator r(iterator_);
+		while (i--) {
+			--r.iterator_;
+		}
+		return r;
+	}
+	Iterator &operator + (size_t i) override{
+		ArrayIterator r(iterator_);
+		while (i++) {
+			++r.iterator_;
+		}
+		return r;
+	}
+	std::shared_ptr<Stmt> operator[](size_t idx) override{
+		while (idx++) {
+			++iterator_;
+		}
+		return *iterator_;
+	}
+	signed operator - (const Iterator &R) override{
+		signed t = 0;
+		ArrayIterator r1(iterator_);
+		ArrayIterator r2(dynamic_cast<const ArrayIterator &>(R).iterator_);
+		if(r1.iterator_ == r2.iterator_)
+			return t;
+
+		return t;
+	}
+
+	std::shared_ptr<Stmt> operator*() const override{
+		return *iterator_;
+	}
+	std::shared_ptr<Stmt> operator->() const override{
+		return *iterator_;
+	}
+
+	void operator =(std::shared_ptr<Stmt> stmt) const {
+		*iterator_=stmt;
+	}
+
+	bool operator ==(const Iterator &R) const override{
+		auto r =dynamic_cast<const ArrayIterator &>(R);
+		return iterator_ == r.iterator_;
+	}
+	bool operator !=(const Iterator &R) const override{
+		auto r =dynamic_cast<const ArrayIterator &>(R);
+		return iterator_ != r.iterator_;
+	}
+	bool operator >=(const Iterator &R) const override{
+		auto r =dynamic_cast<const ArrayIterator &>(R);
+		//return iterator_ >= r.iterator_;
+	}
+	bool operator >(const Iterator &R) const override{
+		auto r =dynamic_cast<const ArrayIterator &>(R);
+		//return iterator_ > r.iterator_;
+	}
+
+private:
+	T iterator_;
 };
 
 //Stmt - This represents one statement.
@@ -71,8 +342,7 @@ public:
     static bool classof(const std::shared_ptr<Stmt> );
     virtual ~Stmt(){}
 
-
-    typedef Iterator child_iterator;
+    typedef StmtIterator child_iterator;
     virtual child_iterator child_begin() = 0;
     virtual child_iterator child_end()   = 0;
 protected:
@@ -86,7 +356,7 @@ private:
 class DeclStmt : public Stmt
 {
 public:
-    DeclStmt(SourceLocation startLoc, SourceLocation endLoc);
+    DeclStmt(std::shared_ptr<DeclGroupRef> dg, SourceLocation startLoc, SourceLocation endLoc);
     explicit DeclStmt(EmptyShell Empty);
 
     SourceLocation getStartLoc() const;
@@ -95,12 +365,15 @@ public:
     void setStartLoc(SourceLocation L);
     void setEndLoc(SourceLocation L) ;
 
+    std::weak_ptr<DeclGroupRef> getDeclGroup();
+
     static bool classof(const std::weak_ptr<Stmt>T);
     static bool classof(const std::weak_ptr<DeclStmt>);
 
     virtual child_iterator child_begin();
     virtual child_iterator child_end();
 private:
+	std::shared_ptr<DeclGroupRef> m_dg;
     SourceLocation StartLoc;
     SourceLocation EndLoc;
 };
@@ -127,8 +400,10 @@ private:
 class CompoundStmt : public Stmt
 {
 public:
-    CompoundStmt(std::vector<std::shared_ptr<Stmt>> StmtStart, SourceLocation LB, SourceLocation RB);
+    CompoundStmt(std::list<std::shared_ptr<Stmt>> StmtStart, SourceLocation LB, SourceLocation RB);
     explicit CompoundStmt(EmptyShell Empty);
+
+    void setStmts(std::list<std::shared_ptr<Stmt>> Stmts);
 
     SourceLocation getLBracLoc() const;
     SourceLocation getRBracLoc() const;
@@ -142,7 +417,7 @@ public:
     virtual child_iterator child_begin();
     virtual child_iterator child_end();
 private:
-    std::vector<std::shared_ptr<Stmt>> Body;
+    std::list<std::shared_ptr<Stmt>> Body;
     SourceLocation LBracLoc, RBracLoc;
 };
 
@@ -355,7 +630,7 @@ public:
     explicit DoStmt(EmptyShell Empty);
 
     std::weak_ptr<Expr> getCond();
-     std::weak_ptr<Stmt> getBody();
+	std::weak_ptr<Stmt> getBody();
 
     void setCond(std::shared_ptr<Expr> E);
     void setBody(std::shared_ptr<Stmt> S);
@@ -394,7 +669,7 @@ public:
     explicit ForStmt(EmptyShell Empty);
 
     std::weak_ptr<Stmt> getInit();
-    std::weak_ptr<Expr> getCond();
+    std::weak_ptr<Stmt> getCond();
     std::weak_ptr<Expr> getInc();
     std::weak_ptr<Stmt> getBody();
 
@@ -538,9 +813,9 @@ class AsmStmt : public Stmt
 public:
     AsmStmt(SourceLocation asmloc, bool issimple, bool isvolatile,
             unsigned numoutputs, unsigned numinputs,
-            std::vector<std::string> names, std::vector<std::shared_ptr<StringLiteral> > constraints,
-            std::vector<std::shared_ptr<Expr> > exprs, std::shared_ptr<StringLiteral> asmstr, unsigned numclobbers,
-            std::vector<std::shared_ptr<StringLiteral> > clobbers, SourceLocation rparenloc);
+            std::list<std::string> names, std::list<std::shared_ptr<StringLiteral> > constraints,
+            std::list<std::shared_ptr<Expr> > exprs, std::shared_ptr<StringLiteral> asmstr, unsigned numclobbers,
+            std::list<std::shared_ptr<StringLiteral> > clobbers, SourceLocation rparenloc);
     explicit AsmStmt(EmptyShell Empty);
 
     SourceLocation getAsmLoc() const;

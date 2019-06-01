@@ -5,6 +5,7 @@
 #include <memory>
 #include <variant>
 #include <stack>
+#include <list>
 #include "AST/AST.hpp"
 
 class ASTContext
@@ -35,10 +36,13 @@ public:
 			std::string,
 			std::vector<std::shared_ptr<Stmt>>,
 			std::vector<std::shared_ptr<Expr>>,
+			std::list<std::shared_ptr<Stmt>>,
+			std::list<std::shared_ptr<Expr>>,
 			std::shared_ptr<Expr>,
 			std::shared_ptr<Stmt>,
 			std::shared_ptr<QualType>,
-			std::shared_ptr<NamedDecl>
+			std::shared_ptr<NamedDecl>,
+			std::shared_ptr<DeclGroupRef>
 	> var_t;
     /*template<auto type, typename... Args>
 	std::shared_ptr<Stmt> create(Args... args){

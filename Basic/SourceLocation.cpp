@@ -36,6 +36,20 @@ bool SourceLocation::operator<(const SourceLocation &sourceLocation) const
     return true;
 }
 
+bool SourceLocation::operator==(const SourceLocation &sourceLocation) const
+{
+    if(file().compare(sourceLocation.file())){
+        return false;
+    }
+    if(line()!=sourceLocation.line()){
+        return false;
+    }
+    if(bytes()!=sourceLocation.bytes()){
+        return false;
+    }
+    return true;
+}
+
 std::string SourceLocation::file() const
 {
     return m_file;

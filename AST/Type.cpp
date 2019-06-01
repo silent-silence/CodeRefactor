@@ -105,11 +105,11 @@ ComplexType::ComplexType(std::shared_ptr<QualType> Element)
       ElementType(Element)
 {}
 
-shared_ptr<QualType> PointerType::creator(std::shared_ptr<QualType> Pointee, std::shared_ptr<QualType> CanonicalPtr)
+shared_ptr<Type> PointerType::creator(std::shared_ptr<QualType> Pointee, std::shared_ptr<QualType> CanonicalPtr)
 {
     auto ptr=make_shared<PointerType>(Pointee);
     ptr->setCanonicalType(CanonicalPtr);
-    return ptr->getCanonicalType().lock();
+    return ptr;
 }
 
 PointerType::PointerType(std::shared_ptr<QualType> Pointee)

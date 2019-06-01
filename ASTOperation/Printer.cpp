@@ -6,12 +6,14 @@
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
 #include "OpenHelper/OpenHelper.h"
+#include "Decl/DeclGroup.h"
+#include "Basic/IdentifierTable.h"
 
 using std::string;					using std::dynamic_pointer_cast;
 using std::to_string;
 
 Printer::Printer(OpenHelper &openHelper)
-	: m_openHelper{openHelper}, m_tabNum{0}
+	: m_openHelper{openHelper}, m_tabNum{0}, stmtInOneLine{false}
 {}
 
 void Printer::print(std::shared_ptr<Stmt> s)
@@ -22,10 +24,10 @@ void Printer::print(std::shared_ptr<Stmt> s)
 		case Stmt::NullStmtClass:				processNullStmt(s);					break;
 		case Stmt::CompoundStmtClass:			processCompoundStmt(s);				break;
 		case Stmt::CaseStmtClass:				processCaseStmt(s);					break;
-		case Stmt::DefaultStmtClass:break;
+		case Stmt::DefaultStmtClass:			processDefaultStmt(s);				break;
 		case Stmt::LabelStmtClass:break;
 		case Stmt::IfStmtClass:					processIfStmt(s);					break;
-		case Stmt::SwitchStmtClass:break;
+		case Stmt::SwitchStmtClass:				processSwitchStmt(s);				break;
 		case Stmt::WhileStmtClass:				processWhileStmt(s);				break;
 		case Stmt::DoStmtClass:					processDoStmt(s);					break;
 		case Stmt::ForStmtClass:				processForStmt(s);					break;
@@ -34,14 +36,14 @@ void Printer::print(std::shared_ptr<Stmt> s)
 		case Stmt::ContinueStmtClass:			processContinueStmt(s);				break;
 		case Stmt::BreakStmtClass:				processBreakStmt(s);				break;
 		case Stmt::ReturnStmtClass:				processReturnStmt(s);				break;
-		case Stmt::DeclStmtClass:break;
+		case Stmt::DeclStmtClass:				processDeclStmt(s);					break;
 		case Stmt::SwitchCaseClass:break;
 		case Stmt::AsmStmtClass:break;
 		case Stmt::CXXCatchStmtClass:break;
 		case Stmt::CXXTryStmtClass:break;
 		case Stmt::ExprClass:break;
 		case Stmt::PredefinedExprClass:break;
-		case Stmt::DeclRefExprClass:break;
+		case Stmt::DeclRefExprClass:			processRefExpr(s);					break;
 		case Stmt::IntegerLiteralClass:			processIntergerLiteral(s);			break;
 		case Stmt::FloatingLiteralClass:		processFloatingLiteral(s);			break;
 		case Stmt::ImaginaryLiteralClass:break;
@@ -59,7 +61,7 @@ void Printer::print(std::shared_ptr<Stmt> s)
 		case Stmt::ConditionalOperatorClass:	processConditionalOperator(s);		break;
 		case Stmt::ImplicitCastExprClass:break;
 		case Stmt::ExplicitCastExprClass:break;
-		case Stmt::CStyleCastExprClass:break;
+		case Stmt::CStyleCastExprClass:			processCStyleCastExpr(s);			break;
 		case Stmt::CompoundLiteralExprClass:break;
 		case Stmt::ExtVectorElementExprClass:break;
 		case Stmt::InitListExprClass:break;
@@ -116,10 +118,52 @@ void Printer::resetPrinter()
 
 void Printer::formatExprAsStmt(std::shared_ptr<Stmt> s)
 {
+	if(dynamic_pointer_cast<Expr>(s))
+		m_openHelper.getOutputStream()<< string(m_tabNum * 2, tabType);
 	print(s);
 	// if is a expr
 	if(dynamic_pointer_cast<Expr>(s))
 			m_openHelper.getOutputStream() << ";\n";
+}
+
+std::string Printer::getTypeName(std::shared_ptr<Type> type) const
+{
+	std::string typeName;
+	// TODO: support more types
+	if(type->getTypeClass() == Type::Builtin)
+	{
+		auto builtin = dynamic_pointer_cast<BuiltinType>(type);
+		switch(builtin->getKind())
+		{
+			case BuiltinType::Void:			typeName = "void";					break;
+			case BuiltinType::Bool:			typeName = "bool";					break;
+			case BuiltinType::Char_U:		typeName = "unsigned char";			break;
+			case BuiltinType::UChar:		typeName = "unsigned char";			break;
+			case BuiltinType::Char16:		typeName = "void";					break;
+			case BuiltinType::Char32:		typeName = "void";					break;
+			case BuiltinType::UShort:		typeName = "unsigned short";		break;
+			case BuiltinType::UInt:			typeName = "unsigned int";			break;
+			case BuiltinType::ULong:		typeName = "unsigned long";			break;
+			case BuiltinType::ULongLong:	typeName = "unsigned long long";	break;
+			case BuiltinType::UInt128:		typeName = "void";break;
+			case BuiltinType::Char_S:		typeName = "signed char";			break;
+			case BuiltinType::SChar:		typeName = "signed char";			break;
+			case BuiltinType::WChar:		typeName = "void";break;
+			case BuiltinType::Short:		typeName = "short";					break;
+			case BuiltinType::Int:			typeName = "int";					break;
+			case BuiltinType::Long:			typeName = "long";					break;
+			case BuiltinType::LongLong:		typeName = "long long";				break;
+			case BuiltinType::Int128:		typeName = "void";break;
+			case BuiltinType::Float:		typeName = "float";					break;
+			case BuiltinType::Double:		typeName = "double";				break;
+			case BuiltinType::LongDouble:	typeName = "long double";			break;
+			case BuiltinType::NullPtr:		typeName = "void";break;
+			case BuiltinType::Overload:		typeName = "void";break;
+			case BuiltinType::Dependent:	typeName = "void";break;
+			case BuiltinType::UndeducedAuto:typeName = "void";break;
+		}
+	}
+	return typeName;
 }
 
 /*void Printer::childIteration(std::shared_ptr<Stmt> &root)
@@ -130,7 +174,9 @@ void Printer::formatExprAsStmt(std::shared_ptr<Stmt> s)
 
 void Printer::processNullStmt(std::shared_ptr<Stmt> &s)
 {
-	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << ";\n";
+	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << ";";
+	if(!stmtInOneLine)
+		m_openHelper.getOutputStream() << "\n";
 }
 
 void Printer::processCompoundStmt(std::shared_ptr<Stmt> &s)
@@ -199,13 +245,13 @@ void Printer::processUnaryOperator(std::shared_ptr<Stmt> &s)
 void Printer::processIntergerLiteral(std::shared_ptr<Stmt> &s)
 {
 	auto integer = dynamic_pointer_cast<IntegerLiteral>(s);
-	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << to_string(integer->getValue());
+	m_openHelper.getOutputStream() << to_string(integer->getValue());
 }
 
 void Printer::processFloatingLiteral(std::shared_ptr<Stmt> &s)
 {
 	auto floating = dynamic_pointer_cast<FloatingLiteral>(s);
-	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << toString(floating->getValue());
+	m_openHelper.getOutputStream() << toString(floating->getValue());
 }
 
 void Printer::processBinaryOperator(std::shared_ptr<Stmt> &s)
@@ -331,7 +377,7 @@ void Printer::processCharacterLiteral(std::shared_ptr<Stmt> &s)
 void Printer::processWhileStmt(std::shared_ptr<Stmt> &s)
 {
 	auto whileStmt = dynamic_pointer_cast<WhileStmt>(s);
-	m_openHelper.getOutputStream() << "while(";
+	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "while(";
 	print(whileStmt->getCond().lock());
 	m_openHelper.getOutputStream() << ")\n";
 	formatExprAsStmt(whileStmt->getBody().lock());
@@ -340,13 +386,13 @@ void Printer::processWhileStmt(std::shared_ptr<Stmt> &s)
 void Printer::processIfStmt(std::shared_ptr<Stmt> &s)
 {
 	auto ifStmt = dynamic_pointer_cast<IfStmt>(s);
-	m_openHelper.getOutputStream() << "if(";
+	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "if(";
 	print(ifStmt->getCond().lock());
 	m_openHelper.getOutputStream() << ")\n";
 	formatExprAsStmt(ifStmt->getThen().lock());
 	if(ifStmt->getElse().lock())
 	{
-		m_openHelper.getOutputStream() << "else ";
+		m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "else ";
 		print(ifStmt->getElse().lock());
 	}
 }
@@ -354,7 +400,7 @@ void Printer::processIfStmt(std::shared_ptr<Stmt> &s)
 void Printer::processDoStmt(std::shared_ptr<Stmt> &s)
 {
 	auto doStmt = dynamic_pointer_cast<DoStmt>(s);
-	m_openHelper.getOutputStream() << "do\n";
+	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "do\n";
 	formatExprAsStmt(doStmt->getBody().lock());
 	m_openHelper.getOutputStream() << "while(";
 	print(doStmt->getCond().lock());
@@ -364,9 +410,11 @@ void Printer::processDoStmt(std::shared_ptr<Stmt> &s)
 void Printer::processForStmt(std::shared_ptr<Stmt> &s)
 {
 	auto forStmt = dynamic_pointer_cast<ForStmt>(s);
-	m_openHelper.getOutputStream() << "for(";
+	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "for(";
+	stmtInOneLine = true;
 	print(forStmt->getInit().lock());
 	print(forStmt->getCond().lock());
+	stmtInOneLine = false;
 	if(forStmt->getInc().lock())
 		print(forStmt->getInc().lock());
 	m_openHelper.getOutputStream() << ")\n";
@@ -376,7 +424,7 @@ void Printer::processForStmt(std::shared_ptr<Stmt> &s)
 void Printer::processCaseStmt(std::shared_ptr<Stmt> &s)
 {
 	auto caseStmt = dynamic_pointer_cast<CaseStmt>(s);
-	m_openHelper.getOutputStream() << "case ";
+	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "case ";
 	print(caseStmt->getLHS().lock());
 	m_openHelper.getOutputStream() << ":\n";
 	/*if(caseStmt->getSubStmt())
@@ -390,5 +438,54 @@ void Printer::processCaseStmt(std::shared_ptr<Stmt> &s)
 void Printer::processRefExpr(std::shared_ptr<Stmt> &s)
 {
 	auto ref = dynamic_pointer_cast<DeclRefExpr>(s);
-	m_openHelper.getOutputStream() << ref->getDecl().lock()->getIdentifier();
+	m_openHelper.getOutputStream() << ref->getDecl().lock()->getNameAsString();
+}
+
+void Printer::processSwitchStmt(std::shared_ptr<Stmt> &s)
+{
+	auto switchStmt = dynamic_pointer_cast<SwitchStmt>(s);
+	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "switch(";
+	print(switchStmt->getCond().lock());
+	m_openHelper.getOutputStream() << ")\n";
+	print(switchStmt->getBody().lock());
+}
+
+void Printer::processDefaultStmt(std::shared_ptr<Stmt> &s)
+{
+	auto defaultStmt = dynamic_pointer_cast<DefaultStmt>(s);
+	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "default:\n";
+}
+
+void Printer::processCStyleCastExpr(std::shared_ptr<Stmt> &s)
+{
+	auto caseExpr = dynamic_pointer_cast<CStyleCastExpr>(s);
+	auto type = caseExpr->getType().lock()->getTypePtr();
+	m_openHelper.getOutputStream() << "(";
+	m_openHelper.getOutputStream() << getTypeName(type) << ")";
+	print(caseExpr->getSubExpr().lock());
+}
+
+void Printer::processDeclStmt(std::shared_ptr<Stmt> &s)
+{
+	auto declStmt = dynamic_pointer_cast<DeclStmt>(s);
+	auto declRef = declStmt->getDeclGroup().lock();
+	if(declRef->isSingleDecl())
+	{
+		auto decl = dynamic_pointer_cast<ValueDecl>(declRef->getSingleDecl().lock());
+		auto type = decl->getType().lock()->getTypePtr();
+		m_openHelper.getOutputStream() << getTypeName(type) << " " << decl->getNameAsString() << ";\n";
+	}
+	else if(declRef->isDeclGroup())
+	{
+		auto decls = declRef->getDeclGroup().lock();
+		auto type = dynamic_pointer_cast<ValueDecl>((*decls)[0])->getType().lock()->getTypePtr();
+		m_openHelper.getOutputStream() << getTypeName(type) << " ";
+		for (unsigned i = 0; i < decls->size(); ++i)
+		{
+			m_openHelper.getOutputStream() << dynamic_pointer_cast<ValueDecl>((*decls)[i])->getNameAsString();
+			if (i + 1 != decls->size())
+				m_openHelper.getOutputStream() << ", ";
+		}
+		m_openHelper.getOutputStream() << ";\n";
+	}
 }

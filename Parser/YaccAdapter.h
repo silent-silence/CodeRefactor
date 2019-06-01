@@ -15,6 +15,8 @@ class SourceLocation;
 class ASTContext;
 class DeclContextHolder;
 class OpenHelper;
+class Decl;
+class DeclContext;
 
 /// @brief An Adapter which is called by yacc rules, and create AST via ASTContext/DeclContextHolder interface.
 class YaccAdapter {
@@ -36,7 +38,8 @@ public:
 		UNION	=	0x0800,
 		/// @brief represent storage class specifiers, which can be appear only one time
 		STORAGE	=	0x1000,
-		TYPEDEF, EXTERN, STATIC, AUTO, REGISTER
+		TYPEDEF, EXTERN, STATIC, AUTO, REGISTER,
+		CONST, VOLATILE
 	};
 
 	/// @brief This enumerator hold if a basic type can be specified by another type
@@ -140,12 +143,13 @@ public:
 	//void makeDependentDecltypeType(std::vector<var_t> &value);
 
 	/// @brief Symbol table
+	void enterNewBlock(yy::location &l);
 	/// @brief Temporary save the variable name
 	void storeVariable(std::string name, yy::location &l);
 
 private:
 	/// @brief This method should be called by makeDeclStmt() only
-	void makeVariable(std::shared_ptr<QualType> type);
+	std::vector<std::shared_ptr<Decl>> makeVariables(std::shared_ptr<QualType> type);
 
 	/// @brief Check if type specifier is allowed
 	bool isTypeSpecifierNotIllegal();
@@ -155,19 +159,19 @@ private:
 	/// @brief Pop a Stmt/Type from the stack
 	std::shared_ptr<Stmt> pop_stmt();
 	std::shared_ptr<QualType> pop_type();
+	std::shared_ptr<DeclContext> pop_decl();
 
 	ASTContext &m_ASTContext;
 	DeclContextHolder &m_declContextHolder;
 	OpenHelper &m_source;
 
-	/// @brief Temporary save the storage class specifiers(typedef/extern/static/register)
-	TypeSpecifier m_storageSpecifier;
-	/// @brief Temporary save the basic type of specifiers(int/long/double...)
-	unsigned m_typeSpecifier;
-
 	/// @brief The stack of Stmt/Type
 	std::stack<std::shared_ptr<Stmt>> m_stmtStack;
 	std::stack<std::shared_ptr<QualType>> m_typeStack;
+	std::stack<std::shared_ptr<DeclContext>> m_declStack;
+	/// @brief first: Temporary save the basic type of specifiers(int/long/double...)
+	/// @brief seconde: Temporary save the storage class specifiers(typedef/extern/static/register)
+	std::stack<std::pair<unsigned, TypeSpecifier>> m_typeSpecifier;
 	std::stack<std::pair<std::string, SourceLocation>> m_nameStack;
 
 	/*template<typename T=Stmt>

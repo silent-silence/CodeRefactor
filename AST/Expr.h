@@ -431,7 +431,7 @@ private:
 class CallExpr : public Expr
 {
 public:
-    CallExpr(std::shared_ptr<Expr> fn, std::vector<std::shared_ptr<Expr>> args,
+    CallExpr(std::shared_ptr<Expr> fn, std::list<std::shared_ptr<Expr>> args,
              unsigned numargs, std::shared_ptr<QualType> t, SourceLocation rparenloc);
     CallExpr(StmtClass SC, EmptyShell Empty);
 
@@ -452,11 +452,11 @@ public:
 
 protected:
     CallExpr(StmtClass SC, std::shared_ptr<Expr> fn,
-             std::vector<std::shared_ptr<Expr>> args, unsigned numargs,
+             std::list<std::shared_ptr<Expr>> args, unsigned numargs,
              std::shared_ptr<QualType> t, SourceLocation rparenloc);
 private:
     enum { FN=0, ARGS_START=1 };
-    std::vector<std::shared_ptr<Stmt>> SubExprs;
+    std::list<std::shared_ptr<Stmt>> SubExprs;
     unsigned NumArgs;
     SourceLocation RParenLoc;
 };
@@ -550,18 +550,19 @@ public:
     };
     virtual child_iterator child_begin();
     virtual child_iterator child_end();
+
+	static bool classof(const std::weak_ptr<Stmt>T);
+	static bool classof(const std::weak_ptr<CastExpr>);
+
+	CastKind getCastKind() const;
+	void setCastKind(CastKind K);
+
+	std::weak_ptr<Expr>getSubExpr();
+	void setSubExpr(std::shared_ptr<Expr>E);
+
 protected:
     CastExpr(StmtClass SC, std::shared_ptr<QualType> ty, const CastInfo &info, std::shared_ptr<Expr>op) ;
     CastExpr(StmtClass SC, EmptyShell Empty);
-
-    static bool classof(const std::weak_ptr<Stmt>T);
-    static bool classof(const std::weak_ptr<CastExpr>);
-
-    CastKind getCastKind() const;
-    void setCastKind(CastKind K);
-
-    std::weak_ptr<Expr>getSubExpr();
-    void setSubExpr(std::shared_ptr<Expr>E);
 
 private:
     CastKind Kind;
@@ -788,8 +789,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<StmtExpr>);
 
-    virtual child_iterator child_begin() { return &SubStmt; }
-    virtual child_iterator child_end(){ return &SubStmt+1; }
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     std::shared_ptr<Stmt> SubStmt;
     SourceLocation LParenLoc;
@@ -831,7 +832,7 @@ private:
 class ShuffleVectorExpr : public Expr
 {
 public:
-    ShuffleVectorExpr(std::vector<std::shared_ptr<Expr>> args, unsigned nexpr,
+    ShuffleVectorExpr(std::list<std::shared_ptr<Expr>> args, unsigned nexpr,
                       std::shared_ptr<QualType> Type, SourceLocation BLoc,
                       SourceLocation RP);
     explicit ShuffleVectorExpr(EmptyShell Empty);
@@ -854,7 +855,7 @@ public:
     virtual child_iterator child_end();
 private:
     SourceLocation BuiltinLoc, RParenLoc;
-    std::vector<std::shared_ptr<Stmt>> SubExprs;
+    std::list<std::shared_ptr<Stmt>> SubExprs;
     unsigned NumExprs;
 };
 
@@ -883,8 +884,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<ChooseExpr>);
 
-    virtual child_iterator child_begin(){ return &SubExprs[0]; }
-    virtual child_iterator child_end(){ return &SubExprs[0]+END_EXPR; }
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     enum { COND, LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -907,8 +908,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<GNUNullExpr>);
 
-    virtual child_iterator child_begin(){return child_iterator();}
-    virtual child_iterator child_end(){return child_iterator();}
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     SourceLocation TokenLoc;
 };
@@ -934,8 +935,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<VAArgExpr>);
 
-    virtual child_iterator child_begin(){return &Val;}
-    virtual child_iterator child_end(){return &Val+1;}
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
     std::shared_ptr<Stmt> Val;
     SourceLocation BuiltinLoc;
@@ -946,7 +947,7 @@ private:
 class InitListExpr : public Expr
 {
 public:
-    InitListExpr(SourceLocation lbraceloc, std::vector<std::shared_ptr<Expr>> initexprs,
+    InitListExpr(SourceLocation lbraceloc, std::list<std::shared_ptr<Expr>> initexprs,
                  unsigned numinits, SourceLocation rbraceloc);
     explicit InitListExpr(EmptyShell Empty);
 
@@ -964,7 +965,7 @@ public:
     virtual child_iterator child_begin();
     virtual child_iterator child_end();
 private:
-    std::vector<std::shared_ptr<Stmt>> InitExprs;
+    std::list<std::shared_ptr<Stmt>> InitExprs;
     SourceLocation LBraceLoc;
     SourceLocation RBraceLoc;
 
@@ -1034,7 +1035,7 @@ public:
 class ParenListExpr : public Expr
 {
 public:
-    ParenListExpr(SourceLocation lparenloc, std::vector<std::shared_ptr<Expr>> exprs,
+    ParenListExpr(SourceLocation lparenloc, std::list<std::shared_ptr<Expr>> exprs,
                   unsigned numexprs, SourceLocation rparenloc);
 
     const std::weak_ptr<Expr> getExpr(unsigned Init) const;
@@ -1047,10 +1048,10 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<ParenListExpr>);
 
-    virtual child_iterator child_begin(){return &Exprs[0];}
-    virtual child_iterator child_end(){return &Exprs[0]+NumExprs;}
+    virtual child_iterator child_begin();
+    virtual child_iterator child_end();
 private:
-    std::vector<std::shared_ptr<Stmt>> Exprs;
+    std::list<std::shared_ptr<Stmt>> Exprs;
     unsigned NumExprs;
     SourceLocation LParenLoc;
     SourceLocation RParenLoc;

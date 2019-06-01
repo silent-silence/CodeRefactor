@@ -11,19 +11,23 @@
 class SourceLocation;
 class DeclContext;
 class QualType;
+class Decl;
+class Stmt;
 
+/// @brief This class hold the root of DeclContext, and provide create decls' methods
 class DeclContextHolder {
 public:
 	DeclContextHolder();
 
 	std::shared_ptr<DeclContext> getContext() const;
 
-	void createVariable(std::string name, SourceLocation &location, std::shared_ptr<QualType> type);
-	void createFunction();
-
 #ifdef ENV_TEST
 	void clean();
 #endif
+
+	std::shared_ptr<Decl> createVariable(std::shared_ptr<DeclContext> &context, std::string name, SourceLocation &location, std::shared_ptr<QualType> type);
+	std::shared_ptr<DeclContext> createBlock(std::shared_ptr<DeclContext> &context, SourceLocation &&location);
+	void createFunction();
 
 private:
 	std::shared_ptr<DeclContext> m_contextRoot;

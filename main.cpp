@@ -18,7 +18,7 @@ using std::string;
 
 int main()
 {
-	int a[] = {1, 2};
+	/*int a[] = {1, 2};
 
 	a[4] = 2;
 	std::cout << a[4] << typeid(a).name() << std::endl;
@@ -32,7 +32,7 @@ int main()
 
 	std::string output;
 	openHelper >> output;
-	std::cout << output;
+	std::cout << output;*/
 
 	return 0;
 }

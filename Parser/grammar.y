@@ -93,6 +93,7 @@
 %type <int>struct_declarator_list
 %type <int>parameter_list
 %type <int>parameter_type_list
+%type <int>case_stmt
 
 %printer { yyoutput << $$; }<*>
 %%
@@ -123,7 +124,10 @@ null_stmt
 	: ";"							{ DRIVER.makeNullStmt(@1); }
 	;
 compound_stmt
-	: "{" block_stmt "}"					{ DRIVER.makeCompoundStmt($2, @1, @3); }
+	: open_curly block_stmt "}"				{ DRIVER.makeCompoundStmt($2, @1, @3); }
+	;
+open_curly
+	: "{"							{ DRIVER.enterNewBlock(@1); }
 	;
 block_stmt
 	:							{ $$ = 0; }
@@ -164,10 +168,10 @@ switch_stmt
 	: "switch" "(" expression ")" statement			{ DRIVER.makeSwitchStmt(@1); }
 	;
 case_stmt
-	: "case" integer_constant_expression ":" statement	{ DRIVER.makeCaseStmt(@1, @2, @3); }
+	: "case" integer_constant_expression ":"		{ DRIVER.makeCaseStmt(@1, @2, @3); }
 	;
 default_stmt
-	: "default" ":" statement				{ DRIVER.makeDefaultStmt(@1, @2); }
+	: "default" ":"						{ DRIVER.makeDefaultStmt(@1, @2); }
 	;
 label_stmt
 	: IDENTIFIER ":" statement				{ /*DRIVER.makeLabelStmt(@1);*/ }
@@ -231,7 +235,7 @@ struct_declaration_list
 	| struct_declaration_list struct_declaration		{ $$ = $1 + 1; }
 	;
 struct_declaration
-	: specifier_qualifier_list struct_declarator_list ";"
+	: specifier_qualifier_list struct_declarator_list ";"	{ /*DRIVER.makeStructDeclaration($2);*/ }
 	;
 specifier_qualifier_list
 	: type_specifier specifier_qualifier_list
@@ -279,7 +283,7 @@ direct_declarator
 	| direct_declarator "(" ")"				{ /*DRIVER.makeFunctionNoProtoType();*/ }
 	;
 pointer
-	: "*"
+	: "*"							{ DRIVER.makePointerType(); }
 	| "*" type_qualifier_list
 	| "*" pointer
 	| "*" type_qualifier_list pointer

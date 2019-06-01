@@ -5,6 +5,7 @@ using std::get;							using std::string;
 using std::queue;						using std::holds_alternative;
 using std::vector;						using std::shared_ptr;
 using std::make_shared;					using std::dynamic_pointer_cast;
+using std::list;
 
 void ASTContext::updateASTRoot(std::shared_ptr<Stmt> root)
 {
@@ -26,8 +27,9 @@ void ASTContext::cleanAST()
 std::shared_ptr<Stmt> ASTContext::createDeclStmt(std::vector<var_t> &value)
 {
 	return make_shared<DeclStmt>(
-					get<SourceLocation>(value[0]),
-					get<SourceLocation>(value[1])
+					get<shared_ptr<DeclGroupRef>>(value[0]),
+					get<SourceLocation>(value[1]),
+					get<SourceLocation>(value[2])
 	);
 }
 
@@ -41,7 +43,7 @@ std::shared_ptr<Stmt> ASTContext::createNullStmt(std::vector<ASTContext::var_t> 
 std::shared_ptr<Stmt> ASTContext::createCompoundStmt(std::vector<ASTContext::var_t> &value)
 {
 	return make_shared<CompoundStmt>(
-					get<vector<shared_ptr<Stmt>>>(value[0]),
+					get<list<shared_ptr<Stmt>>>(value[0]),
 					get<SourceLocation>(value[1]),
 					get<SourceLocation>(value[2])
 	);
@@ -64,7 +66,7 @@ std::shared_ptr<Stmt> ASTContext::createDefaultStmt(std::vector<ASTContext::var_
 	return make_shared<DefaultStmt>(
 					get<SourceLocation>(value[0]),
 					get<SourceLocation>(value[1]),
-					get<shared_ptr<Stmt>>(value[2])
+					nullptr
 	);
 }
 
@@ -96,10 +98,12 @@ std::shared_ptr<Stmt> ASTContext::createIfStmt(std::vector<ASTContext::var_t> &v
 
 std::shared_ptr<Stmt> ASTContext::createSwitchStmt(std::vector<ASTContext::var_t> &value)
 {
-	return make_shared<SwitchStmt>(
+	auto switchStmt = make_shared<SwitchStmt>(
 			get<SourceLocation>(value[0]),
 			get<shared_ptr<Expr>>(value[1])
 	);
+	switchStmt->setBody(get<shared_ptr<Stmt>>(value[2]));
+	return switchStmt;
 }
 
 std::shared_ptr<Stmt> ASTContext::createWhileStmt(std::vector<ASTContext::var_t> &value)
@@ -127,7 +131,7 @@ std::shared_ptr<Stmt> ASTContext::createForStmt(std::vector<ASTContext::var_t> &
 	bool haveInc = get<bool>(value[0]);
 	return make_shared<ForStmt>(
 					get<shared_ptr<Stmt>>(value[1]),
-					get<shared_ptr<Expr>>(value[2]),
+					get<shared_ptr<Stmt>>(value[2]),
 					haveInc ? get<shared_ptr<Expr>>(value[7]) : nullptr,
 					get<shared_ptr<Stmt>>(value[3]),
 					get<SourceLocation>(value[4]),
@@ -246,9 +250,9 @@ std::shared_ptr<Stmt> ASTContext::createStringLiteral(std::vector<ASTContext::va
 {
 	// TODO: make default string type
 	auto type = BuiltinType::creator(BuiltinType::SChar);
-	auto pType = PointerType::creator(type, type);
+	auto pType = createType(Type::Pointer, type);
 	return StringLiteral::Create(
-			get<char *>(value[0]),
+			get<string>(value[0]),
 			get<unsigned long>(value[1]),
 			get<bool>(value[2]),
 			pType,
@@ -322,7 +326,7 @@ std::shared_ptr<Stmt> ASTContext::createCallExpr(std::vector<ASTContext::var_t> 
 {
 	auto fn = get<shared_ptr<Expr>>(value[0]);
 	auto retType = fn->getType().lock();
-	auto args = get<vector<shared_ptr<Expr>>>(value[1]);
+	auto args = get<list<shared_ptr<Expr>>>(value[1]);
 	return make_shared<CallExpr>(
 					get<shared_ptr<Expr>>(value[0]),
 					args,
@@ -575,10 +579,13 @@ std::shared_ptr<QualType> ASTContext::createBuiltinType(std::vector<ASTContext::
 
 std::shared_ptr<QualType> ASTContext::createPointerType(std::vector<ASTContext::var_t> &value)
 {
-	return PointerType::creator(
+	shared_ptr<QualType> qual = make_shared<QualType>();
+	std::shared_ptr<Type> pointer = PointerType::creator(
 					get<shared_ptr<QualType>>(value[0]),
-					get<shared_ptr<QualType>>(value[1])
+					qual
 	);
+	qual->Value.first = pointer;
+	return qual;
 }
 
 /*std::shared_ptr<Type> ASTContext::createBlockPointerType(std::vector<ASTContext::var_t> &value)

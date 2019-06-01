@@ -29,5 +29,25 @@ private:
 	const char *m_msg;
 };
 
+/// @brief Throw this when create a symbol name which already token in table
+class SymbolAlreadyExist : public std::exception {
+public:
+	explicit SymbolAlreadyExist(const char *error)
+			: m_msg{error}
+	{}
+	explicit SymbolAlreadyExist(std::string error)
+			: m_msg{error.data()}
+	{}
+
+	~SymbolAlreadyExist() override = default;
+
+	const char *what() const noexcept override
+	{
+		return m_msg;
+	}
+
+private:
+	const char *m_msg;
+};
 
 #endif //CODEREFACTOR_SYMBOLERROR_HPP

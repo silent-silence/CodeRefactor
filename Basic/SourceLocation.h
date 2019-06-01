@@ -11,6 +11,7 @@ public:
 
     bool operator>(const SourceLocation &sourceLocation) const;
     bool operator<(const SourceLocation &sourceLocation) const;
+    bool operator==(const SourceLocation &sourceLocation) const;
 protected:
     std::string file() const;
     unsigned int line() const;

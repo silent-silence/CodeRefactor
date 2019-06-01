@@ -10,6 +10,7 @@
 
 class OpenHelper;
 class Stmt;
+class Type;
 
 class Printer {
 public:
@@ -26,6 +27,8 @@ private:
 	/// @brief Out put a expr as a stmt(add ';\n' at end)
 	/// 		if s is a stmt type, just pass the parameter
 	void formatExprAsStmt(std::shared_ptr<Stmt> s);
+	// TODO: move this into Type
+	std::string getTypeName(std::shared_ptr<Type> type) const;
 
 	void processNullStmt(std::shared_ptr<Stmt> &s);
 	void processCompoundStmt(std::shared_ptr<Stmt> &s);
@@ -42,7 +45,7 @@ private:
 	void processContinueStmt(std::shared_ptr<Stmt> &s);
 	void processBreakStmt(std::shared_ptr<Stmt> &s);
 	void processReturnStmt(std::shared_ptr<Stmt> &s);
-	//void processDeclStmt(std::shared_ptr<Stmt> &s);
+	void processDeclStmt(std::shared_ptr<Stmt> &s);
 
 	void processRefExpr(std::shared_ptr<Stmt> &s);
 	void processIntergerLiteral(std::shared_ptr<Stmt> &s);
@@ -65,6 +68,7 @@ private:
 	void processParenListExpr(std::shared_ptr<Stmt> &s);
 
 	OpenHelper &m_openHelper;
+	bool stmtInOneLine;
 	int m_tabNum;
 	const char tabType = ' ';
 
