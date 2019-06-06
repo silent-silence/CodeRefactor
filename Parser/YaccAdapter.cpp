@@ -19,14 +19,16 @@ using std::make_shared;					using std::shared_ptr;
 using std::vector;						using std::dynamic_pointer_cast;
 using std::cerr;						using std::endl;
 using std::make_pair;					using std::stack;
-using std::list;
+using std::list;						using std::string;
+using std::pair;
 
 typedef yy::Parser::token::yytokentype token;
 
 YaccAdapter::YaccAdapter(ASTContext &context,  DeclContextHolder &declContext, OpenHelper &source)
 	: m_ASTContext{context}, m_declContextHolder{declContext}, m_source{source}
 {
-	m_declStack.push(m_declContextHolder.getContext());
+	// init context stack with context holder's root
+	m_declContextStack.push(m_declContextHolder.getContextRoot());
 }
 
 void YaccAdapter::parseDone()
@@ -45,21 +47,34 @@ void YaccAdapter::clean()
 }
 #endif
 
-void YaccAdapter::makeDeclStmt(yy::location &l, yy::location &r, bool haveDefinedName)
+void YaccAdapter::makeDeclStmt(yy::location &l, yy::location &r)
 {
-	vector<shared_ptr<Decl>> decls;
-	if(haveDefinedName)
-		decls = makeVariables(pop_type());
+	// make DeclGroupRef
 	shared_ptr<DeclGroupRef> dg;
-	if(decls.size() == 1)
-		dg = make_shared<DeclGroupRef>(decls[0]);
-	else
-		dg = make_shared<DeclGroupRef>(decls, decls.size());
+	if(m_varDecls.empty())			// There's no variable declared
+		dg = nullptr;
+	else if(m_varDecls.size() == 1)	// Only one variable declared
+		dg = make_shared<DeclGroupRef>(popVarDecl());
+	else							// A group of declaration were made
+	{
+		vector<shared_ptr<Decl>> decls;
+		while(!m_varDecls.empty())
+			decls.push_back(popVarDecl());
+		dg = make_shared<DeclGroupRef>(decls);
+	}
+
+	// make decl stmt
 	SourceLocation lp = toSourceLocation(l);
 	SourceLocation rp = toSourceLocation(r);
 	m_stmtStack.push(
 			m_ASTContext.createStmt(Stmt::DeclStmtClass, dg, lp, rp)
 	);
+
+	// pop type here
+	pop_type();
+	// pop corresponding type specifiers
+	if(!m_typeSpecifier.empty())
+		m_typeSpecifier.pop();
 }
 
 void YaccAdapter::makeNullStmt(yy::location &l)
@@ -82,7 +97,7 @@ void YaccAdapter::makeCompoundStmt(unsigned stmtNumInBlock, yy::location &l, yy:
 	m_stmtStack.push(
 			m_ASTContext.createStmt(Stmt::CompoundStmtClass, stmts, lb, rb)
 	);
-	dynamic_pointer_cast<BlockDecl>(pop_decl())->setBody(
+	dynamic_pointer_cast<BlockDecl>(popDeclContext())->setBody(
 			dynamic_pointer_cast<CompoundStmt>(m_stmtStack.top())
 	);
 }
@@ -190,17 +205,23 @@ void YaccAdapter::makeForStmt(yy::location &f, yy::location &l, yy::location &r,
 	SourceLocation rp = toSourceLocation(r);
 
 	if (haveInc)
+	{
+		auto body = pop_stmt();
+		auto inc = dynamic_pointer_cast<Expr>(pop_stmt());
+		auto cond = pop_stmt();
+		auto init = pop_stmt();
 		m_stmtStack.push(
 				m_ASTContext.createStmt(
 						Stmt::ForStmtClass,
 						haveInc,
-						pop_stmt(),
-						pop_stmt(),
-						pop_stmt(),
+						init,
+						cond,
+						body,
 						fp, lp, rp,
-						dynamic_pointer_cast<Expr>(pop_stmt())
+						inc
 				)
 		);
+	}
 	else
 		m_stmtStack.push(
 				m_ASTContext.createStmt(
@@ -244,15 +265,16 @@ void YaccAdapter::makeReturnStmt(yy::location &l, bool haveExpr)
 
 void YaccAdapter::makeDeclRefExpr(std::string &name, yy::location &l)
 {
-	std::shared_ptr<NamedDecl> decl = dynamic_pointer_cast<NamedDecl>(
-			m_declStack.top()->lookup(name).lock()
+	shared_ptr<ValueDecl> decl = dynamic_pointer_cast<ValueDecl>(
+			m_declContextStack.top()->lookup(name).lock()
 	);
-	// TODO: get decl type
-	auto declType = m_ASTContext.createType(Type::Builtin, BuiltinType::Int);
 	SourceLocation lp = toSourceLocation(l);
 	m_stmtStack.push(
 			m_ASTContext.createStmt(
-					Stmt::DeclRefExprClass, decl, declType, lp
+					Stmt::DeclRefExprClass,
+					dynamic_pointer_cast<NamedDecl>(decl),
+					decl->getType().lock(),
+					lp
 			)
 	);
 }
@@ -402,7 +424,7 @@ void YaccAdapter::makeCallExpr(unsigned parameterNum, yy::location &l)
 	);
 }
 
-void YaccAdapter::makeMemberExpr(int opc, yy::location &l)
+void YaccAdapter::makeMemberExpr(int opc, yy::location &l, std::string &name)
 {
 	bool isArrow;
 	switch(opc)
@@ -411,14 +433,21 @@ void YaccAdapter::makeMemberExpr(int opc, yy::location &l)
 		case token::TOK_POINT_OP:	isArrow = true;		break;
 		default:					isArrow = false;
 	}
+
+	// get base and decl
+	shared_ptr<Expr> base = dynamic_pointer_cast<Expr>(pop_stmt());
+	auto baseType = dynamic_pointer_cast<TagType>(base->getType().lock()->getTypePtr());
+	if(!baseType)
+		throw TypeError("Used member accese on type not a struct or union");
+	shared_ptr<NamedDecl> decl = dynamic_pointer_cast<NamedDecl>(
+			baseType->getDecl().lock()->lookup(name).lock()
+	);
 	SourceLocation lp = toSourceLocation(l);
 	/// @note The type of member can be found by ASTContext
-	// TODO find NamedDecl
-	shared_ptr<NamedDecl> decl;// = make_shared<NamedDecl>();
 	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::MemberExprClass,
-					dynamic_pointer_cast<Expr>(pop_stmt()),
+					base,
 					isArrow, decl, lp
 			)
 	);
@@ -520,94 +549,130 @@ void YaccAdapter::makeConditionalOperator()
 	);
 }
 
-/*void YaccAdapter::makeFunctionNoProtoType()
+void YaccAdapter::makeFunctionNoProtoType()
 {
 	auto retType = pop_type();
-	m_typeStack.push(
-			m_ASTContext.createType(
-					Type::FunctionNoProto,
-					retType->getCanonicalType().lock(),
-					retType->getCanonicalType().lock(),
-					false
+	m_typeSpecifier.pop();
+
+	auto type = m_ASTContext.createType(
+			Type::FunctionNoProto,
+			retType,
+			false
+	);
+	auto name = m_nameStack.top();
+	m_nameStack.pop();
+	// Sine a function can be definition or declaration, we can not push the func into decl context now
+	m_varDecls.push(
+			m_declContextHolder.createFunction(
+					m_declContextStack.top(), name.first, name.second, type
 			)
 	);
-}*/
+	m_typeStack.push(type);
+}
+
+void YaccAdapter::makeFunctionProtoType(int paramNum)
+{
+	// set FunctionProtoType's args type
+	vector<shared_ptr<QualType>> argsType;
+	for(int i = 1; i < paramNum; ++i)
+		argsType.push_back(pop_type());
+	auto funDecl = dynamic_pointer_cast<FunctionDecl>(m_declContextStack.top());
+	dynamic_pointer_cast<FunctionProtoType>(funDecl->getType().lock()->getTypePtr())->setArgs(argsType);
+
+	// reset current context because we called enterFunctioParamDecl early
+	m_declContextStack.pop();
+}
 
 void YaccAdapter::addTypeSpecifier(YaccAdapter::TypeSpecifier type)
 {
-	// init type specifier stack
+	// init type specifier stack if empty
 	if(m_typeSpecifier.empty())
 		m_typeSpecifier.push(make_pair(static_cast<unsigned>(0), static_cast<TypeSpecifier>(0)));
+
+	// storage specifier
+	switch(type)
+	{
+		case TYPEDEF:
+		case EXTERN:
+		case STATIC:
+		case AUTO:
+		case REGISTER:
+			m_typeSpecifier.top().second = type;
+			type = TypeSpecifier::STORAGE;
+			break;
+		default:
+			// do nothing
+			break;
+	}
+
 	// long and long long need special operation
 	if ((type == YaccAdapter::TypeSpecifier::LONG) &&
 		(m_typeSpecifier.top().first & YaccAdapter::TypeSpecifier::LONGLONG) == 0)
+	{
 		m_typeSpecifier.top().first += type;
+	}
 	else if ((type != YaccAdapter::TypeSpecifier::LONG) && (m_typeSpecifier.top().first & type) == 0)
+	{
 		m_typeSpecifier.top().first |= type;
+	}
 	else
-		throw TypeError("");
+	{
+		// reset specifiers before throw
+		m_typeSpecifier.pop();
+		throw TypeError("Type specifiers error");
+	}
 }
 
-void YaccAdapter::addTypeSpecifier(YaccAdapter::TypeSpecifier type, YaccAdapter::TypeSpecifier storageSpecifier)
+void YaccAdapter::makeType()
 {
-	addTypeSpecifier(type);
-	m_typeSpecifier.top().second = storageSpecifier;
-}
+	// pop struct's next specifiers for struct member
+	if(m_typeSpecifier.top().first == 0)
+		m_typeSpecifier.pop();
 
-void YaccAdapter::makeBuiltinType()
-{
 	if(!isTypeSpecifierNotIllegal())
 	{
 		// reset specifiers before throw
-		m_typeSpecifier.top().first = 0;
-		throw TypeError("??");
+		m_typeSpecifier.pop();
+		throw TypeError("Type specifiers error");
 	}
 
-	auto doCreate = [&](BuiltinType::Kind kind)->shared_ptr<QualType>{
-		QualType::TQ typeQualifier = QualType::None;
-		switch(m_typeSpecifier.top().first)
-		{
-			case CONST:		typeQualifier = QualType::Const;	break;
-			case VOLATILE:	typeQualifier = QualType::Volatile;	break;
-		}
-		return m_ASTContext.createType(Type::Builtin, kind);
-	};
+	// Left builtin type specifiers only
 	unsigned types = m_typeSpecifier.top().first & (
-			VOID | CHAR | SHORT | INT | FLOAT | DOUBLE | SIGNED | UNSIGNED | LONG | LONGLONG
+			VOID | CHAR | SHORT | INT | FLOAT | DOUBLE | SIGNED | UNSIGNED | LONG | LONGLONG | STRUCT | UNION
 	);
+	// make which type
 	switch(types)
 	{
-		case UNSIGNED | CHAR:			m_typeStack.push(doCreate(BuiltinType::UChar));		break;
-		case UNSIGNED | SHORT:			m_typeStack.push(doCreate(BuiltinType::UShort));	break;
-		case UNSIGNED | INT:			m_typeStack.push(doCreate(BuiltinType::UInt));		break;
-		case UNSIGNED | LONG:			m_typeStack.push(doCreate(BuiltinType::ULong));		break;
-		case UNSIGNED | LONG | INT:		m_typeStack.push(doCreate(BuiltinType::ULong));		break;
-		case UNSIGNED | LONGLONG:		m_typeStack.push(doCreate(BuiltinType::ULongLong));	break;
-		case UNSIGNED | LONGLONG | INT:	m_typeStack.push(doCreate(BuiltinType::ULongLong));	break;
-		case SIGNED | CHAR:				m_typeStack.push(doCreate(BuiltinType::SChar));		break;
-		case SIGNED | SHORT:			m_typeStack.push(doCreate(BuiltinType::Short));		break;
-		case SIGNED | INT:				m_typeStack.push(doCreate(BuiltinType::Int));		break;
-		case SIGNED | LONG:				m_typeStack.push(doCreate(BuiltinType::Long));		break;
-		case SIGNED | LONGLONG:			m_typeStack.push(doCreate(BuiltinType::LongLong));	break;
-		case SHORT | INT:				m_typeStack.push(doCreate(BuiltinType::Short));		break;
-		case LONGLONG | INT:			m_typeStack.push(doCreate(BuiltinType::LongLong));	break;
-		case LONG | DOUBLE:				m_typeStack.push(doCreate(BuiltinType::LongDouble));break;
-		case LONG | INT:				m_typeStack.push(doCreate(BuiltinType::Long));		break;
-		case VOID:						m_typeStack.push(doCreate(BuiltinType::Void));		break;
-		case CHAR:						m_typeStack.push(doCreate(BuiltinType::Char_S));	break;
-		case SHORT:						m_typeStack.push(doCreate(BuiltinType::Short));		break;
-		case INT:						m_typeStack.push(doCreate(BuiltinType::Int));		break;
-		case FLOAT:						m_typeStack.push(doCreate(BuiltinType::Float));		break;
-		case DOUBLE:					m_typeStack.push(doCreate(BuiltinType::Double));	break;
-		case SIGNED:					m_typeStack.push(doCreate(BuiltinType::Int));		break;
-		case UNSIGNED:					m_typeStack.push(doCreate(BuiltinType::UInt));		break;
-		case LONG:						m_typeStack.push(doCreate(BuiltinType::Long));		break;
-		case LONGLONG:					m_typeStack.push(doCreate(BuiltinType::LongLong));	break;
+		case UNSIGNED | CHAR:			m_typeStack.push(makeBuiltin(BuiltinType::UChar));		break;
+		case UNSIGNED | SHORT:			m_typeStack.push(makeBuiltin(BuiltinType::UShort));		break;
+		case UNSIGNED | INT:			m_typeStack.push(makeBuiltin(BuiltinType::UInt));		break;
+		case UNSIGNED | LONG:			m_typeStack.push(makeBuiltin(BuiltinType::ULong));		break;
+		case UNSIGNED | LONG | INT:		m_typeStack.push(makeBuiltin(BuiltinType::ULong));		break;
+		case UNSIGNED | LONGLONG:		m_typeStack.push(makeBuiltin(BuiltinType::ULongLong));	break;
+		case UNSIGNED | LONGLONG | INT:	m_typeStack.push(makeBuiltin(BuiltinType::ULongLong));	break;
+		case SIGNED | CHAR:				m_typeStack.push(makeBuiltin(BuiltinType::SChar));		break;
+		case SIGNED | SHORT:			m_typeStack.push(makeBuiltin(BuiltinType::Short));		break;
+		case SIGNED | INT:				m_typeStack.push(makeBuiltin(BuiltinType::Int));		break;
+		case SIGNED | LONG:				m_typeStack.push(makeBuiltin(BuiltinType::Long));		break;
+		case SIGNED | LONGLONG:			m_typeStack.push(makeBuiltin(BuiltinType::LongLong));	break;
+		case SHORT | INT:				m_typeStack.push(makeBuiltin(BuiltinType::Short));		break;
+		case LONGLONG | INT:			m_typeStack.push(makeBuiltin(BuiltinType::LongLong));	break;
+		case LONG | DOUBLE:				m_typeStack.push(makeBuiltin(BuiltinType::LongDouble));	break;
+		case LONG | INT:				m_typeStack.push(makeBuiltin(BuiltinType::Long));		break;
+		case VOID:						m_typeStack.push(makeBuiltin(BuiltinType::Void));		break;
+		case CHAR:						m_typeStack.push(makeBuiltin(BuiltinType::Char_S));		break;
+		case SHORT:						m_typeStack.push(makeBuiltin(BuiltinType::Short));		break;
+		case INT:						m_typeStack.push(makeBuiltin(BuiltinType::Int));		break;
+		case FLOAT:						m_typeStack.push(makeBuiltin(BuiltinType::Float));		break;
+		case DOUBLE:					m_typeStack.push(makeBuiltin(BuiltinType::Double));		break;
+		case SIGNED:					m_typeStack.push(makeBuiltin(BuiltinType::Int));		break;
+		case UNSIGNED:					m_typeStack.push(makeBuiltin(BuiltinType::UInt));		break;
+		case LONG:						m_typeStack.push(makeBuiltin(BuiltinType::Long));		break;
+		case LONGLONG:					m_typeStack.push(makeBuiltin(BuiltinType::LongLong));	break;
+		case STRUCT:					m_typeStack.push(makeStruct());							break;
+		case UNION:
 		default:						break;
 	}
-
-	// reset specifiers after built
-	m_typeSpecifier.pop();
 }
 
 void YaccAdapter::makePointerType()
@@ -657,11 +722,53 @@ void YaccAdapter::makeIncompleteArrayType()
 	);
 }
 
-void YaccAdapter::enterNewBlock(yy::location &l)
+void YaccAdapter::enterCompoundBlock(yy::location &l)
 {
-	m_declStack.push(
-			m_declContextHolder.createBlock(m_declStack.top(), toSourceLocation(l))
+	m_declContextStack.push(
+			m_declContextHolder.createBlock(m_declContextStack.top(), toSourceLocation(l))
 	);
+}
+
+void YaccAdapter::enterStructBlock(yy::location &l)
+{
+	m_declContextStack.push(
+			m_declContextHolder.createStruct(m_declContextStack.top(), toSourceLocation(l))
+	);
+	// ready new type specifier env for struct member
+	m_typeSpecifier.push(make_pair(static_cast<unsigned>(0), static_cast<TypeSpecifier>(0)));
+}
+
+void YaccAdapter::enterFunctionParamDecl()
+{
+	auto retType = pop_type();
+	m_typeSpecifier.pop();
+
+	// temporary a function with no parameter
+	auto type = m_ASTContext.createType(
+			Type::FunctionProto,
+			retType,
+			vector<shared_ptr<QualType>>()
+	);
+
+	auto name = m_nameStack.top();
+	m_nameStack.pop();
+	// Sine a function can be definition or declaration, we can not push the func into decl context now
+	auto funDecl = m_declContextHolder.createFunction(
+			m_declContextStack.top(), name.first, name.second, type
+	);
+	m_varDecls.push(funDecl);
+	m_typeStack.push(type);
+
+	// temporary make the function a context for it's parameters
+	m_declContextStack.push(dynamic_pointer_cast<FunctionDecl>(funDecl));
+}
+
+void YaccAdapter::enterFunctionBlock()
+{
+	auto func = dynamic_pointer_cast<FunctionDecl>(m_varDecls.front());
+	m_varDecls.pop();
+	pop_type();
+	m_declContextStack.push(func);
 }
 
 void YaccAdapter::storeVariable(std::string name, yy::location &l)
@@ -669,25 +776,73 @@ void YaccAdapter::storeVariable(std::string name, yy::location &l)
 	m_nameStack.push(make_pair(name, toSourceLocation(l)));
 }
 
-std::vector<std::shared_ptr<Decl>> YaccAdapter::makeVariables(std::shared_ptr<QualType> type)
+void YaccAdapter::makeVariables()
 {
-	stack<shared_ptr<Decl>> decls;
+	shared_ptr<QualType> type;
+	// Get type for var, except function(Do not pop type here)
+	if(!m_nameStack.empty())
+		type = m_typeStack.top();
+
+	// all name in stack is the same type
 	while(!m_nameStack.empty())
 	{
 		auto varName = m_nameStack.top();
 		m_nameStack.pop();
-		decls.push(
-				m_declContextHolder.createVariable(m_declStack.top(), varName.first, varName.second, type)
-		);
-	}
-	vector<shared_ptr<Decl>> ret;
-	while(!decls.empty())
-	{
-		ret.push_back(decls.top());
-		decls.pop();
-	}
 
-	return ret;
+		if(!m_typeSpecifier.empty() && (m_typeSpecifier.top().first & TYPEDEF))	// if is typedef type
+		{
+			m_varDecls.push(
+					m_declContextHolder.createTypedefDecl(m_declContextStack.top(), type, varName.first, varName.second)
+			);
+		}
+		else										// is normal variable
+		{
+			m_varDecls.push(
+					m_declContextHolder.createVariable(m_declContextStack.top(), varName.first, varName.second, type)
+			);
+		}
+	}
+}
+
+void YaccAdapter::makeInStructDeclStmt(yy::location &l, yy::location &r)
+{
+	makeDeclStmt(l, r);
+	// ready new type specifier env for struct member
+	m_typeSpecifier.push(make_pair(static_cast<unsigned>(0), static_cast<TypeSpecifier>(0)));
+}
+
+void YaccAdapter::makeFunParam()
+{
+	// get type and reset type specifers
+	auto type = m_typeStack.top();
+	m_typeSpecifier.top().first = 0;
+	m_typeSpecifier.top().second = static_cast<TypeSpecifier>(0);
+	// get name if defined
+	auto name = m_nameStack.top();
+	m_nameStack.pop();
+	m_varDecls.push(
+			m_declContextHolder.createVariable(m_declContextStack.top(), name.first, name.second, type)
+	);
+}
+
+void YaccAdapter::makeUnnamedFunParam(yy::location &l)
+{
+	// get type and reset type specifers
+	auto type = m_typeStack.top();
+	m_typeSpecifier.top().first = 0;
+	m_typeSpecifier.top().second = static_cast<TypeSpecifier>(0);
+	// get name if defined
+	string nameString = StoredDecl().getDeclAsString();
+	SourceLocation location = toSourceLocation(l);
+	m_varDecls.push(
+			m_declContextHolder.createVariable(m_declContextStack.top(), nameString, location, type)
+	);
+}
+
+void YaccAdapter::makeFunctionDefinition()
+{
+	auto func = dynamic_pointer_cast<FunctionDecl>(m_declContextStack.top());
+	func->setBody(pop_stmt());
 }
 
 bool YaccAdapter::isTypeSpecifierNotIllegal()
@@ -716,12 +871,40 @@ bool YaccAdapter::isTypeSpecifierNotIllegal()
 		updateJumpTable(UNSIGNED)
 		updateJumpTable(LONG)
 		updateJumpTable(LONGLONG)
-		/*updateJumpTable(STRUCT)
-		updateJumpTable(UNION)*/
+		updateJumpTable(STRUCT)
+		updateJumpTable(UNION)
 		updateJumpTable(STORAGE)
 		return false;
 	}
+
 	return true;
+}
+
+std::shared_ptr<QualType> YaccAdapter::makeBuiltin(BuiltinType::Kind kind)
+{
+	QualType::TQ typeQualifier = QualType::None;
+	switch(m_typeSpecifier.top().first)
+	{
+		case CONST:		typeQualifier = QualType::Const;	break;
+		case VOLATILE:	typeQualifier = QualType::Volatile;	break;
+	}
+
+	return m_ASTContext.createType(Type::Builtin, kind);
+}
+
+std::shared_ptr<QualType> YaccAdapter::makeStruct()
+{
+	// if is a struct decl, pop it
+	shared_ptr<RecordDecl> structDecl = dynamic_pointer_cast<RecordDecl>(popDeclContext());
+
+	QualType::TQ typeQualifier = QualType::None;
+	switch(m_typeSpecifier.top().first)
+	{
+		case CONST:		typeQualifier = QualType::Const;	break;
+		case VOLATILE:	typeQualifier = QualType::Volatile;	break;
+	}
+
+	return m_ASTContext.createType(Type::Record, structDecl);
 }
 
 SourceLocation YaccAdapter::toSourceLocation(yy::location &location)
@@ -747,11 +930,20 @@ std::shared_ptr<QualType> YaccAdapter::pop_type()
 	return ptr;
 }
 
-std::shared_ptr<DeclContext> YaccAdapter::pop_decl()
+std::shared_ptr<DeclContext> YaccAdapter::popDeclContext()
 {
-	if(m_declStack.empty())
+	if(m_declContextStack.empty())
+		throw std::range_error("Decl context stack empty");
+	std::shared_ptr<DeclContext> ptr = m_declContextStack.top();
+	m_declContextStack.pop();
+	return ptr;
+}
+
+std::shared_ptr<Decl> YaccAdapter::popVarDecl()
+{
+	if(m_varDecls.empty())
 		throw std::range_error("Decl stack empty");
-	std::shared_ptr<DeclContext> ptr = m_declStack.top();
-	m_declStack.pop();
+	std::shared_ptr<Decl> ptr = m_varDecls.front();
+	m_varDecls.pop();
 	return ptr;
 }

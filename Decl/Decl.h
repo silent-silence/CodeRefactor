@@ -9,15 +9,20 @@
 class QualType;
 class Expr;
 class Type;
+class Stmt;
 class CompoundStmt;
 class SourceRange;
 class SourceLocation;
 class Parameter;
 
+class FunctionDecl;
+class ParmVarDecl;
+
 /*class DeclaratorInfo {
 
 };*/
 
+/// @brief The top decl context
 class TranslationUnitDecl : public Decl, public DeclContext {
 public:
 	TranslationUnitDecl();
@@ -34,14 +39,16 @@ public:
 			DeclName name);
 	~NamedDecl() override = default;
 
-	DeclName getDeclarationName() const { return m_name; }
-	std::string getNameAsString() const { return m_name.getAsString(); }
-	std::weak_ptr<IdentifierInfo> getIdentifier() const { return m_name.getAsIdentifierInfo(); }
+	DeclName getDeclarationName() const;
+	std::string getNameAsString() const;
+	std::weak_ptr<IdentifierInfo> getIdentifier() const;
 
 private:
 	DeclName m_name;
 };
 
+/// @abstract
+/// @brief Represent a variable/function/enum constant
 class ValueDecl : public NamedDecl {
 public:
 	ValueDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
@@ -49,13 +56,15 @@ public:
 			std::shared_ptr<QualType> type);
 	~ValueDecl() override = 0;
 
-	std::weak_ptr<QualType> getType() { return m_declType; }
-	void setType(std::shared_ptr<QualType> newType) { m_declType = newType; }
+	std::weak_ptr<QualType> getType() const;
+	void setType(std::shared_ptr<QualType> newType);
 
 private:
 	std::shared_ptr<QualType> m_declType;
 };
 
+/// @abstract
+/// @brief Represent ValueDecl declared with declarator
 class DeclaratorDecl : public ValueDecl {
 public:
 	DeclaratorDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
@@ -129,84 +138,66 @@ private:
 	std::weak_ptr<CompoundStmt> m_body;
 };
 
-/// @brief Represent a function declaration.
-/*class FunctionDecl : public DeclContext, public NamedDecl {
-public:
-	~FunctionDecl() override = default;
-
-	SourceRange getSourceRange() const;
-	void setLocEnd(SourceLocation E);
-
-	std::weak_ptr<CompoundStmt> getBody() const { return m_body; }
-	void setBody(std::weak_ptr<CompoundStmt> body) { m_body = body; }
-
-	unsigned getNumParams() const { return m_parameters.size(); }
-	const std::weak_ptr<Parameter> getParamDecl(unsigned i) const { return m_parameters[i]; }
-	std::weak_ptr<Parameter> getParamDecl(unsigned i) { return m_parameters[i]; }
-	void setParams(std::vector<std::weak_ptr<Parameter>> parameter) { m_parameters = parameter; }
-
-	std::shared_ptr<QualType> getResultType() const { return m_returnType; };
-private:
-	std::shared_ptr<QualType> m_returnType;
-	std::vector<std::weak_ptr<Parameter>> m_parameters;
-	std::weak_ptr<CompoundStmt> m_body;
-	SourceLocation endRangeLoc;
-};*/
-
 /// @brief Represent a declaration of type.
 class TypeDecl : public NamedDecl {
 public:
-	TypeDecl(Kind kind, std::weak_ptr<DeclContext> context, SourceLocation l, std::shared_ptr<IdentifierInfo> info)
-		: NamedDecl{kind, context, l, info}, m_typeForDecl{nullptr}
-	{}
+	TypeDecl(Kind kind, std::weak_ptr<DeclContext> context, SourceLocation l,
+			std::shared_ptr<IdentifierInfo> info);
+	~TypeDecl() override = 0;
 
-	std::weak_ptr<Type> getTypeForDecl() const { return m_typeForDecl; }
-	void setTypeForDecl(std::shared_ptr<Type> type) { m_typeForDecl = type; }
+	std::weak_ptr<Type> getTypeForDecl() const;
+	void setTypeForDecl(std::shared_ptr<Type> type);
 
 private:
 	std::shared_ptr<Type> m_typeForDecl;
 };
 
+/// @brief Represent a typedef type
 class TypedefDecl : public TypeDecl {
+	friend class DeclContextHolder;
 public:
-	TypedefDecl(std::weak_ptr<DeclContext> context, SourceLocation l, std::shared_ptr<IdentifierInfo> info, std::shared_ptr<QualType> type)
-		: TypeDecl{Typedef, context, l, info}, underlyingType{type}
-	{}
+	TypedefDecl(std::weak_ptr<DeclContext> context, SourceLocation l, std::shared_ptr<IdentifierInfo> info,
+			std::shared_ptr<QualType> type);
+	~TypedefDecl() override = default;
 
 private:
 	std::shared_ptr<QualType> underlyingType;
 };
 
 /// @brief Represent a declaration of a struct/enum/union
-class TagDecl : public NamedDecl, public DeclContext {
+class TagDecl : public TypeDecl, public DeclContext {
 public:
-	~TagDecl() override = default;
-
 	enum class TagKind {
 		KindStruct,
 		KindEnum,
 		KindUnion
 	};
 
-	bool isDefinition() const { return m_isDefinition; }
+	TagDecl(Kind declKind, TagKind tagKind, std::weak_ptr<DeclContext> context,
+			SourceLocation location, std::shared_ptr<IdentifierInfo> info,
+			SourceLocation tkl);
+	~TagDecl() override = default;
 
-	std::string getKindName() const {
-		switch (getTagKind()) {
-			case TagKind::KindStruct:	return "struct";
-			case TagKind::KindEnum:		return "enum";
-			case TagKind::KindUnion:	return "union";
-		}
-	}
-	TagKind getTagKind() const { return m_kind; }
-	void setTagKind(TagKind kind) { m_kind = kind; }
-	bool isStruct() const { return m_kind == TagKind::KindStruct; }
-	bool isUnion() const { return m_kind == TagKind::KindUnion; }
-	bool isEnum() const { return m_kind == TagKind::KindEnum; }
+	std::weak_ptr<DeclContext> getParent() override;
+	const std::weak_ptr<DeclContext> getParent() const override;
+
+	bool isDefinition() const;
+
+	std::string getKindName() const;
+	TagKind getTagKind() const;
+	void setTagKind(TagKind kind);
+	bool isStruct() const;
+	bool isUnion() const;
+	bool isEnum() const;
+
+	std::weak_ptr<TypedefDecl> getTypedefForAnonDecl() const;
+	void setTypedefForAnonDecl(std::shared_ptr<TypedefDecl> TDD);
 
 private:
 	TagKind m_kind;
+	/// @brief Is definition or declaration
 	bool m_isDefinition;
-	std::shared_ptr<QualType> m_type;
+	std::shared_ptr<TypedefDecl> m_typedefForAnonDecl;
 	SourceLocation TagKeyWordLoc;
 	SourceLocation RBraceLoc;
 };
@@ -214,13 +205,17 @@ private:
 /// @brief Represent a struct/union.
 class RecordDecl : public TagDecl {
 public:
+	RecordDecl(Kind declKind, TagKind tagKind, std::weak_ptr<DeclContext> context,
+			   SourceLocation l, std::shared_ptr<IdentifierInfo> info,
+			   SourceLocation tkl = SourceLocation());
 	~RecordDecl() override = default;
 
-	bool isAnonymous() const { return m_isAnonymous; }
-	void setAnonymous(bool isAnonymous) { m_isAnonymous = isAnonymous; }
+	bool isAnonymous() const;
+	void setAnonymous(bool isAnonymous);
 
-	bool hasObjectMember() const { return m_hasObjectMember; }
-	void setHasObjectMember(bool has) { m_hasObjectMember = has; }
+	bool hasObjectMember() const;
+	void setHasObjectMember(bool has);
+
 private:
 	bool m_isAnonymous;
 	bool m_hasObjectMember;
@@ -237,5 +232,79 @@ public:
 private:
 	std::shared_ptr<QualType> m_integerType;
 };*/
+
+
+/// @brief Represent a function declaration.
+class FunctionDecl : public DeclaratorDecl, public DeclContext
+{
+public:
+    enum class StorageClass {
+        None, Extern, Static, PrivateExtern
+    };
+    FunctionDecl(Kind declKind, std::shared_ptr<DeclContext> context, SourceLocation location,
+                 DeclName name, std::shared_ptr<QualType> type,
+                 StorageClass S, bool isInline);
+    ~FunctionDecl() override = default;
+    /*static std::shared_ptr<FunctionDecl> Create(DeclContext *DC, SourceLocation L,
+                                                DeclName N, std::shared_ptr<QualType> T,
+                                                StorageClass S = None, bool isInline = false,
+                                                bool hasWrittenPrototype = true);*/
+
+	std::weak_ptr<DeclContext> getParent() override;
+	const std::weak_ptr<DeclContext> getParent() const override;
+
+    void setLocEnd(SourceLocation E);
+
+    /*std::weak_ptr<Stmt> getBody(const std::weak_ptr<FunctionDecl> &Definition) const;*/
+    std::weak_ptr<Stmt> getBody() const;
+
+    /*std::weak_ptr<Stmt> getBodyIfAvailable() const;*/
+    void setBody(std::shared_ptr<Stmt> B);
+
+    /*unsigned getNumParmVarDeclsFromType() const;*/
+    unsigned getNumParams() const;
+
+    const std::weak_ptr<ParmVarDecl> getParamDecl(unsigned i) const;
+    std::weak_ptr<ParmVarDecl> getParamDecl(unsigned i);
+    void setParams(std::vector<std::shared_ptr<ParmVarDecl>> &NewParamInfo);
+
+	FunctionDecl::StorageClass getStorageClass() const;
+    void setStorageClass(FunctionDecl::StorageClass SC);
+
+    bool isC99InlineDefinition() const;
+    void setC99InlineDefinition(bool I);
+
+private:
+	std::vector<std::shared_ptr<ParmVarDecl>> ParamInfo;
+
+	std::shared_ptr<Stmt> Body;
+
+	StorageClass SClass;
+	/*bool IsInline : 1;*/
+	bool C99InlineDefinition;
+	/*bool IsVirtualAsWritten : 1;
+	bool IsPure : 1;
+	bool HasInheritedPrototype : 1;
+	bool HasWrittenPrototype : 1;
+	bool IsDeleted : 1;
+	bool IsTrivial : 1; // sunk from CXXMethodDecl
+	bool IsCopyAssignment : 1;  // sunk from CXXMethodDecl
+	bool HasImplicitReturnZero : 1;*/
+	SourceLocation EndRangeLoc;
+
+	/*std::shared_ptr<FunctionDecl> TemplateOrSpecialization;*/
+};
+
+class ParmVarDecl : public VarDecl {
+public:
+    ParmVarDecl(Kind DK, std::shared_ptr<DeclContext> DC, SourceLocation L,
+                std::shared_ptr<IdentifierInfo> Id, std::shared_ptr<QualType> T,
+                StorageClass S);
+    /*static std::shared_ptr<ParmVarDecl> Create(std::shared_ptr<DeclContext> DC,
+                               SourceLocation L,std::shared_ptr<IdentifierInfo> Id,
+                               std::shared_ptr<QualType> T,
+                               StorageClass S, std::shared_ptr<Expr> DefArg);*/
+    std::weak_ptr<QualType> getOriginalType() const;
+};
 
 #endif

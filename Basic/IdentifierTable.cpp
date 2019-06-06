@@ -1,5 +1,17 @@
 #include "IdentifierTable.h"
 
+using std::to_string;
+
+unsigned IdentifierInfo::anonymousNameId = 0;
+
+IdentifierInfo::IdentifierInfo()
+	: IdentifierInfo("%%" + to_string(++anonymousNameId))
+{}
+
+IdentifierInfo::IdentifierInfo(std::string name)
+	: m_entry{name}, HasMacro{false}
+{}
+
 bool IdentifierInfo::isStr(const std::string name) const
 {
 	return m_entry == name;

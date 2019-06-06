@@ -218,12 +218,20 @@ TEST_F(BasicParseTest, ArraySubscriptTest)
 
 TEST_F(BasicParseTest, MemberExprTest)
 {
-	openHelper << "int a; a.b;";
+	openHelper <<
+"struct {"
+"	int a;"
+"} b;"
+"b.a;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<MemberExpr>(astContext.getRoot().lock()));
 	reset();
 
-	openHelper << "a->b;";
+	openHelper <<
+"struct {"
+"	int c;"
+"} d;"
+"d->c;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<MemberExpr>(astContext.getRoot().lock()));
 	reset();
@@ -437,20 +445,26 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 	EXPECT_THROW(driver.parse(), TypeError);
 
 	// storage
-	openHelper << "typedef;";
+	openHelper << "typedef int;";
 	EXPECT_NO_THROW(driver.parse());
 
-	openHelper << "extern;";
+	openHelper << "extern int;";
 	EXPECT_NO_THROW(driver.parse());
 
-	openHelper << "static;";
+	openHelper << "static int;";
 	EXPECT_NO_THROW(driver.parse());
 
-	openHelper << "register;";
+	openHelper << "register int;";
 	EXPECT_NO_THROW(driver.parse());
 
-	openHelper << "extern static;";
+	openHelper << "extern static int;";
 	EXPECT_THROW(driver.parse(), TypeError);
+
+	openHelper << "struct { int a; };";
+	EXPECT_NO_THROW(driver.parse());
+
+	openHelper << "struct { int a; int b; int c; };";
+	EXPECT_NO_THROW(driver.parse());
 }
 
 TEST_F(BasicParseTest, PointerTypeTest)
@@ -459,7 +473,7 @@ TEST_F(BasicParseTest, PointerTypeTest)
 	driver.parse();
 	EXPECT_EQ(
 			dynamic_pointer_cast<VarDecl>(
-					declContext.getContext()->lookup("a").lock()
+					declContext.getContextRoot()->lookup("a").lock()
 			)->getType().lock()->getTypePtr()->getTypeClass(),
 			Type::Pointer
 	);
@@ -470,7 +484,7 @@ TEST_F(BasicParseTest, VariableTest)
 	openHelper << "long int a;";
 	driver.parse();
 	EXPECT_EQ(
-			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("a").lock())->getNameAsString(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("a").lock())->getNameAsString(),
 			string("a")
 	);
 	reset();
@@ -478,7 +492,7 @@ TEST_F(BasicParseTest, VariableTest)
 	openHelper << "long int b[][];";
 	driver.parse();
 	EXPECT_EQ(
-			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("b").lock())->getNameAsString(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("b").lock())->getNameAsString(),
 			string("b")
 	);
 	reset();
@@ -486,28 +500,59 @@ TEST_F(BasicParseTest, VariableTest)
 	openHelper << "long int c, d, e;";
 	driver.parse();
 	EXPECT_EQ(
-			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("c").lock())->getNameAsString(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("c").lock())->getNameAsString(),
 			string("c")
 	);
 	EXPECT_EQ(
-			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("d").lock())->getNameAsString(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("d").lock())->getNameAsString(),
 			string("d")
 	);
 	EXPECT_EQ(
-			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("e").lock())->getNameAsString(),
+			dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("e").lock())->getNameAsString(),
 			string("e")
 	);
 	reset();
 }
 
-TEST_F(BasicParseTest, FunctionTest)
+TEST_F(BasicParseTest, FunctionWithParmNoProtoTypeDeclTest)
 {
 	openHelper << "int a();";
 	driver.parse();
 	EXPECT_EQ(
-			dynamic_pointer_cast<VarDecl>(declContext.getContext()->lookup("a").lock())->getNameAsString(),
+			dynamic_pointer_cast<FunctionDecl>(declContext.getContextRoot()->lookup("a").lock())->getNameAsString(),
+			string("a")
+	);
+	shared_ptr<FunctionDecl> func = dynamic_pointer_cast<FunctionDecl>(declContext.getContextRoot()->lookup("a").lock());
+	EXPECT_EQ(func->getKind(), Decl::Function);
+	reset();
+}
+
+TEST_F(BasicParseTest, FunctionWithParmNoProtoTypeDefinitionTest)
+{
+	openHelper <<
+"int a()"
+"{"
+"	123;"
+"}";
+	driver.parse();
+	EXPECT_EQ(
+			dynamic_pointer_cast<FunctionDecl>(declContext.getContextRoot()->lookup("a").lock())->getNameAsString(),
+			string("a")
+	);
+	shared_ptr<FunctionDecl> func = dynamic_pointer_cast<FunctionDecl>(declContext.getContextRoot()->lookup("a").lock());
+	EXPECT_EQ(func->getKind(), Decl::Function);
+	reset();
+}
+
+TEST_F(BasicParseTest, FunctionWithParmTest)
+{
+	openHelper << "void a(int b, double c) {}";
+	driver.parse();
+	EXPECT_EQ(
+			dynamic_pointer_cast<FunctionDecl>(declContext.getContextRoot()->lookup("a").lock())->getNameAsString(),
 			string("a")
 	);
 	reset();
 }
+
 #endif

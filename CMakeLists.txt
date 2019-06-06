@@ -25,7 +25,8 @@ add_executable(CodeRefactor
 		OpenHelper/OpenHelper.cpp OpenHelper/OpenHelper.h OpenHelper/StringStreamOpenHelper.cpp OpenHelper/StringStreamOpenHelper.h OpenHelper/StdioOpenHelper.cpp OpenHelper/StdioOpenHelper.h OpenHelper/FileOpenHelper.cpp OpenHelper/FileOpenHelper.h
         Decl/Decl.h Decl/DeclName.h Decl/DeclBase.h Decl/DeclBase.cpp
 		AST/AST.hpp AST/Expr.cpp AST/Expr.h AST/Stmt.cpp AST/Stmt.h AST/StmtNodes.def AST/Type.cpp AST/Type.h AST/TypeNodes.def AST/ASTContext.h AST/ASTContext.cpp
+		AST/StmtIterator.h AST/StmtIterator.cpp
 		Basic/SourceLocation.h Basic/SourceLocation.cpp Basic/IdentifierTable.h Basic/IdentifierTable.cpp
-		test/BasicParseTest.cpp test/OpenHelperTest.cpp test/DeclarationTest.cpp Decl/DeclGroup.cpp Decl/DeclGroup.h Parser/YaccAdapter.cpp Parser/YaccAdapter.h Decl/DeclContextHolder.cpp Decl/DeclContextHolder.h Errors/SymbolError.hpp test/HybridParseTest.cpp Errors/TypeError.hpp  test/ASTStructureTest.cpp
+		test/BasicParseTest.cpp test/OpenHelperTest.cpp test/DeclarationTest.cpp Decl/DeclGroup.cpp Decl/DeclGroup.h Parser/YaccAdapter.cpp Parser/YaccAdapter.h Decl/DeclContextHolder.cpp Decl/DeclContextHolder.h Errors/SymbolError.hpp test/HybridParseTest.cpp Errors/TypeError.hpp test/ASTStructurePrintTest.cpp
 		ASTOperation/Printer.cpp ASTOperation/Printer.h ASTOperation/Corrector.cpp ASTOperation/Corrector.h ASTOperation/Refactor.h ASTOperation/Refactor.cpp
         Decl/DeclName.cpp Decl/Decl.cpp test/RefactorTest.cpp)

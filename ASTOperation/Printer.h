@@ -35,7 +35,7 @@ private:
 	void processCaseStmt(std::shared_ptr<Stmt> &s);
 	void processDefaultStmt(std::shared_ptr<Stmt> &s);
 	void processLabelStmt(std::shared_ptr<Stmt> &s);
-	void processIfStmt(std::shared_ptr<Stmt> &s);
+	void processIfStmt(std::shared_ptr<Stmt> &s, bool isElseCond = false);
 	void processSwitchStmt(std::shared_ptr<Stmt> &s);
 	void processWhileStmt(std::shared_ptr<Stmt> &s);
 	void processDoStmt(std::shared_ptr<Stmt> &s);

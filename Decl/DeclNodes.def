@@ -1,45 +1,3 @@
-//===-- DeclNodes.def - Metadata about Decl AST nodes -----------*- C++ -*-===//
-//
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
-//
-//===----------------------------------------------------------------------===//
-//
-//  This file defines the declaration nodes within the AST. The
-//  description of the declaration nodes uses six macros: 
-//
-//  DECL(Derived, Base) describes a normal declaration type Derived
-//  and specifies its base class. Note that Derived should not have
-//  the Decl suffix on it, while Base should.
-//
-//  LAST_DECL(Derived, Base) is like DECL, but is used for the last
-//  declaration in the list.
-//
-//  ABSTRACT_DECL(Derived, Base) describes an abstract class that is
-//  used to specify a classification of declarations. For example,
-//  TagDecl is an abstract class used to describe the various kinds of
-//  "tag" declarations (unions, structs, classes, enums).
-//
-//  DECL_CONTEXT(Decl) specifies that Decl is a kind of declaration
-//  that is also a DeclContext.
-//  
-//  LAST_DECL_CONTEXT(Decl) is like DECL_CONTEXT, but is used for the
-//  last declaration context.
-//
-//  DECL_RANGE(CommonBase, Start, End) specifies a range of
-//  declaration values that have a common (potentially indirect) base
-//  class.
-//
-//  LAST_DECL_RANGE(CommonBase, Start, End) is like DECL_RANGE, but is
-//  used for the last declaration range.
-//
-//  Note that, due to the use of ranges, the order of the these
-//  declarations is significant. A declaration should be listed under
-//  its base class.
-//  ===----------------------------------------------------------------------===//
-
 #ifndef DECL
 #  define DECL(Derived, Base)
 #endif
@@ -75,52 +33,51 @@
 
 DECL(TranslationUnit, Decl)
 ABSTRACT_DECL(Named,  Decl)
-  DECL(OverloadedFunction, NamedDecl)
-  DECL(Namespace, NamedDecl)
-  DECL(UsingDirective, NamedDecl)
-  DECL(NamespaceAlias, NamedDecl)
-  ABSTRACT_DECL(Type, NamedDecl)
-    DECL(Typedef, TypeDecl)
-    ABSTRACT_DECL(Tag, TypeDecl)
-      DECL(Enum, TagDecl)
-      DECL(Record, TagDecl)
-        DECL(CXXRecord, RecordDecl)
-          DECL(ClassTemplateSpecialization, CXXRecordDecl)
-            DECL(ClassTemplatePartialSpecialization, 
-                 ClassTemplateSpecializationDecl)
-    DECL(TemplateTypeParm, TypeDecl)
-  ABSTRACT_DECL(Value, NamedDecl)
-    DECL(EnumConstant, ValueDecl)
-    ABSTRACT_DECL(Declarator, NamedDecl)
-      DECL(Function, ValueDecl)
-        DECL(FriendFunction, FunctionDecl)
-        DECL(CXXMethod, FunctionDecl)
-          DECL(CXXConstructor, CXXMethodDecl)
-          DECL(CXXDestructor, CXXMethodDecl)
-          DECL(CXXConversion, CXXMethodDecl)
-      DECL(Field, ValueDecl)
-        DECL(ObjCIvar, FieldDecl)
-        DECL(ObjCAtDefsField, FieldDecl)
-      DECL(Var, ValueDecl)
-        DECL(ImplicitParam, VarDecl)
-        DECL(ParmVar, VarDecl)
-          DECL(OriginalParmVar, ParmVarDecl)
-        DECL(NonTypeTemplateParm, VarDecl)
-  DECL(Template, NamedDecl)
-    DECL(FunctionTemplate, TemplateDecl)
-    DECL(ClassTemplate, TemplateDecl)
-    DECL(TemplateTemplateParm, TemplateDecl)
-  DECL(Using, NamedDecl)
-  DECL(ObjCMethod, NamedDecl)
-  DECL(ObjCContainer, NamedDecl)
-    DECL(ObjCCategory, ObjCContainerDecl)
-    DECL(ObjCProtocol, ObjCContainerDecl)
-    DECL(ObjCInterface, ObjCContainerDecl)
-    ABSTRACT_DECL(ObjCImpl, ObjCContainerDecl)
-      DECL(ObjCCategoryImpl, ObjCImplDecl)
-      DECL(ObjCImplementation, ObjCImplDecl)
-  DECL(ObjCProperty, NamedDecl)
-  DECL(ObjCCompatibleAlias, NamedDecl)
+DECL(OverloadedFunction, NamedDecl)
+DECL(Namespace, NamedDecl)
+DECL(UsingDirective, NamedDecl)
+DECL(NamespaceAlias, NamedDecl)
+ABSTRACT_DECL(Type, NamedDecl)
+DECL(Typedef, TypeDecl)
+ABSTRACT_DECL(Tag, TypeDecl)
+DECL(Enum, TagDecl)
+DECL(Record, TagDecl)
+DECL(CXXRecord, RecordDecl)
+DECL(ClassTemplateSpecialization, CXXRecordDecl)
+DECL(ClassTemplatePartialSpecialization, ClassTemplateSpecializationDecl)
+DECL(TemplateTypeParm, TypeDecl)
+ABSTRACT_DECL(Value, NamedDecl)
+DECL(EnumConstant, ValueDecl)
+ABSTRACT_DECL(Declarator, NamedDecl)
+DECL(Function, ValueDecl)
+DECL(FriendFunction, FunctionDecl)
+DECL(CXXMethod, FunctionDecl)
+DECL(CXXConstructor, CXXMethodDecl)
+DECL(CXXDestructor, CXXMethodDecl)
+DECL(CXXConversion, CXXMethodDecl)
+DECL(Field, ValueDecl)
+DECL(ObjCIvar, FieldDecl)
+DECL(ObjCAtDefsField, FieldDecl)
+DECL(Var, ValueDecl)
+DECL(ImplicitParam, VarDecl)
+DECL(ParmVar, VarDecl)
+DECL(OriginalParmVar, ParmVarDecl)
+DECL(NonTypeTemplateParm, VarDecl)
+DECL(Template, NamedDecl)
+DECL(FunctionTemplate, TemplateDecl)
+DECL(ClassTemplate, TemplateDecl)
+DECL(TemplateTemplateParm, TemplateDecl)
+DECL(Using, NamedDecl)
+DECL(ObjCMethod, NamedDecl)
+DECL(ObjCContainer, NamedDecl)
+DECL(ObjCCategory, ObjCContainerDecl)
+DECL(ObjCProtocol, ObjCContainerDecl)
+DECL(ObjCInterface, ObjCContainerDecl)
+ABSTRACT_DECL(ObjCImpl, ObjCContainerDecl)
+DECL(ObjCCategoryImpl, ObjCImplDecl)
+DECL(ObjCImplementation, ObjCImplDecl)
+DECL(ObjCProperty, NamedDecl)
+DECL(ObjCCompatibleAlias, NamedDecl)
 DECL(LinkageSpec, Decl)
 DECL(ObjCPropertyImpl, Decl)
 DECL(ObjCForwardProtocol, Decl)

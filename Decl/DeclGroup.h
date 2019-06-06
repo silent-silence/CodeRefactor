@@ -14,7 +14,7 @@ public:
 	DeclGroupRef();
 	explicit DeclGroupRef(std::shared_ptr<Decl> d);
 	explicit DeclGroupRef(std::shared_ptr<DeclGroup> dg);
-	DeclGroupRef(std::vector<std::shared_ptr<Decl>> Decls, unsigned NumDecls);
+	explicit DeclGroupRef(std::vector<std::shared_ptr<Decl>> Decls);
 
 	bool isNull() const { return bool(D); }
 	bool isSingleDecl() const { return m_groupKind == Kind::SingleDeclKind; }
@@ -37,15 +37,14 @@ private:
 /// @brief Holds Several number of Decls
 class DeclGroup {
 public:
-	DeclGroup(unsigned numdecls, std::vector<std::shared_ptr<Decl>> decls);
+	DeclGroup(std::vector<std::shared_ptr<Decl>> decls);
 
 	unsigned size() const;
 	std::shared_ptr<Decl> &operator[](unsigned i);
 	std::shared_ptr<Decl> const &operator[](unsigned i) const;
 private:
-	DeclGroup();
+	DeclGroup() = default;
 
-	unsigned NumDecls;
 	std::vector<std::shared_ptr<Decl>> Decls;
 };
 

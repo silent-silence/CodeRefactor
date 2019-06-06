@@ -5,7 +5,6 @@
 #include <string>
 #include <unordered_map>
 #include "Basic/SourceLocation.h"
-#include "DeclName.h"
 
 class DeclContext;
 class NamedDecl;
@@ -23,12 +22,8 @@ public:
 #include "Decl/DeclNodes.def"
 	};
 
-	Decl(Kind declKind, SourceLocation location)
-		: m_kind{declKind}, m_loc{location}, m_isUsed{false}
-	{}
-	Decl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location)
-		: m_kind{declKind}, m_belongToContext{context}, m_loc{location}, m_isUsed{false}
-	{}
+	Decl(Kind declKind, SourceLocation location);
+	Decl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location);
 	virtual ~Decl() = 0;
 
 	/*/// @brief According to C99 6.2.3, there are four namespaces, labels, tags, members and ordinary
@@ -41,19 +36,19 @@ public:
 
 	/// @brief Get locations in code
 	/*virtual SourceRange getSourceRange() const;
-	SourceLocation getLocStart() const;
-	SourceLocation getLocEnd() const;*/
+	SourceLocation getLocStart() const;*/
+	SourceLocation getSourceLocation() const;
 
 	/// @brief Get kind of the declaration
-	Kind getKind() const { return m_kind; }
+	Decl::Kind getKind() const;
 	//std::string getDeclKindName();
 
 	/// @brief Get context the declaration belong
-	std::weak_ptr<Decl> getNextDeclInContext() { return m_nextDeclInContext; }
-	const std::weak_ptr<Decl> getNextDeclInContext() const { return m_nextDeclInContext; }
+	std::weak_ptr<Decl> getNextDeclInContext();
+	const std::weak_ptr<Decl> getNextDeclInContext() const;
 
-	std::weak_ptr<DeclContext> getDeclContext() { return m_belongToContext; }
-	const std::weak_ptr<DeclContext> getDeclContext() const { return m_belongToContext;	}
+	std::weak_ptr<DeclContext> getDeclContext();
+	const std::weak_ptr<DeclContext> getDeclContext() const;
 
 private:
 	/// @brief Which context does the declaration belong
@@ -73,21 +68,21 @@ private:
 	bool m_isUsed;
 };
 
-/// @brief StoreDecl acts like a union
+/// @brief StoreDecl acts like a union, stored an pointer to named decl or id to unnamed decl
 class StoredDecl {
 public:
 	enum class StoredKind {
 		DeclPtr,
 		DeclId
 	};
-	StoredDecl() = default;
-	StoredDecl(StoredKind kind, std::shared_ptr<NamedDecl> ptr = nullptr);
+	StoredDecl();
+	explicit StoredDecl(StoredKind kind, std::shared_ptr<NamedDecl> ptr = nullptr);
 	virtual ~StoredDecl() = default;
 
 	/// @brief Get decl name or decl id as string
 	virtual std::string getDeclAsString() const;
 
-	/// @brief An hash algorithm
+	/// @brief A hash algorithm
 	size_t operator()(const StoredDecl &name) const;
 
 private:
@@ -109,16 +104,14 @@ private:
 	std::string lookupName;
 };
 
+/// @brief Compare, used by unordered_map
 bool operator ==(const StoredDecl &s1, const StoredDecl &s2);
 
 /// @brief A context is where a decl stored
 class DeclContext {
 public:
-	DeclContext(Decl::Kind K)
-		: m_declKind{K}
-	{}
-
-	virtual ~DeclContext() = default;
+	DeclContext(Decl::Kind K);
+	virtual ~DeclContext() = 0;
 
 	Decl::Kind getDeclKind() const;
 	std::string getDeclKindName() const;
@@ -141,10 +134,18 @@ public:
 	std::weak_ptr<Decl> lookup(std::string &name);
 	std::weak_ptr<Decl> lookup(std::string &&name);
 
+	/// @brief Look up for a name in current context
 	std::weak_ptr<Decl> lookupCurrentContext(StoredDecl &name);
 	std::weak_ptr<Decl> lookupCurrentContext(StoredDecl &&name);
 	std::weak_ptr<Decl> lookupCurrentContext(std::string &name);
 	std::weak_ptr<Decl> lookupCurrentContext(std::string &&name);
+
+	/// @brief Look up for name in current and parent contexts, throw differently on existence
+	/// @param name: name to be looked up
+	/// @param lookIntoParent: need to look up into parent context(if any)
+	/// @throw SymbolNotFound: if not find the symbol
+	/// @throw SymbolAlreadyExist: if find the symbol
+	void lookupForExistence(StoredDecl &name, bool lookIntoParent);
 
 	//void makeDeclVisibleInContext(std::shared_ptr<NamedDecl> d);
 

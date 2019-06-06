@@ -2,10 +2,10 @@
 #include "AST/Expr.h"
 
 using std::get;							using std::string;
-using std::queue;						using std::holds_alternative;
+using std::holds_alternative;			using std::list;
 using std::vector;						using std::shared_ptr;
 using std::make_shared;					using std::dynamic_pointer_cast;
-using std::list;
+
 
 void ASTContext::updateASTRoot(std::shared_ptr<Stmt> root)
 {
@@ -102,7 +102,24 @@ std::shared_ptr<Stmt> ASTContext::createSwitchStmt(std::vector<ASTContext::var_t
 			get<SourceLocation>(value[0]),
 			get<shared_ptr<Expr>>(value[1])
 	);
-	switchStmt->setBody(get<shared_ptr<Stmt>>(value[2]));
+    auto body = get<shared_ptr<Stmt>>(value[2]);
+    if(CompoundStmt::classof(body)){
+        auto stmts = std::dynamic_pointer_cast<CompoundStmt>(body);
+        shared_ptr<CaseStmt> stmt=nullptr;
+        for(auto i = stmts->body_begin(); i!=stmts->body_end(); ++i){
+            if(CaseStmt::classof(*i)){
+                auto ptr = std::dynamic_pointer_cast<CaseStmt>(*i);
+                if(stmt != nullptr){
+                    stmt->setNextSwitchCase(ptr);
+                }
+                else{
+                    switchStmt->setSwitchCaseList(ptr);
+                }
+                stmt = ptr;
+            }
+        }
+    }
+    switchStmt->setBody(body);
 	return switchStmt;
 }
 
@@ -342,7 +359,7 @@ std::shared_ptr<Stmt> ASTContext::createMemberExpr(std::vector<ASTContext::var_t
 	auto expr = get<shared_ptr<Expr>>(value[0]);
 	auto memberType = expr->getType().lock();
 	return make_shared<MemberExpr>(
-					get<shared_ptr<Expr>>(value[0]),
+					expr,
 					get<bool>(value[1]),
 					get<shared_ptr<NamedDecl>>(value[2]),
 					get<SourceLocation>(value[3]),
@@ -716,21 +733,54 @@ std::shared_ptr<QualType> ASTContext::createIncompleteArrayType(std::vector<ASTC
 
 std::shared_ptr<QualType> ASTContext::createFunctionNoProtoType(std::vector<ASTContext::var_t> &value)
 {
-	return FunctionNoProtoType::creator(
+	auto qualifier = make_shared<QualType>();
+	auto func = FunctionNoProtoType::creator(
 					get<shared_ptr<QualType>>(value[0]),
-					get<shared_ptr<QualType>>(value[1]),
-					get<bool>(value[2])
+					qualifier,
+					get<bool>(value[1])
 	);
+	qualifier->Value.first = func;
+	return qualifier;
 }
 
-/*std::shared_ptr<Type> ASTContext::createFunctionProtoType(std::vector<ASTContext::var_t> &value)
+std::shared_ptr<QualType> ASTContext::createTypedefType(std::vector<var_t> &value)
 {
-	queue_type.push(
-			make_shared<FunctionProtoType>(
-					get<QualType>(value[0]),
-					get<QualType>(value[1]),
-					get<bool>(value[2])));
-}*/
+	shared_ptr<QualType> qualifier = make_shared<QualType>();
+	auto type = TypedefType::creator(
+			qualifier,
+			get<shared_ptr<TypedefDecl>>(value[0])
+	);
+	qualifier->Value.first = type;
+	return qualifier;
+}
+
+std::shared_ptr<QualType> ASTContext::createRecordType(std::vector<var_t> &value)
+{
+	shared_ptr<QualType> qualifier = make_shared<QualType>();
+	auto type = make_shared<RecordType>(get<shared_ptr<RecordDecl>>(value[0]), qualifier);
+	qualifier->Value.first = type;
+	return qualifier;
+}
+
+std::shared_ptr<QualType> ASTContext::createFunctionProtoType(std::vector<ASTContext::var_t> &value)
+{
+	shared_ptr<QualType> qualifier = make_shared<QualType>();
+	auto args = get<vector<shared_ptr<QualType>>>(value[1]);
+	auto type = FunctionProtoType::creator(
+			get<shared_ptr<QualType>>(value[0]),
+			args,
+			args.size(),
+			false,
+			0, false,
+			false,
+			vector<QualType>(),
+			0,
+			qualifier,
+			false
+	);
+	qualifier->Value.first = type;
+	return qualifier;
+}
 
 /*void ASTContext::createTypeOfExprType(std::vector<ASTContext::var_t> &value)
 {

@@ -123,7 +123,12 @@ void Printer::formatExprAsStmt(std::shared_ptr<Stmt> s)
 	print(s);
 	// if is a expr
 	if(dynamic_pointer_cast<Expr>(s))
+	{
+		if(stmtInOneLine)
+			m_openHelper.getOutputStream() << ";";
+		else
 			m_openHelper.getOutputStream() << ";\n";
+	}
 }
 
 std::string Printer::getTypeName(std::shared_ptr<Type> type) const
@@ -383,17 +388,36 @@ void Printer::processWhileStmt(std::shared_ptr<Stmt> &s)
 	formatExprAsStmt(whileStmt->getBody().lock());
 }
 
-void Printer::processIfStmt(std::shared_ptr<Stmt> &s)
+void Printer::processIfStmt(std::shared_ptr<Stmt> &s, bool isElseCond)
 {
 	auto ifStmt = dynamic_pointer_cast<IfStmt>(s);
-	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "if(";
+	if(isElseCond)
+		m_openHelper.getOutputStream() << "if(";
+	else
+		m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "if(";
 	print(ifStmt->getCond().lock());
 	m_openHelper.getOutputStream() << ")\n";
-	formatExprAsStmt(ifStmt->getThen().lock());
-	if(ifStmt->getElse().lock())
+	auto thenBlock = ifStmt->getThen().lock();
+	if(CompoundStmt::classof(thenBlock))
+		print(thenBlock);
+	else
+	{
+		m_tabNum++;
+		formatExprAsStmt(thenBlock);
+		m_tabNum--;
+	}
+
+	auto elseBlock = ifStmt->getElse().lock();
+	if(elseBlock)
 	{
 		m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "else ";
-		print(ifStmt->getElse().lock());
+		if(IfStmt::classof(elseBlock))
+			processIfStmt(elseBlock, true);
+		else
+		{
+			m_openHelper.getOutputStream() << "\n";
+			print(elseBlock);
+		}
 	}
 }
 
@@ -412,8 +436,8 @@ void Printer::processForStmt(std::shared_ptr<Stmt> &s)
 	auto forStmt = dynamic_pointer_cast<ForStmt>(s);
 	m_openHelper.getOutputStream() << string(m_tabNum * 2, tabType) << "for(";
 	stmtInOneLine = true;
-	print(forStmt->getInit().lock());
-	print(forStmt->getCond().lock());
+	formatExprAsStmt(forStmt->getInit().lock());
+	formatExprAsStmt(forStmt->getCond().lock());
 	stmtInOneLine = false;
 	if(forStmt->getInc().lock())
 		print(forStmt->getInc().lock());
@@ -473,7 +497,9 @@ void Printer::processDeclStmt(std::shared_ptr<Stmt> &s)
 	{
 		auto decl = dynamic_pointer_cast<ValueDecl>(declRef->getSingleDecl().lock());
 		auto type = decl->getType().lock()->getTypePtr();
-		m_openHelper.getOutputStream() << getTypeName(type) << " " << decl->getNameAsString() << ";\n";
+		m_openHelper.getOutputStream() << getTypeName(type) << " " << decl->getNameAsString() << ";";
+		if(!stmtInOneLine)
+			m_openHelper.getOutputStream() << "\n";
 	}
 	else if(declRef->isDeclGroup())
 	{
@@ -486,6 +512,9 @@ void Printer::processDeclStmt(std::shared_ptr<Stmt> &s)
 			if (i + 1 != decls->size())
 				m_openHelper.getOutputStream() << ", ";
 		}
-		m_openHelper.getOutputStream() << ";\n";
+		if(stmtInOneLine)
+			m_openHelper.getOutputStream() << ";";
+		else
+			m_openHelper.getOutputStream() << ";\n";
 	}
 }

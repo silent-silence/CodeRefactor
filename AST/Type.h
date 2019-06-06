@@ -10,6 +10,7 @@ class Stmt;
 class ASTContext;
 class TagDecl;
 class TypedefDecl;
+class RecordDecl;
 
 class QualType;
 class Type;
@@ -57,7 +58,7 @@ class QualType
 {
 	friend class ASTContext;
 public:
-    enum TQ {
+    enum TQ : unsigned {
     	None		= 0,
         Const		= 0x1,
         Restrict	= 0x2,
@@ -95,7 +96,7 @@ public:
 #include "TypeNodes.def"
         TagFirst = Record, TagLast = Enum
     };
-    Type(){}
+    Type() = default;
     Type(TypeClass tc, bool dependent);
     virtual ~Type() = default;
     bool isDependentType() const;
@@ -103,7 +104,7 @@ public:
     std::weak_ptr<QualType> getCanonicalType() const;
     void setCanonicalType(const std::weak_ptr<QualType> &value);
 
-	TypeClass getTypeClass() const { return static_cast<TypeClass>(TC); };
+	TypeClass getTypeClass() const;
 
 protected:
     enum { TypeClassBitSize = 6 };
@@ -112,8 +113,8 @@ private:
     //    void operator=(const Type&)=default;
 
     std::weak_ptr<QualType> CanonicalType;
-    bool Dependent : 1;
-    unsigned TC : TypeClassBitSize;
+    bool Dependent : 1;	// C++ template [temp.dep.type]
+	unsigned TC : TypeClassBitSize;
 
 };
 
@@ -189,8 +190,6 @@ public:
 
         UndeducedAuto, // In C++0x, this represents the type of an auto variable
         // that has not been deduced yet.
-        ObjCId,    // This represents the ObjC 'id' type.
-        ObjCClass  // This represents the ObjC 'Class' type.
     };
     static std::shared_ptr<QualType> creator(Kind k);
     BuiltinType(Kind k);
@@ -498,7 +497,7 @@ private:
 class FunctionNoProtoType : public FunctionType
 {
 public:
-    static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> Result,
+    static std::shared_ptr<Type> creator(std::shared_ptr<QualType> Result,
                                          std::shared_ptr<QualType> Canonical,
                                          bool NoReturn = false);
     FunctionNoProtoType(std::shared_ptr<QualType> Result, bool NoReturn = false);
@@ -509,19 +508,24 @@ public:
 class FunctionProtoType : public FunctionType
 {
 public:
-    static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> Result, const std::vector<QualType> ArgArray,
+    static std::shared_ptr<Type> creator(std::shared_ptr<QualType> Result, const std::vector<std::shared_ptr<QualType>> ArgArray,
                                          unsigned numArgs,
                                          bool isVariadic, unsigned typeQuals, bool hasExs,
                                          bool hasAnyExs, const std::vector<QualType> ExArray,
                                          unsigned numExs, std::shared_ptr<QualType> Canonical,
                                          bool NoReturn);
-    FunctionProtoType(std::shared_ptr<QualType> Result, const std::vector<QualType> ArgArray,
+    FunctionProtoType(std::shared_ptr<QualType> Result, const std::vector<std::shared_ptr<QualType>> ArgArray,
                       unsigned numArgs,
                       bool isVariadic, unsigned typeQuals, bool hasExs,
                       bool hasAnyExs, const std::vector<QualType> ExArray,
                       unsigned numExs, bool NoReturn);
+
+    void setArgs(std::vector<std::shared_ptr<QualType>> ArgArray);
+
 private:
-    static bool hasAnyDependentType(const std::vector<QualType> ArgArray);
+    static bool hasAnyDependentType(const std::vector<std::shared_ptr<QualType>> ArgArray);
+
+    std::vector<std::shared_ptr<QualType>> Args;
     unsigned NumArgs : 20;
     unsigned NumExceptions : 10;
     bool HasExceptionSpec : 1;
@@ -531,15 +535,16 @@ private:
 /// @brief typedef
 class TypedefType : public Type
 {
+	friend class ASTContext;
 public:
-protected:
+	static std::shared_ptr<Type> creator(std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl);
+
     /*TypedefType(TypeClass tc, TypedefDecl *D, QualType can)
         : Type(tc, can, can->isDependentType()), Decl(D) {
         assert(!isa<TypedefType>(can) && "Invalid canonical type");
     }*/
-    TypedefType(TypeClass tc, std::shared_ptr<QualType> can)
-        : Type(tc, (*can)->isDependentType()){
-    }
+    TypedefType(TypeClass tc, std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl);
+
 private:
     std::shared_ptr<TypedefDecl> Decl;
 };
@@ -600,18 +605,22 @@ private:
 /// @brief a struct/union/class/enum
 class TagType : public Type
 {
-protected:
-    TagType(TypeClass TC, std::shared_ptr<TagDecl> D);
+public:
+	TagType(TypeClass TC, std::shared_ptr<TagDecl> D, std::shared_ptr<QualType> can);
+	~TagType() override = 0;
+
+	std::weak_ptr<TagDecl> getDecl() const;
+
 private:
-    std::pair<std::shared_ptr<TagDecl> , unsigned> decl;
+	std::shared_ptr<TagDecl> decl;
 };
 
 /// @brief structs/unions/classes
 class RecordType : public TagType
 {
-protected:
-    //    explicit RecordType(std::shared_ptr<RecordDecl> D)
-    //        : TagType(Record, std::dynamic_pointer_cast<TagDecl>(D), QualType()) { }
+public:
+	~RecordType() override = default;
+	RecordType(std::shared_ptr<RecordDecl> D, std::shared_ptr<QualType> can);
     //    explicit RecordType(TypeClass TC, std::shared_ptr<RecordDecl> D)
     //        : TagType(TC, std::dynamic_pointer_cast<TagDecl>(D), QualType()) { }
 };
@@ -619,6 +628,8 @@ protected:
 /// @brief enum
 class EnumType : public TagType
 {
+public:
+	~EnumType() override = default;
 private:
     //    explicit EnumType(std::shared_ptr<EnumDecl> D)
     //        : TagType(Enum, std::dynamic_pointer_cast<TagDecl>(D), QualType()) { }

@@ -29,12 +29,30 @@ protected:
 TEST_F(HybridParseTest, Sequenced)
 {
 	string input =
+"float foo();"
+"double foo2(int a, int b);"
+""
+"int main(void)"
 "{"
-"	int a = 1;"
-"	int b = 3;"
+"	signed a = 1;"
+"	char b = 3;"
 "	{"
-"		int c = a + b;"
+"		double c = a + b;"
 "	}"
+"	for(int i; i < 100; i++)"
+"		foo();"
+"	foo2();"
+"	return 0;"
+"}"
+""
+"float foo()"
+"{"
+"	return 1;"
+"}"
+""
+"double foo2(int a, int b)"
+"{"
+"	return a + b;"
 "}";
 	openHelper << input;
 	EXPECT_NO_THROW(driver.parse());

@@ -3,15 +3,14 @@
 using std::shared_ptr;
 using std::make_shared;
 
-DeclGroup::DeclGroup(unsigned numdecls, std::vector<std::shared_ptr<Decl> > decls)
-		: NumDecls(numdecls)
-{
-	Decls=decls;
-}
+/// @DeclGroup
+DeclGroup::DeclGroup(std::vector<std::shared_ptr<Decl>> decls)
+		: Decls{decls}
+{}
 
 unsigned DeclGroup::size() const
 {
-	return NumDecls;
+	return Decls.size();
 }
 
 const shared_ptr<Decl> &DeclGroup::operator[](unsigned i) const
@@ -23,10 +22,7 @@ std::shared_ptr<Decl> &DeclGroup::operator[](unsigned i) {
 	return Decls[i];
 }
 
-DeclGroup::DeclGroup()
-		: NumDecls(0)
-{}
-
+/// @DeclGroupRef
 DeclGroupRef::DeclGroupRef()
 	: D(nullptr), groupRef(nullptr)
 {}
@@ -39,8 +35,8 @@ DeclGroupRef::DeclGroupRef(std::shared_ptr<DeclGroup> dg)
 	: groupRef{dg}, m_groupKind{Kind::DeclGroupKind}, D{nullptr}
 {}
 
-DeclGroupRef::DeclGroupRef(std::vector<std::shared_ptr<Decl>> Decls, unsigned NumDecls)
-	: groupRef(make_shared<DeclGroup>(NumDecls, Decls)), m_groupKind{Kind::DeclGroupKind}, D{nullptr}
+DeclGroupRef::DeclGroupRef(std::vector<std::shared_ptr<Decl>> Decls)
+	: groupRef(make_shared<DeclGroup>(Decls)), m_groupKind{Kind::DeclGroupKind}, D{nullptr}
 {}
 
 std::weak_ptr<Decl> DeclGroupRef::getSingleDecl()

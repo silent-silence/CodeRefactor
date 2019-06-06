@@ -1,12 +1,13 @@
 #ifndef ASTCONTEXT_H
 #define ASTCONTEXT_H
 
-#include <queue>
 #include <memory>
 #include <variant>
-#include <stack>
 #include <list>
+#include <vector>
 #include "AST/AST.hpp"
+#include "Decl/Decl.h"
+#include "Decl/DeclGroup.h"
 
 class ASTContext
 {
@@ -42,7 +43,11 @@ public:
 			std::shared_ptr<Stmt>,
 			std::shared_ptr<QualType>,
 			std::shared_ptr<NamedDecl>,
-			std::shared_ptr<DeclGroupRef>
+			std::shared_ptr<TypedefDecl>,
+			std::shared_ptr<DeclGroupRef>,
+			std::shared_ptr<Decl>,
+			std::shared_ptr<RecordDecl>,
+			std::vector<std::shared_ptr<QualType>>
 	> var_t;
     /*template<auto type, typename... Args>
 	std::shared_ptr<Stmt> create(Args... args){
@@ -152,13 +157,13 @@ public:
 			case Type::DependentSizedExtVector:break;
 			case Type::Vector:break;
 			case Type::ExtVector:break;
-			case Type::FunctionProto:break;
+			case Type::FunctionProto:			return createFunctionProtoType(value);
 			case Type::FunctionNoProto:			return createFunctionNoProtoType(value);
-			case Type::Typedef:break;
+			case Type::Typedef:					return createTypedefType(value);
 			case Type::TypeOfExpr:break;
 			case Type::TypeOf:break;
 			case Type::Decltype:break;
-			case Type::Record:break;
+			case Type::Record:					return createRecordType(value);
 			case Type::Enum:break;
 			case Type::TemplateTypeParm:break;
 			case Type::TemplateSpecialization:break;
@@ -242,7 +247,7 @@ private:
 	std::shared_ptr<QualType> createConstantArrayType(std::vector<var_t> &value);//
 	std::shared_ptr<QualType> createConstantArrayWithExprType(std::vector<var_t> &value);//
 	std::shared_ptr<QualType> createConstantArrayWithoutExprType(std::vector<var_t> &value);//
-	std::shared_ptr<QualType> createIncompleteArrayType(std::vector<var_t> &value);//
+	std::shared_ptr<QualType> createIncompleteArrayType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createVariableArrayType(std::vector<var_t> &value);//
 	//std::shared_ptr<Type> createDependentSizedArrayType(std::vector<var_t> &value);//
 
@@ -252,6 +257,8 @@ private:
 
 	std::shared_ptr<QualType> createFunctionNoProtoType(std::vector<var_t> &value);
 	std::shared_ptr<QualType> createFunctionProtoType(std::vector<var_t> &value);
+	std::shared_ptr<QualType> createTypedefType(std::vector<var_t> &value);
+	std::shared_ptr<QualType> createRecordType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createTypeOfExprType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createDependentTypeOfExprType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createTypeOfType(std::vector<var_t> &value);

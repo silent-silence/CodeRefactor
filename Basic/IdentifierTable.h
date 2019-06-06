@@ -7,10 +7,11 @@
 /// @brief This class store an identifier name an is's attributes
 class IdentifierInfo {
 public:
-	IdentifierInfo() = default;
-	IdentifierInfo(std::string name)
-		: m_entry{name}, HasMacro{false}
-	{}
+	/// @brief Construct an unique but illegal name(@example '%%1') by default
+	IdentifierInfo();
+	/// @brief Explicit give a name
+	IdentifierInfo(std::string name);
+
 	IdentifierInfo(const IdentifierInfo&) = delete;  // NONCOPYABLE.
 	void operator=(const IdentifierInfo&) = delete;  // NONASSIGNABLE.
 
@@ -41,6 +42,8 @@ public:
 	/*bool isHandleIdentifierCase() const { return NeedsHandleIdentifier; }*/
 
 private:
+	static unsigned anonymousNameId;
+
 	std::string m_entry;
 	/*std::map<std::shared_ptr<IdentifierInfo>, std::string> Entry;*/
 	/*unsigned TokenID            : 8;*/

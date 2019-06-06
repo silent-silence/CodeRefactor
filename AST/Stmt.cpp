@@ -112,7 +112,6 @@ CompoundStmt::CompoundStmt(std::list<std::shared_ptr<Stmt>> StmtStart,
                            SourceLocation LB, SourceLocation RB)
     :Stmt (CompoundStmtClass), Body{StmtStart}, LBracLoc(LB), RBracLoc(RB)
 {
-
 }
 
 
@@ -122,6 +121,16 @@ CompoundStmt::CompoundStmt(EmptyShell Empty):Stmt(CompoundStmtClass, Empty)
 void CompoundStmt::setStmts(std::list<std::shared_ptr<Stmt> > Stmts)
 {
     this->Body=Stmts;
+}
+
+void CompoundStmt::addStmt(std::shared_ptr<Stmt> Stmt)
+{
+    Body.push_back(Stmt);
+}
+
+unsigned CompoundStmt::size() const
+{
+    return static_cast<unsigned>(Body.size());
 }
 
 SourceLocation CompoundStmt::getLBracLoc() const

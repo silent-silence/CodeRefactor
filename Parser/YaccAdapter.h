@@ -7,6 +7,8 @@
 
 #include <stack>
 #include <memory>
+#include <queue>
+#include "AST/Type.h"
 #include "parser.hpp"
 
 class Stmt;
@@ -54,6 +56,8 @@ public:
 		UNSIGNED_JMP=	CHAR | SHORT | INT | LONG | LONGLONG | STORAGE,
 		LONG_JMP	=	INT | DOUBLE | UNSIGNED | SIGNED | LONG | STORAGE,
 		LONGLONG_JMP=	INT  | UNSIGNED | SIGNED | STORAGE,
+		STRUCT_JMP	=	STORAGE | CONST | VOLATILE,
+		UNION_JMP	=	STORAGE | CONST | VOLATILE,
 		STORAGE_JMP	=	VOID | CHAR | SHORT | INT | FLOAT | DOUBLE | SIGNED | UNSIGNED | LONG | LONGLONG
 	};
 
@@ -67,7 +71,7 @@ public:
 #endif
 
 	/// @brief Make statements
-	void makeDeclStmt(yy::location &l, yy::location &r, bool haveDefinedName);
+	void makeDeclStmt(yy::location &l, yy::location &r);
 	void makeNullStmt(yy::location &l);
 	void makeCompoundStmt(unsigned stmtNumInBlock, yy::location &l, yy::location &r);
 	void makeCaseStmt(yy::location &l, yy::location &r, yy::location &c);
@@ -99,7 +103,7 @@ public:
 	void makeSizeofExpr(yy::location &l, yy::location &r, bool isSizeofType);
 	void makeArraySubscripExpr(yy::location &l);
 	void makeCallExpr(unsigned parameterNum, yy::location &l);
-	void makeMemberExpr(int opc, yy::location &l);
+	void makeMemberExpr(int opc, yy::location &l, std::string &name);
 	void makeCompoundLiteralExpr();
 	void makeImplicitCastExpr();
 	void makeCStyleCastExpr(yy::location &l, yy::location &r);
@@ -112,12 +116,11 @@ public:
 
 	/// @brief Temporary save type specifier before create a type
 	void addTypeSpecifier(TypeSpecifier type);
-	void addTypeSpecifier(TypeSpecifier type, TypeSpecifier storageSpecifier);
 
 	/// @brief Make types
 	//void makeExtQualType(std::vector<var_t> &value);
 //    void makeQualifierSet(std::vector<var_t> &value);
-	void makeBuiltinType();
+	void makeType();
 	void makeFixedWidthIntType();
 	void makeComplexType();
 	void makePointerType();
@@ -135,7 +138,7 @@ public:
 	//void makeVectorType(std::vector<var_t> &value);
 	//void makeExtVectorType(std::vector<var_t> &value);
 	void makeFunctionNoProtoType();
-	void makeFunctionProtoType();
+	void makeFunctionProtoType(int paramNum);
 	//void makeTypeOfExprType(std::vector<var_t> &value);
 	//void makeDependentTypeOfExprType(std::vector<var_t> &value);
 	//void makeTypeOfType(std::vector<var_t> &value);
@@ -143,13 +146,25 @@ public:
 	//void makeDependentDecltypeType(std::vector<var_t> &value);
 
 	/// @brief Symbol table
-	void enterNewBlock(yy::location &l);
+	/// @brief Call this meeting a '{', will create a context(block/struct/enum)
+	void enterCompoundBlock(yy::location &l);
+	void enterStructBlock(yy::location &l);
+	void enterFunctionParamDecl();
+	void enterFunctionBlock();
+
 	/// @brief Temporary save the variable name
 	void storeVariable(std::string name, yy::location &l);
+	/// @brief Pop a name and make variable/typedef decl
+	void makeVariables();
+	void makeInStructDeclStmt(yy::location &l, yy::location &r);
+	void makeFunParam();
+	void makeUnnamedFunParam(yy::location &l);
+	void makeFunctionDefinition();
 
 private:
-	/// @brief This method should be called by makeDeclStmt() only
-	std::vector<std::shared_ptr<Decl>> makeVariables(std::shared_ptr<QualType> type);
+	/// @brief A method to create build in type
+	std::shared_ptr<QualType> makeBuiltin(BuiltinType::Kind kind);
+	std::shared_ptr<QualType> makeStruct();
 
 	/// @brief Check if type specifier is allowed
 	bool isTypeSpecifierNotIllegal();
@@ -157,22 +172,33 @@ private:
 	SourceLocation toSourceLocation(yy::location &location);
 
 	/// @brief Pop a Stmt/Type from the stack
-	std::shared_ptr<Stmt> pop_stmt();
-	std::shared_ptr<QualType> pop_type();
-	std::shared_ptr<DeclContext> pop_decl();
 
 	ASTContext &m_ASTContext;
 	DeclContextHolder &m_declContextHolder;
 	OpenHelper &m_source;
 
-	/// @brief The stack of Stmt/Type
+	/// @brief The stack of Stmt
+	std::shared_ptr<Stmt> pop_stmt();
 	std::stack<std::shared_ptr<Stmt>> m_stmtStack;
+
+	/// @brief The stack of Type
+	std::shared_ptr<QualType> pop_type();
 	std::stack<std::shared_ptr<QualType>> m_typeStack;
-	std::stack<std::shared_ptr<DeclContext>> m_declStack;
+
+	/// @brief The stack of DeclContext
+	std::shared_ptr<DeclContext> popDeclContext();
+	std::stack<std::shared_ptr<DeclContext>> m_declContextStack;
+
 	/// @brief first: Temporary save the basic type of specifiers(int/long/double...)
 	/// @brief seconde: Temporary save the storage class specifiers(typedef/extern/static/register)
 	std::stack<std::pair<unsigned, TypeSpecifier>> m_typeSpecifier;
+
+	/// @brief Temporary save the variable name and it's location
+	// TODO: this can be just one 'pair', not a 'stack'
 	std::stack<std::pair<std::string, SourceLocation>> m_nameStack;
+	/// @brief Temporary save the variable decls
+	std::shared_ptr<Decl> popVarDecl();
+	std::queue<std::shared_ptr<Decl>> m_varDecls;
 
 	/*template<typename T=Stmt>
 	std::shared_ptr<T> pop_stmt(){
