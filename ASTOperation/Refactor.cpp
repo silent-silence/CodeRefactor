@@ -20,6 +20,7 @@ void Refactor::refactor_MCIf(std::weak_ptr<Stmt> root)
 {
     if(root.lock()==nullptr)return;
     auto ptr = TypeConversion(root);
+
     for(auto i = ptr->child_begin(); i != ptr->child_end(); ++i){
         if((*i)==nullptr)break;
         if(is_MCIf(i)){
@@ -309,5 +310,3 @@ bool Refactor::is_MIf(StmtIterator iter)
     //        return false;
     //    auto stmt = TypeConversion<IfStmt>(*iter);
 }
-
-

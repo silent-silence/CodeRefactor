@@ -35,7 +35,7 @@ private:
 	void processCaseStmt(std::shared_ptr<Stmt> &s);
 	void processDefaultStmt(std::shared_ptr<Stmt> &s);
 	void processLabelStmt(std::shared_ptr<Stmt> &s);
-	void processIfStmt(std::shared_ptr<Stmt> &s, bool isElseCond = false);
+	void processIfStmt(std::shared_ptr<Stmt> &s);
 	void processSwitchStmt(std::shared_ptr<Stmt> &s);
 	void processWhileStmt(std::shared_ptr<Stmt> &s);
 	void processDoStmt(std::shared_ptr<Stmt> &s);
@@ -46,6 +46,7 @@ private:
 	void processBreakStmt(std::shared_ptr<Stmt> &s);
 	void processReturnStmt(std::shared_ptr<Stmt> &s);
 	void processDeclStmt(std::shared_ptr<Stmt> &s);
+    void processCommentStmt(std::shared_ptr<Stmt> &s);
 
 	void processRefExpr(std::shared_ptr<Stmt> &s);
 	void processIntergerLiteral(std::shared_ptr<Stmt> &s);

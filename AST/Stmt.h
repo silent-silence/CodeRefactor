@@ -32,6 +32,7 @@ class ContinueStmt;
 class BreakStmt;
 class ReturnStmt;
 class AsmStmt;//GNU内联汇编语句扩展
+class CommentStmt;
 
 //Stmt - This represents one statement.
 class Stmt
@@ -558,6 +559,29 @@ private:
     std::array<std::shared_ptr<StringLiteral>, 4> Constraints;
     std::array<std::shared_ptr<Stmt>, 4> Exprs;
     std::array<std::shared_ptr<StringLiteral>, 4> Clobbers;
+};
+
+class CommentStmt : public Stmt
+{
+public:
+    CommentStmt(std::string comment, SourceLocation SL);
+    explicit CommentStmt(EmptyShell Empty);
+
+    SourceLocation getCommentLoc() const;
+
+    void setCommetLoc(SourceLocation L);
+
+    static bool classof(const std::weak_ptr<Stmt> T);
+    static bool classof(const std::weak_ptr<CommentStmt>);
+
+    std::string getComment() const;
+
+    virtual child_iterator child_begin(){}
+    virtual child_iterator child_end(){}
+
+private:
+    SourceLocation CommentLoc;
+    std::string Comment;
 };
 
 #endif // AST_STMT_H

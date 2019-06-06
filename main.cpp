@@ -11,28 +11,27 @@ int main(int argc, char *argv[])
 #else
 
 #include "OpenHelper/StringStreamOpenHelper.h"
+#include "OpenHelper/FileOpenHelper.h"
+#include "Parser/YaccAdapter.h"
+#include "Decl/DeclContextHolder.h"
 #include "Parser/Driver.h"
 #include "AST/ASTContext.h"
+#include "ASTOperation/Printer.h"
 
 using std::string;
 
 int main()
 {
-	/*int a[] = {1, 2};
-
-	a[4] = 2;
-	std::cout << a[4] << typeid(a).name() << std::endl;
-
-	StringStreamOpenHelper openHelper;
-	openHelper << string("a=4;\n");
-	//openHelper << string("a[1];\n");
+    FileOpenHelper openHelper("a.txt", "b.txt");
 	ASTContext context;
-	Driver driver(openHelper, context);
-	driver.parse();
+	DeclContextHolder declContextHolder;
+	YaccAdapter adapter(context, declContextHolder, openHelper);
 
-	std::string output;
-	openHelper >> output;
-	std::cout << output;*/
+	Driver driver(openHelper, adapter);
+    Printer printer(openHelper);
+
+	driver.parse();
+    printer.print(context.getRoot().lock());
 
 	return 0;
 }

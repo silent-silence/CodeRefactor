@@ -12,7 +12,6 @@ void ASTContext::updateASTRoot(std::shared_ptr<Stmt> root)
 	m_ASTRoot = root;
 }
 
-#ifdef ENV_TEST
 std::weak_ptr<Stmt> ASTContext::getRoot() const
 {
 	return m_ASTRoot;
@@ -22,7 +21,7 @@ void ASTContext::cleanAST()
 {
 	m_ASTRoot = std::shared_ptr<Stmt>();
 }
-#endif
+
 
 std::shared_ptr<Stmt> ASTContext::createDeclStmt(std::vector<var_t> &value)
 {
@@ -198,7 +197,15 @@ std::shared_ptr<Stmt> ASTContext::createReturnStmt(std::vector<ASTContext::var_t
 	return make_shared<ReturnStmt>(
 					get<SourceLocation>(value[0]),
 					get<shared_ptr<Expr>>(value[1])
-	);
+            );
+}
+
+std::shared_ptr<Stmt> ASTContext::createCommentStmt(std::vector<ASTContext::var_t> &value)
+{
+    return make_shared<CommentStmt>(
+                get<string>(value[0]),
+                    get<SourceLocation>(value[1])
+            );
 }
 
 std::shared_ptr<Stmt> ASTContext::createDeclRefExpr(std::vector<ASTContext::var_t> &value)

@@ -88,6 +88,7 @@ public:
 	void makeContinueStmt(yy::location &l);
 	void makeBreakStmt(yy::location &l);
 	void makeReturnStmt(yy::location &l, bool haveExpr = false);
+    void makeCommentStmt(std::string &comment, yy::location &l);
 
 	/// @brief Make expressions
 	//void makeStmtExpr(yy::location &l, yy::location &r);

@@ -82,6 +82,7 @@
 
 %token <std::string>IDENTIFIER
 %token <int>INTEGER_LITERAL	<double>FLOATING_LITERAL	<std::string>STRING_LITERAL	<char>CHARACTER_LITERAL
+%token <std::string>COMMENT
 
 %token  EOF	0	"eof"
 
@@ -124,6 +125,10 @@ statement
 	| goto_stmt
 	| return_stmt
 	| decl_stmt
+	| comment_stmt
+	;
+comment_stmt
+    : COMMENT						{ DRIVER.makeCommentStmt($1, @1); }
 	;
 null_stmt
 	: ";"							{ DRIVER.makeNullStmt(@1); }

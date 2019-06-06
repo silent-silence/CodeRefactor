@@ -107,32 +107,100 @@ void Corrector::correct(std::weak_ptr<Stmt> root)
 //            case Stmt::ShuffleVectorExprClass:break;
 //            case Stmt::BlockExprClass:break;
 //            case Stmt::BlockDeclRefExprClass:break;
-//    }
+    //    }
 }
 
-//void Corrector::processNullStmt(std::weak_ptr<Stmt> s)
-//{
-//    auto ptr = TypeConversion<NullStmt>(s);
-//}
+void Corrector::processDeclRefExpr(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<DeclRefExpr>(s);
+}
 
-//void Corrector::processCompoundStmt(std::weak_ptr<Stmt> s)
-//{
-//    auto ptr = TypeConversion<CompoundStmt>(s);
-//    try {
-//        for(auto stmt = ptr->child_begin(); stmt != ptr->child_end(); ++stmt)
-//            correct(*stmt);
-//    } catch (exception e) {
-//        m_openHelper.getOutputStream()<<e.what();
-//    }
-//}
+void Corrector::processIntergerLiteral(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<IntegerLiteral>(s);
+}
 
-//void Corrector::processCaseStmt(std::weak_ptr<Stmt> s)
-//{
-//    auto ptr = TypeConversion<CaseStmt>(s);
-//    try {
-//        for(auto stmt = ptr->child_begin(); stmt != ptr->child_end(); ++stmt)
-//            correct(*stmt);
-//    } catch (exception e) {
-//        m_openHelper.getOutputStream()<<e.what();
-//    }
-//}
+void Corrector::processFloatingLiteral(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<FloatingLiteral>(s);
+}
+
+void Corrector::processImaginaryLiteral(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<ImaginaryLiteral>(s);
+}
+
+void Corrector::processStringLiteral(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<StringLiteral>(s);
+}
+
+void Corrector::processCharacterLiteral(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<CharacterLiteral>(s);
+}
+
+void Corrector::processParenExpr(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<ParenExpr>(s);
+}
+
+void Corrector::processUnaryOperator(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<UnaryOperator>(s);
+}
+
+void Corrector::processSizeOfAlignOfExpr(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<SizeOfAlignOfExpr>(s);
+}
+
+void Corrector::processArraySubscriptExpr(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<ArraySubscriptExpr>(s);
+}
+
+void Corrector::processCallExpr(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<CallExpr>(s);
+}
+
+void Corrector::processBinaryOperator(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<BinaryOperator>(s);
+}
+
+void Corrector::processCompoundAssignOperator(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<CompoundAssignOperator>(s);
+}
+
+void Corrector::processConditionalOperator(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<ConditionalOperator>(s);
+}
+
+void Corrector::processImplicitCastExpr(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<ImplicitCastExpr>(s);
+}
+
+void Corrector::processCStyleCastExpr(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<CStyleCastExpr>(s);
+}
+
+void Corrector::processVAArgExpr(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<VAArgExpr>(s);
+}
+
+void Corrector::processInitListExpr(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<InitListExpr>(s);
+}
+
+void Corrector::processParenListExpr(std::weak_ptr<Stmt> s)
+{
+    auto ptr = TypeConversion<ParenListExpr>(s);
+}

@@ -35,6 +35,7 @@ STMT(BreakStmt       , Stmt)
 STMT(ReturnStmt      , Stmt)
 STMT(DeclStmt        , Stmt)
 STMT(SwitchCase      , Stmt)
+STMT(CommentStmt      , Stmt)
 
 // GNU Stmt Extensions
 STMT(AsmStmt         , Stmt)

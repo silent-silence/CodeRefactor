@@ -24,6 +24,9 @@ integer		({digit})+
 identifier	([_a-zA-Z][_0-9a-zA-Z]*)
 character   (\'{letter}\')
 
+single_comment      (\/\/.*?)
+multi_comment       (\/\*(.|\n)*?\*\/)
+
 %%
 
 %{
@@ -70,6 +73,9 @@ character   (\'{letter}\')
 {float}			{ return yy::Parser::make_FLOATING_LITERAL(atof(yytext), loc); }
 {integer}		{ return yy::Parser::make_INTEGER_LITERAL(atoi(yytext), loc); }
 {identifier}	{ return yy::Parser::make_IDENTIFIER(yytext, loc); }
+
+{single_comment} |
+{multi_comment}  { return yy::Parser::make_COMMENT(yytext, loc);}
 
 "..."   		{ return yy::Parser::make_ELLIPSIS(loc); }
 "<<="         	{ return yy::Parser::make_RIGHT_SHIFT_ASSIGN(loc); }
@@ -130,6 +136,7 @@ character   (\'{letter}\')
 
 {string}        { return yy::Parser::make_STRING_LITERAL(yytext, loc); }
 {character}     { return yy::Parser::make_CHARACTER_LITERAL(*(yytext + 1), loc); }
+
 <<EOF>>    { return yy::Parser::make_EOF(loc); }
 
 %%

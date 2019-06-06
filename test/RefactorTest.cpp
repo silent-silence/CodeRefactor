@@ -1,6 +1,7 @@
 //
 // Created by 17271 on 2019/6/1.
 //
+#ifdef ENV_TEST
 
 #include <memory>
 #include <string>
@@ -56,3 +57,5 @@ TEST_F(RefactorTest, IfRefactorTest)
 	refactor.refactor_MCIf(astContext.getRoot().lock());
 	printer.print(astContext.getRoot().lock());*/
 }
+
+#endif

@@ -1147,3 +1147,42 @@ Stmt::child_iterator IfStmt::child_end()
                 std::shared_ptr<Stmt>,
                 END_EXPR>::iterator>>(SubExprs.end()));
 }
+
+CommentStmt::CommentStmt(std::string comment, SourceLocation SL)
+    :Stmt(CommentStmtClass), Comment{comment}, CommentLoc{SL}
+{
+
+}
+
+CommentStmt::CommentStmt(Stmt::EmptyShell Empty)
+    :Stmt(CommentStmtClass, Empty)
+{
+
+}
+
+SourceLocation CommentStmt::getCommentLoc() const
+{
+    return CommentLoc;
+}
+
+void CommentStmt::setCommetLoc(SourceLocation L)
+{
+    CommentLoc = L;
+}
+
+bool CommentStmt::classof(const std::weak_ptr<Stmt> T)
+{
+    if(T.lock()->getStmtClass() == Stmt::CommentStmtClass)
+        return true;
+    return false;
+}
+
+bool CommentStmt::classof(const std::weak_ptr<CommentStmt>)
+{
+    return true;
+}
+
+std::string CommentStmt::getComment() const
+{
+    return Comment;
+}
