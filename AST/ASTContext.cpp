@@ -230,7 +230,7 @@ std::shared_ptr<Stmt> ASTContext::createPredefinedExpr(std::vector<ASTContext::v
 
 std::shared_ptr<Stmt> ASTContext::createIntegerLiteral(std::vector<ASTContext::var_t> &value)
 {
-	auto type = BuiltinType::creator(BuiltinType::Int);
+	auto type = BuiltinType::creator(BuiltinType::Int, QualType::None);
 	return make_shared<IntegerLiteral>(
 					get<int>(value[0]),
 					type,
@@ -240,7 +240,7 @@ std::shared_ptr<Stmt> ASTContext::createIntegerLiteral(std::vector<ASTContext::v
 
 std::shared_ptr<Stmt> ASTContext::createCharacterLiteral(std::vector<ASTContext::var_t> &value)
 {
-	auto type = BuiltinType::creator(BuiltinType::SChar);
+	auto type = BuiltinType::creator(BuiltinType::SChar, QualType::None);
 	return make_shared<CharacterLiteral>(
 					get<unsigned>(value[0]),
 					get<bool>(value[1]),
@@ -251,7 +251,7 @@ std::shared_ptr<Stmt> ASTContext::createCharacterLiteral(std::vector<ASTContext:
 
 std::shared_ptr<Stmt> ASTContext::createFloatingLiteral(std::vector<ASTContext::var_t> &value)
 {
-	auto type = BuiltinType::creator(BuiltinType::Double);
+	auto type = BuiltinType::creator(BuiltinType::Double, QualType::None);
 	return make_shared<FloatingLiteral>(
 					get<float>(value[0]),
 					get<bool>(value[1]),
@@ -273,8 +273,8 @@ std::shared_ptr<Stmt> ASTContext::createImaginaryLiteral(std::vector<ASTContext:
 std::shared_ptr<Stmt> ASTContext::createStringLiteral(std::vector<ASTContext::var_t> &value)
 {
 	// TODO: make default string type
-	auto type = BuiltinType::creator(BuiltinType::SChar);
-	auto pType = createType(Type::Pointer, type);
+	auto type = BuiltinType::creator(BuiltinType::SChar, QualType::None);
+	auto pType = createType(Type::Pointer, type, QualType::Const);
 	return StringLiteral::Create(
 			get<string>(value[0]),
 			get<unsigned long>(value[1]),
@@ -309,7 +309,7 @@ std::shared_ptr<Stmt> ASTContext::createUnaryOperator(std::vector<ASTContext::va
 std::shared_ptr<Stmt> ASTContext::createSizeOfAlignOfExpr(std::vector<ASTContext::var_t> &value)
 {
 	//TODO: set return type
-	auto retType = BuiltinType::creator(BuiltinType::UInt);
+	auto retType = BuiltinType::creator(BuiltinType::UInt, QualType::None);
 	if(holds_alternative<shared_ptr<QualType>>(value[2]))
 	{
 		return make_shared<SizeOfAlignOfExpr>(
@@ -582,7 +582,10 @@ std::shared_ptr<Stmt> ASTContext::createParenListExpr(std::vector<ASTContext::va
 
 std::shared_ptr<QualType> ASTContext::createBuiltinType(std::vector<ASTContext::var_t> &value)
 {
-	return BuiltinType::creator(get<BuiltinType::Kind>(value[0]));
+	return BuiltinType::creator(
+			get<BuiltinType::Kind>(value[0]),
+			get<QualType::TQ>(value[1])
+	);
 }
 
 /*std::shared_ptr<Type> ASTContext::createFixedWidthIntType(std::vector<ASTContext::var_t> &value)
@@ -609,6 +612,7 @@ std::shared_ptr<QualType> ASTContext::createPointerType(std::vector<ASTContext::
 					qual
 	);
 	qual->Value.first = pointer;
+	qual->Value.second = get<QualType::TQ>(value[1]);
 	return qual;
 }
 
@@ -765,6 +769,16 @@ std::shared_ptr<QualType> ASTContext::createRecordType(std::vector<var_t> &value
 {
 	shared_ptr<QualType> qualifier = make_shared<QualType>();
 	auto type = make_shared<RecordType>(get<shared_ptr<RecordDecl>>(value[0]), qualifier);
+	qualifier->Value.first = type;
+	return qualifier;
+}
+
+std::shared_ptr<QualType> ASTContext::createEnumType(std::vector<var_t> &value)
+{
+	shared_ptr<QualType> qualifier = make_shared<QualType>();
+	auto type = make_shared<EnumType>(
+			get<shared_ptr<EnumDecl>>(value[0]), qualifier
+	);
 	qualifier->Value.first = type;
 	return qualifier;
 }

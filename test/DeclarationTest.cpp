@@ -21,7 +21,7 @@ TEST(DelcarationTest, Decls)
 	SourceLocation location;
 
 	DeclName name(make_shared<IdentifierInfo>("variable"));
-	auto type = BuiltinType::creator(BuiltinType::Int);
+	auto type = BuiltinType::creator(BuiltinType::Int, QualType::None);
 	auto variable = make_shared<VarDecl>(Decl::Kind::Var, context, location, name, type, VarDecl::StorageClass::None);
 	context->addDecl(variable);
 

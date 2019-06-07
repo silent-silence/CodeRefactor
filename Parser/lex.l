@@ -46,6 +46,7 @@ multi_comment       (\/\*(.|\n)*?\*\/)
 
 "struct"        { return yy::Parser::make_KEYWORD_STRUCT(loc); }
 "union"         { return yy::Parser::make_KEYWORD_UNION(loc); }
+"enum"          { return yy::Parser::make_KEYWORD_ENUM(loc); }
 
 "for"           { return yy::Parser::make_KEYWORD_FOR(loc); }
 "switch"        { return yy::Parser::make_KEYWORD_SWITCH(loc); }

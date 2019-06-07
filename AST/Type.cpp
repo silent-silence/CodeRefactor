@@ -95,10 +95,10 @@ ExtQualType::ExtQualType(shared_ptr<Type> Base,
 }
 
 /// @BuiltinType
-std::shared_ptr<QualType> BuiltinType::creator(BuiltinType::Kind k)
+std::shared_ptr<QualType> BuiltinType::creator(BuiltinType::Kind k, QualType::TQ tq)
 {
     auto ptr=make_shared<BuiltinType>(k);
-    auto ptr_qual=make_shared<QualType>(ptr, 0);
+    auto ptr_qual=make_shared<QualType>(ptr, tq);
     ptr->setCanonicalType(ptr_qual);
     return ptr_qual;
 }
@@ -530,4 +530,9 @@ std::weak_ptr<TagDecl> TagType::getDecl() const
 /// @RecordType
 RecordType::RecordType(std::shared_ptr<RecordDecl> D, std::shared_ptr<QualType> can)
 	: TagType(Record, std::dynamic_pointer_cast<TagDecl>(D), can)
+{}
+
+/// @EnumType
+EnumType::EnumType(std::shared_ptr<EnumDecl> D, std::shared_ptr<QualType> can)
+	: TagType(Enum, std::dynamic_pointer_cast<TagDecl>(D), can)
 {}

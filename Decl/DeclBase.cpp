@@ -185,11 +185,6 @@ std::string StoredDecl::getDeclAsString() const
 	return declName;
 }
 
-size_t StoredDecl::operator()(const StoredDecl &name) const
-{
-	return hash<string>()(name.getDeclAsString());
-}
-
 /// @LookupStoredDecl
 LookupStoredDecl::LookupStoredDecl(std::string name)
 		: StoredDecl(), lookupName{name}
@@ -198,6 +193,12 @@ LookupStoredDecl::LookupStoredDecl(std::string name)
 std::string LookupStoredDecl::getDeclAsString() const
 {
 	return lookupName;
+}
+
+/// @StoredDeclHash
+std::size_t StoredDeclHash::operator()(const StoredDecl &name) const
+{
+	return hash<string>()(name.getDeclAsString());
 }
 
 bool operator ==(const StoredDecl &s1, const StoredDecl &s2)

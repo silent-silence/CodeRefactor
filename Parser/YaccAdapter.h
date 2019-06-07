@@ -38,10 +38,12 @@ public:
 		LONGLONG=	0x0200,
 		STRUCT	=	0x0400,
 		UNION	=	0x0800,
+		ENUM	=	0x1000,
+		CONST	=	0x2000,
+		VOLATILE=	0x4000,
 		/// @brief represent storage class specifiers, which can be appear only one time
-		STORAGE	=	0x1000,
-		TYPEDEF, EXTERN, STATIC, AUTO, REGISTER,
-		CONST, VOLATILE
+		STORAGE	=	0x8000,
+		TYPEDEF, EXTERN, STATIC, AUTO, REGISTER
 	};
 
 	/// @brief This enumerator hold if a basic type can be specified by another type
@@ -58,6 +60,7 @@ public:
 		LONGLONG_JMP=	INT  | UNSIGNED | SIGNED | STORAGE,
 		STRUCT_JMP	=	STORAGE | CONST | VOLATILE,
 		UNION_JMP	=	STORAGE | CONST | VOLATILE,
+		ENUM_JMP	=	STORAGE | CONST | VOLATILE,
 		STORAGE_JMP	=	VOID | CHAR | SHORT | INT | FLOAT | DOUBLE | SIGNED | UNSIGNED | LONG | LONGLONG
 	};
 
@@ -152,23 +155,31 @@ public:
 	void enterStructBlock(yy::location &l);
 	void enterFunctionParamDecl();
 	void enterFunctionBlock();
+	/// @brief For enum decl, named or unnamed
+	void makeEnumContext(yy::location &location);
+	void makeEnumContext(std::string &name, yy::location &location);
 
 	/// @brief Temporary save the variable name
 	void storeVariable(std::string name, yy::location &l);
 	/// @brief Pop a name and make variable/typedef decl
-	void makeVariables();
+	void makeVariables(bool hasInit);
 	void makeInStructDeclStmt(yy::location &l, yy::location &r);
 	void makeFunParam();
 	void makeUnnamedFunParam(yy::location &l);
 	void makeFunctionDefinition();
+	void makeEnumConstant(std::string &name, yy::location &l, bool hasInit);
 
 private:
 	/// @brief A method to create build in type
 	std::shared_ptr<QualType> makeBuiltin(BuiltinType::Kind kind);
 	std::shared_ptr<QualType> makeStruct();
+	std::shared_ptr<QualType> makeEnum();
 
 	/// @brief Check if type specifier is allowed
 	bool isTypeSpecifierNotIllegal();
+
+	/// @brief Get CVR qualifier, if empty, return QualType::None
+	QualType::TQ getTypeCVRQualifier() const;
 
 	SourceLocation toSourceLocation(yy::location &location);
 

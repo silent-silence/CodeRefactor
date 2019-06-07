@@ -91,6 +91,48 @@ VarDecl::VarDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocati
 	: DeclaratorDecl{declKind, context, location, name, type/*, info*/}, SClass{sc}, DeclaredInCondition{false}
 {}
 
+void VarDecl::setInitExpr(std::shared_ptr<Expr> init)
+{
+	m_init = init;
+}
+std::weak_ptr<Expr> VarDecl::getInitExpr() const
+{
+	return m_init;
+}
+
+/// @EnumConstantDecl
+EnumConstantDecl::EnumConstantDecl(std::weak_ptr<DeclContext> context, SourceLocation location,
+								   DeclName name,
+								   std::shared_ptr<QualType> type,
+								   std::shared_ptr<Expr> init)
+	: ValueDecl(EnumConstant, context, location, name, type), m_init{init}// TODO, m_value{m_init->getValue()}
+{}
+
+std::weak_ptr<Expr> EnumConstantDecl::getInitExpr()
+{
+	return m_init;
+}
+
+const std::weak_ptr<Expr> EnumConstantDecl::getInitExpr() const
+{
+	return m_init;
+}
+
+const int EnumConstantDecl::getInitValue() const
+{
+	return m_value;
+}
+
+void EnumConstantDecl::setInitExpr(std::weak_ptr<Expr> e)
+{
+	m_init = e.lock();
+}
+
+void EnumConstantDecl::setInitValue(const int value)
+{
+	m_value = value;
+}
+
 /// @BlockDecl
 BlockDecl::BlockDecl(std::weak_ptr<DeclContext> context, SourceLocation location)
 	: Decl(Decl::Kind::Block, context, location), DeclContext{Decl::Kind::Block}
@@ -172,6 +214,7 @@ std::string TagDecl::getKindName() const
 		case TagKind::KindStruct:	return "struct";
 		case TagKind::KindEnum:		return "enum";
 		case TagKind::KindUnion:	return "union";
+		default:					return "";	//silent warning
 	}
 }
 
@@ -234,6 +277,22 @@ bool RecordDecl::hasObjectMember() const
 void RecordDecl::setHasObjectMember(bool has)
 {
 	m_hasObjectMember = has;
+}
+
+/// @brief
+EnumDecl::EnumDecl(std::weak_ptr<DeclContext> context,
+		SourceLocation l, std::shared_ptr<IdentifierInfo> info, SourceLocation tkl)
+	: TagDecl(Enum, TagKind::KindEnum, context, l, info, tkl)
+{}
+
+std::shared_ptr<QualType> EnumDecl::getIntegerType() const
+{
+	return m_integerType;
+}
+
+void EnumDecl::setIntegerType(std::shared_ptr<QualType> type)
+{
+	m_integerType = type;
 }
 
 /// @FunctionDecl

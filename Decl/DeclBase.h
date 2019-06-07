@@ -82,9 +82,6 @@ public:
 	/// @brief Get decl name or decl id as string
 	virtual std::string getDeclAsString() const;
 
-	/// @brief A hash algorithm
-	size_t operator()(const StoredDecl &name) const;
-
 private:
 	StoredKind declKind;
 	std::shared_ptr<NamedDecl> declPtr;
@@ -102,6 +99,12 @@ public:
 
 private:
 	std::string lookupName;
+};
+
+/// @brief A hash algorithm
+class StoredDeclHash {
+public:
+	std::size_t operator()(const StoredDecl &name) const;
 };
 
 /// @brief Compare, used by unordered_map
@@ -151,7 +154,7 @@ public:
 
 private:
 	Decl::Kind m_declKind;
-	std::unordered_map<StoredDecl, std::shared_ptr<Decl>, StoredDecl> m_decls;
+	std::unordered_map<StoredDecl, std::shared_ptr<Decl>, StoredDeclHash> m_decls;
 };
 
 #endif

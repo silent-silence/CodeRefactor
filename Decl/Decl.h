@@ -97,29 +97,36 @@ public:
 
 	~VarDecl() override = default;
 
+	void setInitExpr(std::shared_ptr<Expr> init);
+	std::weak_ptr<Expr> getInitExpr() const;
+
 private:
-	//TODO: save initializer
+	std::shared_ptr<Expr> m_init;
 	StorageClass SClass;
 	bool DeclaredInCondition ;
 };
 
 /// @brief Represent a declaration of enum constant, for example, enum X {a, b}, a/b is an EnumConstantDecl.
-/*class EnumConstantDecl : public VarDecl {
+class EnumConstantDecl : public ValueDecl {
 public:
+	EnumConstantDecl(std::weak_ptr<DeclContext> context, SourceLocation location,
+					 DeclName name,
+					 std::shared_ptr<QualType> type,
+					 std::shared_ptr<Expr> init);
 	~EnumConstantDecl() override = default;
 
-	std::weak_ptr<Expr> getInitExpr() { return m_init; }
-	const std::weak_ptr<Expr> getInitExpr() const { return m_init; }
+	std::weak_ptr<Expr> getInitExpr();
+	const std::weak_ptr<Expr> getInitExpr() const;
 
-	const int getInitValue() const { return m_value; }
+	const int getInitValue() const;
 
-	void setInitExpr(std::weak_ptr<Expr> e) { m_init = e; }
-	void setInitValue(const int value) { m_value = value; }
+	void setInitExpr(std::weak_ptr<Expr> e);
+	void setInitValue(const int value);
 
 private:
-	std::weak_ptr<Expr> m_init;
+	std::shared_ptr<Expr> m_init;
 	int m_value;
-};*/
+};
 
 /// @brief Represent a block of declarations.
 class BlockDecl : public Decl, public DeclContext {
@@ -222,17 +229,18 @@ private:
 };
 
 /// @brief Represent an enum.
-/*class EnumDecl : public TagDecl {
+class EnumDecl : public TagDecl {
 public:
+	EnumDecl(std::weak_ptr<DeclContext> context,
+			SourceLocation l, std::shared_ptr<IdentifierInfo> info, SourceLocation tkl = SourceLocation());
 	~EnumDecl() override = default;
 
-	std::shared_ptr<QualType> getIntegerType() const { return m_integerType; }
-	void setIntegerType(std::shared_ptr<QualType> type) { m_integerType = type; }
+	std::shared_ptr<QualType> getIntegerType() const;
+	void setIntegerType(std::shared_ptr<QualType> type);
 
 private:
 	std::shared_ptr<QualType> m_integerType;
-};*/
-
+};
 
 /// @brief Represent a function declaration.
 class FunctionDecl : public DeclaratorDecl, public DeclContext

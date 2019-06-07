@@ -9,8 +9,10 @@
 #include "DeclName.h"
 #include "Basic/IdentifierTable.h"
 #include "AST/Stmt.h"
+#include "AST/Expr.h"
 
 using std::make_shared;					using std::weak_ptr;
+using std::shared_ptr;
 
 DeclContextHolder::DeclContextHolder()
 {
@@ -84,12 +86,47 @@ std::shared_ptr<DeclContext> DeclContextHolder::createBlock(std::shared_ptr<Decl
 	return block;
 }
 
+std::shared_ptr<DeclContext> DeclContextHolder::createStruct(std::shared_ptr<DeclContext> &context, SourceLocation &&location, std::string &name)
+{
+	auto structBlock = make_shared<RecordDecl>(Decl::Record, TagDecl::TagKind::KindStruct, context, location, make_shared<IdentifierInfo>());
+	context->addDecl(structBlock);
+	return structBlock;
+}
+
 std::shared_ptr<DeclContext> DeclContextHolder::createStruct(std::shared_ptr<DeclContext> &context,
 															 SourceLocation &&location)
 {
 	auto structBlock = make_shared<RecordDecl>(Decl::Record, TagDecl::TagKind::KindStruct, context, location, make_shared<IdentifierInfo>());
 	context->addDecl(structBlock);
 	return structBlock;
+}
+
+std::shared_ptr<Decl> DeclContextHolder::createEnum(std::shared_ptr<DeclContext> &context, SourceLocation &&location, std::string &name)
+{
+	auto enumBlock = make_shared<EnumDecl>(context, location, make_shared<IdentifierInfo>(name));
+	context->addDecl(enumBlock);
+	return enumBlock;
+}
+
+std::shared_ptr<Decl> DeclContextHolder::createEnum(std::shared_ptr<DeclContext> &context, SourceLocation &&location)
+{
+	auto enumBlock = make_shared<EnumDecl>(context, location, make_shared<IdentifierInfo>());
+	context->addDecl(enumBlock);
+	return enumBlock;
+}
+
+std::shared_ptr<Decl> DeclContextHolder::createEnumConstant(std::shared_ptr<DeclContext> &context, SourceLocation &&location, std::string name, std::shared_ptr<Expr> init)
+{
+	shared_ptr<QualType> type;
+	if(init)
+		type = init->getType().lock();
+	else
+		type = BuiltinType::creator(BuiltinType::UInt, QualType::Const);
+	auto enumConstant = make_shared<EnumConstantDecl>(
+			context, location, make_shared<IdentifierInfo>(name), type, init
+			);
+	context->addDecl(enumConstant);
+	return enumConstant;
 }
 
 std::shared_ptr<Decl> DeclContextHolder::createFunction(std::shared_ptr<DeclContext> &context, std::string &name,

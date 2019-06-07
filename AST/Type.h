@@ -11,6 +11,7 @@ class ASTContext;
 class TagDecl;
 class TypedefDecl;
 class RecordDecl;
+class EnumDecl;
 
 class QualType;
 class Type;
@@ -191,7 +192,7 @@ public:
         UndeducedAuto, // In C++0x, this represents the type of an auto variable
         // that has not been deduced yet.
     };
-    static std::shared_ptr<QualType> creator(Kind k);
+    static std::shared_ptr<QualType> creator(Kind k, QualType::TQ tq);
     BuiltinType(Kind k);
     ~BuiltinType() override = default;
 
@@ -629,10 +630,8 @@ public:
 class EnumType : public TagType
 {
 public:
+	EnumType(std::shared_ptr<EnumDecl> D, std::shared_ptr<QualType> can);
 	~EnumType() override = default;
-private:
-    //    explicit EnumType(std::shared_ptr<EnumDecl> D)
-    //        : TagType(Enum, std::dynamic_pointer_cast<TagDecl>(D), QualType()) { }
 };
 
 /// @C++

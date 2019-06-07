@@ -459,12 +459,6 @@ TEST_F(BasicParseTest, QualifiedBasicTypeTest)
 
 	openHelper << "extern static int;";
 	EXPECT_THROW(driver.parse(), TypeError);
-
-	openHelper << "struct { int a; };";
-	EXPECT_NO_THROW(driver.parse());
-
-	openHelper << "struct { int a; int b; int c; };";
-	EXPECT_NO_THROW(driver.parse());
 }
 
 TEST_F(BasicParseTest, PointerTypeTest)
@@ -477,6 +471,21 @@ TEST_F(BasicParseTest, PointerTypeTest)
 			)->getType().lock()->getTypePtr()->getTypeClass(),
 			Type::Pointer
 	);
+	reset();
+
+	openHelper << "int * const b;";
+	driver.parse();
+	auto b = dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("b").lock());
+	EXPECT_EQ(
+			b->getType().lock()->getTypePtr()->getTypeClass(),
+			Type::Pointer
+	);
+	EXPECT_EQ(
+			b->getType().lock()->getCVRQualifiers(),
+			QualType::Const
+	);
+
+	reset();
 }
 
 TEST_F(BasicParseTest, VariableTest)
@@ -510,6 +519,17 @@ TEST_F(BasicParseTest, VariableTest)
 	EXPECT_EQ(
 			dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("e").lock())->getNameAsString(),
 			string("e")
+	);
+	reset();
+}
+
+TEST_F(BasicParseTest, VariableWithInitTest)
+{
+	openHelper << "long int a = 12;";
+	driver.parse();
+	EXPECT_EQ(
+			dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("a").lock())->getNameAsString(),
+			string("a")
 	);
 	reset();
 }
@@ -553,6 +573,43 @@ TEST_F(BasicParseTest, FunctionWithParmTest)
 			string("a")
 	);
 	reset();
+}
+
+TEST_F(BasicParseTest, StructTest)
+{
+	openHelper << "struct { int a; };";
+	EXPECT_NO_THROW(driver.parse());
+
+	openHelper <<
+"struct"
+"{"
+"	int a;"
+"	int b;"
+"	int c;"
+"};";
+	EXPECT_NO_THROW(driver.parse());
+
+	openHelper <<
+"struct"
+"{"
+"	int a : 1;"
+"	int b;"
+"	int c : 12;"
+"};";
+	EXPECT_NO_THROW(driver.parse());
+}
+
+TEST_F(BasicParseTest, EnumTest)
+{
+	openHelper << "enum { a };";
+	EXPECT_NO_THROW(driver.parse());
+
+	openHelper <<
+"enum"
+"{"
+"	b, c = 1, d"
+"};";
+	EXPECT_NO_THROW(driver.parse());
 }
 
 #endif

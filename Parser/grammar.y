@@ -72,7 +72,7 @@
 %token TYPE_FLOAT	"float"		TYPE_DOUBLE	"double"
 %token TYPE_SIGNED	"signed"	TYPE_UNSIGNED	"unsigned"
 
-%token KEYWORD_STRUCT	"struct"	KEYWORD_UNION	"union"
+%token KEYWORD_STRUCT	"struct"	KEYWORD_UNION	"union"		KEYWORD_ENUM	"enum"
 
 %token KEYWORD_TYPEDEF	"typedef"	KEYWORD_EXTERN	"extern"
 %token KEYWORD_STATIC	"static"	KEYWORD_AUTO	"auto"
@@ -206,8 +206,8 @@ init_declarator_list
 	| init_declarator_list "," init_declarator		{ $$ = $1 + 1; }
 	;
 init_declarator
-	: declarator						{ DRIVER.makeVariables(); }
-	| declarator "=" initializer				{ DRIVER.makeVariables(); }
+	: declarator						{ DRIVER.makeVariables(false); }
+	| declarator "=" initializer				{ DRIVER.makeVariables(true); }
 	;
 type_specifier
 	: "typedef"						{ DRIVER.addTypeSpecifier(YaccAdapter::TYPEDEF); }
@@ -258,26 +258,26 @@ struct_declarator_list
 	| struct_declarator_list "," struct_declarator		{ $$ = $1 + 1; }
 	;
 struct_declarator
-	: declarator						{ DRIVER.makeVariables(); }
+	: declarator						{ DRIVER.makeVariables(false); }
 	| ":" integer_constant_expression
-	| declarator ":" integer_constant_expression		{ DRIVER.makeVariables(); }
+	| declarator ":" integer_constant_expression		{ DRIVER.makeVariables(true); }
 	;
 enum_specifier
-	: "enum" "{" enumerator_list "}"
-	| "enum" IDENTIFIER "{" enumerator_list "}"
-	| "enum" IDENTIFIER
+	: "enum" "{" enumerator_list "}"			{ DRIVER.makeEnumContext(@1); DRIVER.addTypeSpecifier(YaccAdapter::ENUM); }
+	| "enum" IDENTIFIER "{" enumerator_list "}"		{ DRIVER.makeEnumContext($2, @1); DRIVER.addTypeSpecifier(YaccAdapter::ENUM); }
+	| "enum" IDENTIFIER					{ DRIVER.makeEnumContext($2, @1); DRIVER.addTypeSpecifier(YaccAdapter::ENUM); }
 	;
 enumerator_list
 	: enumerator
 	| enumerator_list "," enumerator
 	;
 enumerator
-	: IDENTIFIER
-	| IDENTIFIER "=" integer_constant_expression
+	: IDENTIFIER						{ DRIVER.makeEnumConstant($1, @1, false); }
+	| IDENTIFIER "=" integer_constant_expression		{ DRIVER.makeEnumConstant($1, @1, true); }
 	;
 type_qualifier
-	: "const"
-	| "volatile"
+	: "const"						{ DRIVER.addTypeSpecifier(YaccAdapter::CONST); }
+	| "volatile"						{ DRIVER.addTypeSpecifier(YaccAdapter::VOLATILE); }
 	;
 declarator
 	: pointer direct_declarator
@@ -294,7 +294,7 @@ direct_declarator
 	;
 pointer
 	: "*"							{ DRIVER.makePointerType(); }
-	| "*" type_qualifier_list
+	| "*" type_qualifier_list				{ DRIVER.makePointerType(); }
 	| "*" pointer
 	| "*" type_qualifier_list pointer
 	;
