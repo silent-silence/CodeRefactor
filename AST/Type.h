@@ -12,6 +12,7 @@ class TagDecl;
 class TypedefDecl;
 class RecordDecl;
 class EnumDecl;
+class FunctionDecl;
 
 class QualType;
 class Type;
@@ -74,7 +75,7 @@ public:
     };
     static const unsigned MaxAddressSpace = 0xffffffu;
 
-    QualType();
+    QualType() = default;
     QualType(const std::shared_ptr<Type> Ptr, unsigned Quals);
     std::shared_ptr<Type> getTypePtr() const;
     unsigned getCVRQualifiers() const;
@@ -83,6 +84,9 @@ public:
     bool isConstQualified() const;
     bool isVolatileQualified() const;
     bool isRestrictQualified() const;
+
+    std::string getTypePrefixAsString() const;
+
 private:
     std::pair<std::shared_ptr<Type>, unsigned> Value;
 };
@@ -91,7 +95,7 @@ private:
 class Type : public std::enable_shared_from_this<Type>
 {
 public:
-    enum TypeClass {
+    enum class TypeClass : unsigned {
 #define TYPE(Class, Base) Class,
 #define ABSTRACT_TYPE(Class, Base)
 #include "TypeNodes.def"
@@ -99,13 +103,17 @@ public:
     };
     Type() = default;
     Type(TypeClass tc, bool dependent);
-    virtual ~Type() = default;
+    virtual ~Type() = 0;
     bool isDependentType() const;
 
     std::weak_ptr<QualType> getCanonicalType() const;
     void setCanonicalType(const std::weak_ptr<QualType> &value);
 
 	TypeClass getTypeClass() const;
+
+	/// @brief Get type name
+	/// @example type 'int' has only prefix, type 'int []' has prefix 'int' and postfix '[]'
+	virtual std::string getTypePrefixAsString() const = 0;
 
 protected:
     enum { TypeClassBitSize = 6 };
@@ -115,8 +123,7 @@ private:
 
     std::weak_ptr<QualType> CanonicalType;
     bool Dependent : 1;	// C++ template [temp.dep.type]
-	unsigned TC : TypeClassBitSize;
-
+	TypeClass TC/*: TypeClassBitSize*/;
 };
 
 /// @extends
@@ -133,6 +140,9 @@ public:
     ExtQualType(std::shared_ptr<Type> Base,
                 unsigned AddrSpace,
                 QualType::GCAttrTypes gcAttr);
+
+	std::string getTypePrefixAsString() const override;
+
 private:
     std::shared_ptr<Type> BaseType;
     unsigned AddressSpace;
@@ -161,7 +171,6 @@ class BuiltinType : public Type
 public:
     enum Kind {
         Void,
-
         Bool,     // This is bool and/or _Bool.
         Char_U,   // This is 'char' for targets where char is unsigned.
         UChar,    // This is explicitly qualified unsigned char.
@@ -172,7 +181,6 @@ public:
         ULong,
         ULongLong,
         UInt128,  // __uint128_t
-
         Char_S,   // This is 'char' for targets where char is signed.
         SChar,    // This is explicitly qualified signed char.
         WChar,    // This is 'wchar_t' for C++.
@@ -181,14 +189,10 @@ public:
         Long,
         LongLong,
         Int128,   // __int128_t
-
         Float, Double, LongDouble,
-
         NullPtr,  // This is the type of C++0x 'nullptr'.
-
         Overload,  // This represents the type of an overloaded function declaration.
         Dependent, // This represents the type of a type-dependent expression.
-
         UndeducedAuto, // In C++0x, this represents the type of an auto variable
         // that has not been deduced yet.
     };
@@ -197,6 +201,8 @@ public:
     ~BuiltinType() override = default;
 
 	Kind getKind() const { return TypeKind; }
+
+	std::string getTypePrefixAsString() const override;
 
 private:
     Kind TypeKind;
@@ -209,6 +215,9 @@ public:
     static std::shared_ptr<QualType> creator(unsigned W,bool S);
 
     FixedWidthIntType(unsigned W,bool S);
+
+	std::string getTypePrefixAsString() const override;
+
 private:
     unsigned Width;
     bool Signed;
@@ -221,7 +230,10 @@ public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> Element,
                                          std::shared_ptr<QualType> CanonicalPtr);
 
-    ComplexType(std::shared_ptr<QualType> Element);
+    explicit ComplexType(std::shared_ptr<QualType> Element);
+
+	std::string getTypePrefixAsString() const override;
+
 private:
     std::shared_ptr<QualType> ElementType;
 };
@@ -236,6 +248,9 @@ public:
     PointerType(std::shared_ptr<QualType> Pointee);
 
     std::weak_ptr<QualType> getPointeeType() const;
+
+	std::string getTypePrefixAsString() const override;
+
 private:
     std::shared_ptr<QualType> PointeeType;
 };
@@ -248,6 +263,9 @@ public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> Pointee,
                                          std::shared_ptr<QualType> CanonicalCls);
     BlockPointerType(std::shared_ptr<QualType> Pointee);
+
+	std::string getTypePrefixAsString() const override;
+
 private:
     std::shared_ptr<QualType> PointeeType;
 };
@@ -258,6 +276,9 @@ class ReferenceType : public Type
 {
 protected:
     ReferenceType(TypeClass tc, std::shared_ptr<QualType> Referencee);
+
+	std::string getTypePrefixAsString() const override;
+
 private:
     std::shared_ptr<QualType> PointeeType;
 };
@@ -294,6 +315,9 @@ public:
 
     MemberPointerType(std::shared_ptr<QualType> Pointee,
                       const std::shared_ptr<Type>Cls);
+
+	std::string getTypePrefixAsString() const override;
+
 private:
     std::shared_ptr<QualType> PointeeType;
     const std::shared_ptr<Type> Class;
@@ -306,11 +330,16 @@ public:
     enum ArraySizeModifier {
         Normal, Static, Star
     };
+
+	std::weak_ptr<QualType> getElementType() const;
+	std::string getTypePrefixAsString() const override;
 protected:
     ArrayType(TypeClass tc,
               std::shared_ptr<QualType> et,
               ArraySizeModifier sm,
               unsigned tq);
+
+
 private:
     std::shared_ptr<QualType> ElementType;
     unsigned SizeModifier : 2;
@@ -326,6 +355,7 @@ public:
                                          ArraySizeModifier sm, unsigned tq);
     ConstantArrayType(std::shared_ptr<QualType> et, int size,
                       ArraySizeModifier sm, unsigned tq);
+
 protected:
     ConstantArrayType(TypeClass tc, std::shared_ptr<QualType> et,
                       int size, ArraySizeModifier sm, unsigned tq);
@@ -338,13 +368,16 @@ private:
 class ConstantArrayWithExprType : public ConstantArrayType
 {
 public:
-    static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> et, std::shared_ptr<QualType> can,
-                                         int size, std::shared_ptr<Expr>e,
+    static std::shared_ptr<Type> creator(std::shared_ptr<QualType> et, std::shared_ptr<QualType> can,
+                                         std::shared_ptr<Expr>e,
                                          ArraySizeModifier sm, unsigned tq);
 
     ConstantArrayWithExprType(std::shared_ptr<QualType> et,
                               int size, std::shared_ptr<Expr>e,
                               ArraySizeModifier sm, unsigned tq);
+
+    std::weak_ptr<Expr> getSizeSpecifier() const;
+
 private:
     std::shared_ptr<Expr> SizeExpr;
 };
@@ -369,7 +402,7 @@ public:
 class IncompleteArrayType : public ArrayType
 {
 public:
-    static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> et, std::shared_ptr<QualType> can,
+    static std::shared_ptr<Type> creator(std::shared_ptr<QualType> et, std::shared_ptr<QualType> can,
                                          ArraySizeModifier sm, unsigned tq);
     IncompleteArrayType(std::shared_ptr<QualType> et,
                         ArraySizeModifier sm, unsigned tq);
@@ -387,6 +420,7 @@ public:
 
     VariableArrayType(std::shared_ptr<QualType> et, std::shared_ptr<Expr>e,
                       ArraySizeModifier sm, unsigned tq);
+
 private:
     std::shared_ptr<Stmt> SizeExpr;
 };
@@ -410,10 +444,10 @@ public:
                                          ArraySizeModifier sm,
                                          unsigned tq);
 
-
     DependentSizedArrayType(std::shared_ptr<QualType> et,
                             std::shared_ptr<Expr>e,
                             ArraySizeModifier sm, unsigned tq);
+
 private:
     std::shared_ptr<Stmt> SizeExpr;
     std::shared_ptr<QualType> ElementType;
@@ -440,8 +474,10 @@ public:
     DependentSizedExtVectorType(std::shared_ptr<QualType> ElementType,
                                 std::shared_ptr<Expr> SizeExpr,
                                 SourceLocation loc);
-private:
 
+	std::string getTypePrefixAsString() const override;
+
+private:
     std::shared_ptr<Expr> SizeExpr;
     std::shared_ptr<QualType> ElementType;
     SourceLocation loc;
@@ -457,6 +493,9 @@ public:
                                          std::shared_ptr<QualType> canonType);
     VectorType(std::shared_ptr<QualType> vecType,
                unsigned nElements);
+
+	std::string getTypePrefixAsString() const override;
+
 protected:
     VectorType(TypeClass tc,
                std::shared_ptr<QualType> vecType,
@@ -482,15 +521,22 @@ public:
 class FunctionType : public Type
 {
 public:
+	void setFunDecl(std::shared_ptr<FunctionDecl> decl);
+	std::shared_ptr<FunctionDecl> getFunDecl() const;
+
+	std::string getTypePrefixAsString() const override;
 protected:
     FunctionType(TypeClass tc, std::shared_ptr<QualType> res, bool SubclassInfo,
                  unsigned typeQuals, bool Dependent,
                  bool noReturn = false);
+
+
 private:
     bool SubClassData : 1;
     unsigned TypeQuals : 3;
     unsigned NoReturn : 1;
     std::shared_ptr<QualType> ResultType;
+    std::shared_ptr<FunctionDecl> m_funDecl;
 };
 
 /// @brief Represents a K&R-style 'int foo()' function, which has
@@ -546,6 +592,8 @@ public:
     }*/
     TypedefType(TypeClass tc, std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl);
 
+	std::string getTypePrefixAsString() const override;
+
 private:
     std::shared_ptr<TypedefDecl> Decl;
 };
@@ -558,6 +606,9 @@ public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<Expr> E,
                                          std::shared_ptr<QualType> can = std::make_shared<QualType>());
     TypeOfExprType(std::shared_ptr<Expr> E);
+
+	std::string getTypePrefixAsString() const override;
+
 private:
     std::shared_ptr<Expr> TOExpr;
 };
@@ -576,6 +627,8 @@ class TypeOfType  : public Type
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> T, QualType can);
     TypeOfType(std::shared_ptr<QualType> T);
+
+	std::string getTypePrefixAsString() const override;
 private:
     std::shared_ptr<QualType> TOType;
 };
@@ -590,6 +643,9 @@ public:
                                          std::shared_ptr<QualType> can=std::make_shared<QualType>());
     DecltypeType(std::shared_ptr<Expr> E,
                  std::shared_ptr<QualType> underlyingType);
+
+	std::string getTypePrefixAsString() const override;
+
 private:
     std::shared_ptr<Expr> E;
     std::shared_ptr<QualType> UnderlyingType;
@@ -620,10 +676,13 @@ private:
 class RecordType : public TagType
 {
 public:
-	~RecordType() override = default;
 	RecordType(std::shared_ptr<RecordDecl> D, std::shared_ptr<QualType> can);
+	static std::shared_ptr<Type> creator(std::shared_ptr<RecordDecl> D, std::shared_ptr<QualType> can);
+	~RecordType() override = default;
     //    explicit RecordType(TypeClass TC, std::shared_ptr<RecordDecl> D)
     //        : TagType(TC, std::dynamic_pointer_cast<TagDecl>(D), QualType()) { }
+
+	std::string getTypePrefixAsString() const override;
 };
 
 /// @brief enum
@@ -632,6 +691,8 @@ class EnumType : public TagType
 public:
 	EnumType(std::shared_ptr<EnumDecl> D, std::shared_ptr<QualType> can);
 	~EnumType() override = default;
+
+	std::string getTypePrefixAsString() const override;
 };
 
 /// @C++

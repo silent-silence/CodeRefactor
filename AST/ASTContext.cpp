@@ -274,7 +274,7 @@ std::shared_ptr<Stmt> ASTContext::createStringLiteral(std::vector<ASTContext::va
 {
 	// TODO: make default string type
 	auto type = BuiltinType::creator(BuiltinType::SChar, QualType::None);
-	auto pType = createType(Type::Pointer, type, QualType::Const);
+	auto pType = createType(Type::TypeClass::Pointer, type, QualType::Const);
 	return StringLiteral::Create(
 			get<string>(value[0]),
 			get<unsigned long>(value[1]),
@@ -658,7 +658,7 @@ std::shared_ptr<QualType> ASTContext::createPointerType(std::vector<ASTContext::
 					get<QualType>(value[1])));
 }*/
 
-std::shared_ptr<QualType> ASTContext::createConstantArrayType(std::vector<ASTContext::var_t> &value)
+/*std::shared_ptr<QualType> ASTContext::createConstantArrayType(std::vector<ASTContext::var_t> &value)
 {
 	return ConstantArrayType::creator(
 					get<shared_ptr<QualType>>(value[0]),
@@ -667,19 +667,21 @@ std::shared_ptr<QualType> ASTContext::createConstantArrayType(std::vector<ASTCon
 					get<ArrayType::ArraySizeModifier>(value[3]),
 					get<unsigned>(value[4])
 	);
-}
-
-/*std::shared_ptr<Type> ASTContext::createConstantArrayWithExprType(std::vector<ASTContext::var_t> &value)
-{
-	return ConstantArrayWithExprType(
-					get<QualType>(value[0]),
-					get<QualType>(value[1]),
-					get<int>(value[2]),
-					get<shared_ptr<Expr>>(value[5]),
-					get<ArrayType::ArraySizeModifier>(value[3]),
-					get<unsigned>(value[4])
-	);
 }*/
+
+std::shared_ptr<QualType> ASTContext::createConstantArrayWithExprType(std::vector<ASTContext::var_t> &value)
+{
+	auto qualifier = make_shared<QualType>();
+	auto type = ConstantArrayWithExprType::creator(
+			get<shared_ptr<QualType>>(value[0]),
+			qualifier,
+			get<shared_ptr<Expr>>(value[1]),
+			get<ArrayType::ArraySizeModifier>(value[2]),
+			get<int>(value[3])
+	);
+	qualifier->Value.first = type;
+	return qualifier;
+}
 
 /*std::shared_ptr<Type> ASTContext::createConstantArrayWithoutExprType(std::vector<ASTContext::var_t> &value)
 {
@@ -694,12 +696,15 @@ std::shared_ptr<QualType> ASTContext::createConstantArrayType(std::vector<ASTCon
 
 std::shared_ptr<QualType> ASTContext::createIncompleteArrayType(std::vector<ASTContext::var_t> &value)
 {
-	return IncompleteArrayType::creator(
+	auto qualifier = make_shared<QualType>();
+	auto type = IncompleteArrayType::creator(
 					get<shared_ptr<QualType>>(value[0]),
-					get<shared_ptr<QualType>>(value[1]),
-					get<ArrayType::ArraySizeModifier>(value[2]),
-					get<unsigned>(value[3])
+					qualifier,
+					get<ArrayType::ArraySizeModifier>(value[1]),
+					get<int>(value[2])
 	);
+	qualifier->Value.first = type;
+	return qualifier;
 }
 
 /*void ASTContext::createVariableArrayType(std::vector<ASTContext::var_t> &value)
@@ -768,7 +773,7 @@ std::shared_ptr<QualType> ASTContext::createTypedefType(std::vector<var_t> &valu
 std::shared_ptr<QualType> ASTContext::createRecordType(std::vector<var_t> &value)
 {
 	shared_ptr<QualType> qualifier = make_shared<QualType>();
-	auto type = make_shared<RecordType>(get<shared_ptr<RecordDecl>>(value[0]), qualifier);
+	auto type = RecordType::creator(get<shared_ptr<RecordDecl>>(value[0]), qualifier);
 	qualifier->Value.first = type;
 	return qualifier;
 }

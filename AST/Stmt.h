@@ -38,7 +38,7 @@ class CommentStmt;
 class Stmt
 {
 public:
-    enum StmtClass {
+    enum class StmtClass : unsigned {
         NoStmtClass = 0,
 #define STMT(CLASS, PARENT) CLASS##Class,
 #define FIRST_STMT(CLASS) firstStmtConstant = CLASS##Class,
@@ -59,7 +59,7 @@ public:
 protected:
     explicit Stmt(StmtClass SC, EmptyShell);
 private:
-    const unsigned sClass : 8;//The statement class.
+    const StmtClass sClass;//The statement class.
     unsigned RefCount : 24;//The reference count for this statement.
 };
 

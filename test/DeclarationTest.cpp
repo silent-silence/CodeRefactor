@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include "Errors/SymbolError.hpp"
+#include "Errors/TypeError.hpp"
 #include "OpenHelper/StringStreamOpenHelper.h"
 #include "Parser/Driver.h"
 #include "Parser/YaccAdapter.h"
@@ -166,17 +167,17 @@ TEST_F(SymbolTableTest, SimpleTypedefTest)
 	openHelper <<
 "typedef int a;";
 	driver.parse();
-	EXPECT_EQ(declContextHolder.getContextRoot()->lookup("a").lock()->getKind(), Decl::Typedef);
+	EXPECT_EQ(declContextHolder.getContextRoot()->lookup("a").lock()->getKind(), Decl::Kind::Typedef);
 	shared_ptr<TypedefDecl> typedefType = dynamic_pointer_cast<TypedefDecl>(declContextHolder.getContextRoot()->lookup("a").lock());
-	EXPECT_EQ(dynamic_pointer_cast<BuiltinType>(typedefType->getTypeForDecl().lock())->getKind(), BuiltinType::Int);
+	EXPECT_EQ(dynamic_pointer_cast<BuiltinType>(typedefType->getTypeForDecl().lock()->getTypePtr())->getKind(), BuiltinType::Int);
 }
 
 TEST_F(SymbolTableTest, TypedefRedfineTest)
 {
 	openHelper <<
 "typedef int a;"
-"double a;";
-	EXPECT_THROW(driver.parse(), SymbolAlreadyExist);
+"double a b;";
+	EXPECT_THROW(driver.parse(), TypeError);
 }
 
 TEST_F(SymbolTableTest, StructDeclTest)
@@ -190,7 +191,7 @@ TEST_F(SymbolTableTest, StructDeclTest)
 	EXPECT_THROW(declContextHolder.getContextRoot()->lookup("a"), SymbolNotFound);
 	EXPECT_NO_THROW(declContextHolder.getContextRoot()->lookup("c"));
 	shared_ptr<VarDecl> decl = dynamic_pointer_cast<VarDecl>(declContextHolder.getContextRoot()->lookup("c").lock());
-	EXPECT_EQ(decl->getType().lock()->getTypePtr()->getTypeClass(), Type::Record);
+	EXPECT_EQ(decl->getType().lock()->getTypePtr()->getTypeClass(), Type::TypeClass::Record);
 }
 
 #endif

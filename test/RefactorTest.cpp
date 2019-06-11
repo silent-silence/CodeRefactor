@@ -16,19 +16,19 @@
 #include "Errors/TypeError.hpp"
 #include "ASTOperation/Printer.h"
 
-using std::string;
+using std::string;			using Printer::ASTPrinter;
 
 class RefactorTest : public testing::Test {
 protected:
 	void SetUp() override {}
 	void TearDown() override {
-		printer.resetPrinter();
+		Printer::resetPrinter();
 		output.clear();
 		adapter.clean();
 	}
 
 	void reset() {
-		printer.resetPrinter();
+		Printer::resetPrinter();
 		output.clear();
 		adapter.clean();
 	}
@@ -40,7 +40,7 @@ protected:
 	Driver driver{openHelper, adapter};
 	Refactor refactor{openHelper};
 	StdioOpenHelper printerOutput;
-	Printer printer{printerOutput};
+	ASTPrinter printer{printerOutput};
 	string output;
 };
 
@@ -55,7 +55,7 @@ TEST_F(RefactorTest, IfRefactorTest)
 "}";
 	driver.parse();
 	refactor.refactor_MCIf(astContext.getRoot().lock());
-	printer.print(astContext.getRoot().lock());*/
+	printer.printAST(astContext.getRoot().lock());*/
 }
 
 #endif

@@ -1,4 +1,5 @@
 #include "Expr.h"
+#include "Errors/TypeError.hpp"
 
 using std::array;
 using std::vector;
@@ -60,8 +61,8 @@ void Expr::setValueDependent(bool value)
 
 bool Expr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() >= firstExprConstant &&
-            T.lock()->getStmtClass() <= lastExprConstant;
+    return T.lock()->getStmtClass() >= StmtClass::firstExprConstant &&
+            T.lock()->getStmtClass() <= StmtClass::lastExprConstant;
 }
 
 bool Expr::classof(const weak_ptr<Expr>)
@@ -70,16 +71,16 @@ bool Expr::classof(const weak_ptr<Expr>)
 }
 
 DeclRefExpr::DeclRefExpr(shared_ptr<NamedDecl> d, shared_ptr<QualType> t, SourceLocation l)
-    : Expr(DeclRefExprClass, t), D(d), Loc(l)
+    : Expr(StmtClass::DeclRefExprClass, t), D(d), Loc(l)
 {}
 
 DeclRefExpr::DeclRefExpr(shared_ptr<NamedDecl> d, shared_ptr<QualType> t,
                          SourceLocation l, bool TD, bool VD)
-    : Expr(DeclRefExprClass, t, TD, VD), D(d), Loc(l)
+    : Expr(StmtClass::DeclRefExprClass, t, TD, VD), D(d), Loc(l)
 {}
 
 DeclRefExpr::DeclRefExpr(Stmt::EmptyShell Empty)
-    : Expr(DeclRefExprClass,Empty)
+    : Expr(StmtClass::DeclRefExprClass,Empty)
 {}
 
 DeclRefExpr::DeclRefExpr(Stmt::StmtClass SC, shared_ptr<NamedDecl> d,
@@ -104,9 +105,9 @@ Stmt::child_iterator DeclRefExpr::child_end()
 }
 
 bool DeclRefExpr::classof(const weak_ptr<Stmt> T) {
-    return T.lock()->getStmtClass() == DeclRefExprClass ||
-            T.lock()->getStmtClass() == CXXConditionDeclExprClass ||
-            T.lock()->getStmtClass() == QualifiedDeclRefExprClass;
+    return T.lock()->getStmtClass() == StmtClass::DeclRefExprClass ||
+            T.lock()->getStmtClass() == StmtClass::CXXConditionDeclExprClass ||
+            T.lock()->getStmtClass() == StmtClass::QualifiedDeclRefExprClass;
 }
 
 bool DeclRefExpr::classof(const weak_ptr<DeclRefExpr>)
@@ -131,12 +132,17 @@ void DeclRefExpr::setLocation(SourceLocation L)
     Loc = L;
 }
 
+int DeclRefExpr::EvaluateAsInt() const
+{
+    throw TypeError("");
+}
+
 PredefinedExpr::PredefinedExpr(SourceLocation l, shared_ptr<QualType> type, IdentType IT)
-    : Expr (PredefinedExprClass,type), Loc{l}, Type(IT)
+    : Expr (StmtClass::PredefinedExprClass,type), Loc{l}, Type(IT)
 {}
 
 PredefinedExpr::PredefinedExpr(EmptyShell Empty)
-    : Expr (PredefinedExprClass, Empty)
+    : Expr (StmtClass::PredefinedExprClass, Empty)
 {}
 
 Stmt::child_iterator PredefinedExpr::child_begin()
@@ -151,7 +157,7 @@ Stmt::child_iterator PredefinedExpr::child_end()
 
 bool PredefinedExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == PredefinedExprClass;
+    return T.lock()->getStmtClass() == StmtClass::PredefinedExprClass;
 }
 
 bool PredefinedExpr::classof(const weak_ptr<PredefinedExpr>)
@@ -179,14 +185,19 @@ void PredefinedExpr::setLocation(SourceLocation L)
     Loc = L;
 }
 
+int PredefinedExpr::EvaluateAsInt() const
+{
+    throw TypeError("");
+}
+
 IntegerLiteral::IntegerLiteral(const int &V, shared_ptr<QualType> type, SourceLocation l)
-    : Expr (IntegerLiteralClass,type), Value(V), Loc(l)
+    : Expr (StmtClass::IntegerLiteralClass,type), Value(V), Loc(l)
 {
 
 }
 
 IntegerLiteral::IntegerLiteral(EmptyShell Empty)
-    : Expr (IntegerLiteralClass,Empty)
+    : Expr (StmtClass::IntegerLiteralClass,Empty)
 {}
 
 Stmt::child_iterator IntegerLiteral::child_begin()
@@ -201,7 +212,7 @@ Stmt::child_iterator IntegerLiteral::child_end()
 
 bool IntegerLiteral::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == IntegerLiteralClass;
+    return T.lock()->getStmtClass() == StmtClass::IntegerLiteralClass;
 }
 
 bool IntegerLiteral::classof(const weak_ptr<IntegerLiteral>)
@@ -229,13 +240,18 @@ void IntegerLiteral::setLocation(SourceLocation Location)
     Loc = Location;
 }
 
+int IntegerLiteral::EvaluateAsInt() const
+{
+    return Value;
+}
+
 CharacterLiteral::CharacterLiteral(unsigned value, bool iswide,
                                    shared_ptr<QualType> type, SourceLocation l)
-    :Expr (CharacterLiteralClass,type), Value(value), Loc(l), IsWide(iswide)
+    :Expr (StmtClass::CharacterLiteralClass,type), Value(value), Loc(l), IsWide(iswide)
 {}
 
 CharacterLiteral::CharacterLiteral(EmptyShell Empty)
-    :Expr (CharacterLiteralClass,Empty)
+    :Expr (StmtClass::CharacterLiteralClass,Empty)
 {}
 
 Stmt::child_iterator CharacterLiteral::child_begin()
@@ -250,7 +266,7 @@ Stmt::child_iterator CharacterLiteral::child_end()
 
 bool CharacterLiteral::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == CharacterLiteralClass;
+    return T.lock()->getStmtClass() == StmtClass::CharacterLiteralClass;
 }
 
 bool CharacterLiteral::classof(const weak_ptr<CharacterLiteral>)
@@ -288,13 +304,18 @@ void CharacterLiteral::setValue(unsigned Val)
     Value = Val;
 }
 
+int CharacterLiteral::EvaluateAsInt() const
+{
+    return static_cast<int>(Value);
+}
+
 FloatingLiteral::FloatingLiteral(const float &V, bool isexact,
                                  shared_ptr<QualType> Type, SourceLocation L)
-    : Expr (FloatingLiteralClass,Type), Value(V), IsExact(isexact), Loc(L)
+    : Expr (StmtClass::FloatingLiteralClass,Type), Value(V), IsExact(isexact), Loc(L)
 {}
 
 FloatingLiteral::FloatingLiteral(EmptyShell Empty)
-    : Expr (FloatingLiteralClass,Empty)
+    : Expr (StmtClass::FloatingLiteralClass,Empty)
 {}
 
 Stmt::child_iterator FloatingLiteral::child_begin()
@@ -309,7 +330,7 @@ Stmt::child_iterator FloatingLiteral::child_end()
 
 bool FloatingLiteral::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == FloatingLiteralClass;
+    return T.lock()->getStmtClass() == StmtClass::FloatingLiteralClass;
 }
 
 bool FloatingLiteral::classof(const weak_ptr<FloatingLiteral>)
@@ -347,12 +368,17 @@ void FloatingLiteral::setLocation(SourceLocation L)
     Loc = L;
 }
 
+int FloatingLiteral::EvaluateAsInt() const
+{
+    return static_cast<int>(Value);
+}
+
 ImaginaryLiteral::ImaginaryLiteral(shared_ptr<Expr> val, shared_ptr<QualType> Ty)
-    : Expr (ImaginaryLiteralClass,Ty), Val(val)
+    : Expr (StmtClass::ImaginaryLiteralClass,Ty), Val(val)
 {}
 
 ImaginaryLiteral::ImaginaryLiteral(EmptyShell Empty)
-    :Expr (ImaginaryLiteralClass,Empty)
+    :Expr (StmtClass::ImaginaryLiteralClass,Empty)
 {}
 
 Stmt::child_iterator ImaginaryLiteral::child_begin()
@@ -367,7 +393,7 @@ Stmt::child_iterator ImaginaryLiteral::child_end()
 
 bool ImaginaryLiteral::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ImaginaryLiteralClass;
+    return T.lock()->getStmtClass() == StmtClass::ImaginaryLiteralClass;
 }
 
 bool ImaginaryLiteral::classof(const weak_ptr<ImaginaryLiteral>)
@@ -423,7 +449,7 @@ Stmt::child_iterator StringLiteral::child_end()
 
 bool StringLiteral::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == StringLiteralClass;
+    return T.lock()->getStmtClass() == StmtClass::StringLiteralClass;
 }
 
 bool StringLiteral::classof(const weak_ptr<StringLiteral>)
@@ -431,18 +457,23 @@ bool StringLiteral::classof(const weak_ptr<StringLiteral>)
     return true;
 }
 
+int StringLiteral::EvaluateAsInt() const
+{
+    throw TypeError("");
+}
+
 StringLiteral::StringLiteral(shared_ptr<QualType> Ty)
-    : Expr (StringLiteralClass,Ty)
+    : Expr (StmtClass::StringLiteralClass,Ty)
 {}
 
 ParenExpr::ParenExpr(SourceLocation l, SourceLocation r, std::shared_ptr<Expr> val)
-    :Expr (ParenExprClass, val->getType().lock(),
+    :Expr (StmtClass::ParenExprClass, val->getType().lock(),
            val->isTypeDependent(), val->isValueDependent()),
       Val(val), L(l), R(r)
 {}
 
 ParenExpr::ParenExpr(EmptyShell Empty)
-    :Expr (ParenExprClass,Empty)
+    :Expr (StmtClass::ParenExprClass,Empty)
 {}
 
 Stmt::child_iterator ParenExpr::child_begin()
@@ -457,7 +488,7 @@ Stmt::child_iterator ParenExpr::child_end()
 
 bool ParenExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ParenExprClass;
+    return T.lock()->getStmtClass() == StmtClass::ParenExprClass;
 }
 
 bool ParenExpr::classof(const weak_ptr<ParenExpr>)
@@ -495,14 +526,20 @@ void ParenExpr::setRParen(SourceLocation Loc)
     R = Loc;
 }
 
+int ParenExpr::EvaluateAsInt() const
+{
+    auto expr = dynamic_pointer_cast<Expr>(Val);
+    return expr->EvaluateAsInt();
+}
+
 UnaryOperator::UnaryOperator(shared_ptr<Expr> input, Opcode opc,
                              shared_ptr<QualType> type, SourceLocation l)
-    : Expr (UnaryOperatorClass,type,input->isTypeDependent()&&opc !=OffsetOf,input->isValueDependent()),
+    : Expr (StmtClass::UnaryOperatorClass,type,input->isTypeDependent()&&opc !=OffsetOf,input->isValueDependent()),
       Val(input), Opc(opc), Loc(l)
 {}
 
 UnaryOperator::UnaryOperator(EmptyShell Empty)
-    :Expr (UnaryOperatorClass,Empty)
+    :Expr (StmtClass::UnaryOperatorClass,Empty)
 {}
 
 Stmt::child_iterator UnaryOperator::child_begin()
@@ -517,7 +554,7 @@ Stmt::child_iterator UnaryOperator::child_end()
 
 bool UnaryOperator::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == UnaryOperatorClass;
+    return T.lock()->getStmtClass() == StmtClass::UnaryOperatorClass;
 }
 
 bool UnaryOperator::classof(const weak_ptr<UnaryOperator>)
@@ -560,9 +597,39 @@ SourceLocation UnaryOperator::getExprLoc() const
     return Loc;
 }
 
+int UnaryOperator::EvaluateAsInt() const
+{
+     auto expr = dynamic_pointer_cast<Expr>(Val);
+    switch (Opc) {
+    case PostInc:
+        return expr->EvaluateAsInt()+1;
+    case PostDec:
+        return expr->EvaluateAsInt()-1;
+    case PreInc:
+        return expr->EvaluateAsInt();
+    case PreDec:
+        return expr->EvaluateAsInt();
+    case AddrOf:
+        throw TypeError("");
+    case Deref:
+        throw TypeError("");
+    case Plus:
+        return expr->EvaluateAsInt();
+    case Minus:
+        return -expr->EvaluateAsInt();
+    case Not:
+        return ~(expr->EvaluateAsInt());
+    case LNot:
+        return !(expr->EvaluateAsInt());
+
+    default:
+        break;
+    }
+}
+
 ArraySubscriptExpr::ArraySubscriptExpr(shared_ptr<Expr> lhs, shared_ptr<Expr> rhs,
                                        shared_ptr<QualType> t, SourceLocation rbracketloc)
-    :Expr (ArraySubscriptExprClass, t,
+    :Expr (StmtClass::ArraySubscriptExprClass, t,
            lhs->isTypeDependent()||rhs->isTypeDependent(),
            lhs->isValueDependent()||rhs->isValueDependent()),
       RBracketLoc(rbracketloc)
@@ -572,7 +639,7 @@ ArraySubscriptExpr::ArraySubscriptExpr(shared_ptr<Expr> lhs, shared_ptr<Expr> rh
 }
 
 ArraySubscriptExpr::ArraySubscriptExpr(EmptyShell Shell)
-    :Expr (ArraySubscriptExprClass,Shell)
+    :Expr (StmtClass::ArraySubscriptExprClass,Shell)
 {}
 
 Stmt::child_iterator ArraySubscriptExpr::child_begin()
@@ -597,7 +664,7 @@ Stmt::child_iterator ArraySubscriptExpr::child_end()
 
 bool ArraySubscriptExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ArraySubscriptExprClass;
+    return T.lock()->getStmtClass() == StmtClass::ArraySubscriptExprClass;
 }
 
 bool ArraySubscriptExpr::classof(const weak_ptr<ArraySubscriptExpr>)
@@ -645,9 +712,14 @@ void ArraySubscriptExpr::setRBracketLoc(SourceLocation L)
     RBracketLoc = L;
 }
 
+int ArraySubscriptExpr::EvaluateAsInt() const
+{
+    throw TypeError("");
+}
+
 CallExpr::CallExpr(shared_ptr<Expr> fn, std::list<shared_ptr<Expr>> args,
                    unsigned numargs, shared_ptr<QualType> t, SourceLocation rparenloc)
-    : Expr(CallExprClass, t), NumArgs(numargs)
+    : Expr(StmtClass::CallExprClass, t), NumArgs(numargs)
 {
     //SubExprs = new (C) Stmt*[numargs+1];
     SubExprs.push_back(fn);
@@ -672,9 +744,9 @@ Stmt::child_iterator CallExpr::child_end()
 
 bool CallExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == CallExprClass ||
-            T.lock()->getStmtClass() == CXXOperatorCallExprClass ||
-            T.lock()->getStmtClass() == CXXMemberCallExprClass;
+    return T.lock()->getStmtClass() == StmtClass::CallExprClass ||
+            T.lock()->getStmtClass() == StmtClass::CXXOperatorCallExprClass ||
+            T.lock()->getStmtClass() == StmtClass::CXXMemberCallExprClass;
 }
 
 bool CallExpr::classof(const weak_ptr<CallExpr>)
@@ -723,6 +795,11 @@ void CallExpr::setRParenLoc(SourceLocation L)
     RParenLoc = L;
 }
 
+int CallExpr::EvaluateAsInt() const
+{
+    throw TypeError("");
+}
+
 CallExpr::CallExpr(Stmt::StmtClass SC, shared_ptr<Expr> fn,
                    std::list<shared_ptr<Expr>> args, unsigned numargs,
                    shared_ptr<QualType> t, SourceLocation rparenloc)
@@ -737,12 +814,12 @@ CallExpr::CallExpr(Stmt::StmtClass SC, shared_ptr<Expr> fn,
 MemberExpr::MemberExpr(shared_ptr<Expr> base, bool isarrow,
                        shared_ptr<NamedDecl> memberdecl, SourceLocation l,
                        shared_ptr<QualType> ty)
-    :Expr (MemberExprClass,ty,base->isTypeDependent(),base->isValueDependent()),
+    :Expr (StmtClass::MemberExprClass,ty,base->isTypeDependent(),base->isValueDependent()),
       Base(base), MemberDecl(memberdecl), MemberLoc(l), IsArrow(isarrow)
 {}
 
 MemberExpr::MemberExpr(EmptyShell Empty)
-    :Expr (MemberExprClass,Empty)
+    :Expr (StmtClass::MemberExprClass,Empty)
 {}
 
 Stmt::child_iterator MemberExpr::child_begin()
@@ -757,7 +834,7 @@ Stmt::child_iterator MemberExpr::child_end()
 
 bool MemberExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == MemberExprClass;
+    return T.lock()->getStmtClass() == StmtClass::MemberExprClass;
 }
 
 bool MemberExpr::classof(const weak_ptr<MemberExpr>)
@@ -812,11 +889,11 @@ SourceLocation MemberExpr::getExprLoc() const
 
 CompoundLiteralExpr::CompoundLiteralExpr(SourceLocation lparenloc, shared_ptr<QualType> ty,
                                          shared_ptr<Expr> init, bool fileScope)
-    : Expr (CompoundLiteralExprClass,ty), LParenLoc(lparenloc), Init(init), FileScope(fileScope)
+    : Expr (StmtClass::CompoundLiteralExprClass,ty), LParenLoc(lparenloc), Init(init), FileScope(fileScope)
 {}
 
 CompoundLiteralExpr::CompoundLiteralExpr(EmptyShell Empty)
-    :Expr (CompoundLiteralExprClass,Empty)
+    :Expr (StmtClass::CompoundLiteralExprClass,Empty)
 {}
 
 Stmt::child_iterator CompoundLiteralExpr::child_begin()
@@ -831,7 +908,7 @@ Stmt::child_iterator CompoundLiteralExpr::child_end()
 
 bool CompoundLiteralExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == CompoundLiteralExprClass;
+    return T.lock()->getStmtClass() == StmtClass::CompoundLiteralExprClass;
 }
 
 bool CompoundLiteralExpr::classof(const weak_ptr<CompoundLiteralExpr>)
@@ -897,9 +974,9 @@ CastExpr::CastExpr(StmtClass SC, EmptyShell Empty)
 bool CastExpr::classof(const weak_ptr<Stmt> T)
 {
     StmtClass SC = T.lock()->getStmtClass();
-    if (SC >= CXXNamedCastExprClass && SC <= CXXFunctionalCastExprClass)
+    if (SC >= StmtClass::CXXNamedCastExprClass && SC <= StmtClass::CXXFunctionalCastExprClass)
         return true;
-    if (SC >= ImplicitCastExprClass && SC <= CStyleCastExprClass)
+    if (SC >= StmtClass::ImplicitCastExprClass && SC <= StmtClass::CStyleCastExprClass)
         return true;
     return false;
 }
@@ -931,15 +1008,15 @@ void CastExpr::setSubExpr(shared_ptr<Expr> E)
 
 ImplicitCastExpr::ImplicitCastExpr(shared_ptr<QualType> ty, const CastInfo &info,
                                    shared_ptr<Expr>op, bool Lvalue)
-    : CastExpr(ImplicitCastExprClass, ty, info, op), LvalueCast(Lvalue)
+    : CastExpr(StmtClass::ImplicitCastExprClass, ty, info, op), LvalueCast(Lvalue)
 {}
 
 ImplicitCastExpr::ImplicitCastExpr(EmptyShell Shell)
-    : CastExpr(ImplicitCastExprClass, Shell) { }
+    : CastExpr(StmtClass::ImplicitCastExprClass, Shell) { }
 
 bool ImplicitCastExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ImplicitCastExprClass;
+    return T.lock()->getStmtClass() == StmtClass::ImplicitCastExprClass;
 }
 
 bool ImplicitCastExpr::classof(const weak_ptr<ImplicitCastExpr>)
@@ -969,9 +1046,9 @@ ExplicitCastExpr::ExplicitCastExpr(StmtClass SC, EmptyShell Shell)
 bool ExplicitCastExpr::classof(const weak_ptr<Stmt> T)
 {
     StmtClass SC = T.lock()->getStmtClass();
-    if (SC >= ExplicitCastExprClass && SC <= CStyleCastExprClass)
+    if (SC >= StmtClass::ExplicitCastExprClass && SC <= StmtClass::CStyleCastExprClass)
         return true;
-    if (SC >= CXXNamedCastExprClass && SC <= CXXFunctionalCastExprClass)
+    if (SC >= StmtClass::CXXNamedCastExprClass && SC <= StmtClass::CXXFunctionalCastExprClass)
         return true;
     return false;
 }
@@ -989,17 +1066,17 @@ void ExplicitCastExpr::setTypeAsWritten(shared_ptr<QualType> T)
 CStyleCastExpr::CStyleCastExpr(shared_ptr<QualType> exprTy, CastKind kind,
                                shared_ptr<Expr> op, shared_ptr<QualType> writtenTy,
                                SourceLocation l, SourceLocation r) :
-    ExplicitCastExpr(CStyleCastExprClass, exprTy, kind, op, writtenTy),
+    ExplicitCastExpr(StmtClass::CStyleCastExprClass, exprTy, kind, op, writtenTy),
     LPLoc(l), RPLoc(r)
 {}
 
 CStyleCastExpr::CStyleCastExpr(EmptyShell Shell)
-    : ExplicitCastExpr(CStyleCastExprClass, Shell)
+    : ExplicitCastExpr(StmtClass::CStyleCastExprClass, Shell)
 { }
 
 bool CStyleCastExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == CStyleCastExprClass;
+    return T.lock()->getStmtClass() == StmtClass::CStyleCastExprClass;
 }
 
 bool CStyleCastExpr::classof(const weak_ptr<CStyleCastExpr>)
@@ -1030,7 +1107,7 @@ void CStyleCastExpr::setRParenLoc(SourceLocation L)
 BinaryOperator::BinaryOperator(shared_ptr<Expr> lhs, shared_ptr<Expr> rhs,
                                BinaryOperator::Opcode opc, shared_ptr<QualType> ResTy,
                                SourceLocation opLoc)
-    : Expr(BinaryOperatorClass, ResTy,
+    : Expr(StmtClass::BinaryOperatorClass, ResTy,
            lhs->isTypeDependent() || rhs->isTypeDependent(),
            lhs->isValueDependent() || rhs->isValueDependent()),
       Opc(opc), OpLoc(opLoc)
@@ -1041,7 +1118,7 @@ BinaryOperator::BinaryOperator(shared_ptr<Expr> lhs, shared_ptr<Expr> rhs,
 
 
 BinaryOperator::BinaryOperator(Stmt::EmptyShell Empty)
-    : Expr(BinaryOperatorClass, Empty), Opc(Comma) { }
+    : Expr(StmtClass::BinaryOperatorClass, Empty), Opc(Comma) { }
 
 SourceLocation BinaryOperator::getOperatorLoc() const
 {
@@ -1083,10 +1160,69 @@ void BinaryOperator::setRHS(shared_ptr<Expr> E)
     SubExprs[RHS] = E;
 }
 
+int BinaryOperator::EvaluateAsInt() const
+{
+    auto lhs = dynamic_pointer_cast<Expr>(SubExprs[LHS]);
+    auto rhs = dynamic_pointer_cast<Expr>(SubExprs[RHS]);
+    switch (Opc) {
+    case PtrMemD:
+    case PtrMemI:
+    case Assign:
+    case Comma:
+        return rhs->EvaluateAsInt();
+    case Mul:
+    case MulAssign:
+        return lhs->EvaluateAsInt() * rhs->EvaluateAsInt();
+    case Div:
+    case DivAssign:
+        return lhs->EvaluateAsInt() / rhs->EvaluateAsInt();
+    case Rem:
+    case RemAssign:
+        return lhs->EvaluateAsInt() % rhs->EvaluateAsInt();
+    case Add:
+    case AddAssign:
+        return lhs->EvaluateAsInt() + rhs->EvaluateAsInt();
+    case Sub:
+    case SubAssign:
+        return lhs->EvaluateAsInt() - rhs->EvaluateAsInt();
+    case Shl:
+    case ShlAssign:
+        return lhs->EvaluateAsInt() << rhs->EvaluateAsInt();
+    case Shr:
+    case ShrAssign:
+        return lhs->EvaluateAsInt() >> rhs->EvaluateAsInt();
+    case LT:
+        return lhs->EvaluateAsInt() < rhs->EvaluateAsInt();
+    case GT:
+        return lhs->EvaluateAsInt() > rhs->EvaluateAsInt();
+    case LE:
+        return lhs->EvaluateAsInt() <= rhs->EvaluateAsInt();
+    case GE:
+        return lhs->EvaluateAsInt() >= rhs->EvaluateAsInt();
+    case EQ:
+        return lhs->EvaluateAsInt() == rhs->EvaluateAsInt();
+    case NE:
+        return lhs->EvaluateAsInt() != rhs->EvaluateAsInt();
+    case And:
+    case AndAssign:
+        return lhs->EvaluateAsInt() & rhs->EvaluateAsInt();
+    case Xor:
+    case XorAssign:
+        return lhs->EvaluateAsInt() ^ rhs->EvaluateAsInt();
+    case Or:
+    case OrAssign:
+        return lhs->EvaluateAsInt() | rhs->EvaluateAsInt();
+    case LAnd:
+        return lhs->EvaluateAsInt() && rhs->EvaluateAsInt();
+    case LOr:
+        return lhs->EvaluateAsInt() || rhs->EvaluateAsInt();
+    }
+}
+
 bool BinaryOperator::classof(const weak_ptr<Stmt> S)
 {
-    return S.lock()->getStmtClass() == BinaryOperatorClass ||
-            S.lock()->getStmtClass() == CompoundAssignOperatorClass;
+    return S.lock()->getStmtClass() == StmtClass::BinaryOperatorClass ||
+            S.lock()->getStmtClass() == StmtClass::CompoundAssignOperatorClass;
 }
 
 bool BinaryOperator::classof(const weak_ptr<BinaryOperator>)
@@ -1115,7 +1251,7 @@ Stmt::child_iterator BinaryOperator::child_end()
 BinaryOperator::BinaryOperator(shared_ptr<Expr> lhs, shared_ptr<Expr> rhs,
                                BinaryOperator::Opcode opc, shared_ptr<QualType> ResTy,
                                SourceLocation oploc, bool dead)
-    : Expr(CompoundAssignOperatorClass, ResTy), Opc(opc), OpLoc(oploc)
+    : Expr(StmtClass::CompoundAssignOperatorClass, ResTy), Opc(opc), OpLoc(oploc)
 {
     SubExprs[LHS] = lhs;
     SubExprs[RHS] = rhs;
@@ -1135,7 +1271,7 @@ CompoundAssignOperator::CompoundAssignOperator(shared_ptr<Expr> lhs, shared_ptr<
 }
 
 CompoundAssignOperator::CompoundAssignOperator(Stmt::EmptyShell Empty)
-    : BinaryOperator(CompoundAssignOperatorClass, Empty) { }
+    : BinaryOperator(StmtClass::CompoundAssignOperatorClass, Empty) { }
 
 weak_ptr<QualType> CompoundAssignOperator::getComputationLHSType() const
 {
@@ -1164,12 +1300,12 @@ bool CompoundAssignOperator::classof(const weak_ptr<CompoundAssignOperator>)
 
 bool CompoundAssignOperator::classof(const weak_ptr<Stmt> S)
 {
-    return S.lock()->getStmtClass() == CompoundAssignOperatorClass;
+    return S.lock()->getStmtClass() == StmtClass::CompoundAssignOperatorClass;
 }
 
 ConditionalOperator::ConditionalOperator(shared_ptr<Expr> cond, shared_ptr<Expr> lhs,
                                          shared_ptr<Expr> rhs, shared_ptr<QualType> t)
-    : Expr(ConditionalOperatorClass, t,
+    : Expr(StmtClass::ConditionalOperatorClass, t,
            ((lhs && lhs->isTypeDependent()) || (rhs && rhs->isTypeDependent())),
            (cond->isValueDependent() ||
             (lhs && lhs->isValueDependent()) ||
@@ -1181,7 +1317,7 @@ ConditionalOperator::ConditionalOperator(shared_ptr<Expr> cond, shared_ptr<Expr>
 }
 
 ConditionalOperator::ConditionalOperator(Stmt::EmptyShell Empty)
-    : Expr(ConditionalOperatorClass, Empty) { }
+    : Expr(StmtClass::ConditionalOperatorClass, Empty) { }
 
 weak_ptr<Expr> ConditionalOperator::getCond() const
 {
@@ -1223,9 +1359,17 @@ void ConditionalOperator::setRHS(shared_ptr<Expr> E)
     SubExprs[RHS] = E;
 }
 
+int ConditionalOperator::EvaluateAsInt() const
+{
+    auto cond = dynamic_pointer_cast<Expr>(SubExprs[COND]);
+    auto lhs = dynamic_pointer_cast<Expr>(SubExprs[LHS]);
+    auto rhs = dynamic_pointer_cast<Expr>(SubExprs[RHS]);
+    return cond->EvaluateAsInt() ? lhs->EvaluateAsInt() : rhs->EvaluateAsInt();
+}
+
 bool ConditionalOperator::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ConditionalOperatorClass;
+    return T.lock()->getStmtClass() == StmtClass::ConditionalOperatorClass;
 }
 
 bool ConditionalOperator::classof(const weak_ptr<ConditionalOperator>)
@@ -1255,10 +1399,10 @@ Stmt::child_iterator ConditionalOperator::child_end()
 
 AddrLabelExpr::AddrLabelExpr(SourceLocation AALoc, SourceLocation LLoc,
                              shared_ptr<LabelStmt> L, shared_ptr<QualType> t)
-    : Expr(AddrLabelExprClass, t), AmpAmpLoc(AALoc), LabelLoc(LLoc), Label(L) {}
+    : Expr(StmtClass::AddrLabelExprClass, t), AmpAmpLoc(AALoc), LabelLoc(LLoc), Label(L) {}
 
 AddrLabelExpr::AddrLabelExpr(Stmt::EmptyShell Empty)
-    : Expr(AddrLabelExprClass, Empty) { }
+    : Expr(StmtClass::AddrLabelExprClass, Empty) { }
 
 SourceLocation AddrLabelExpr::getAmpAmpLoc() const
 {
@@ -1292,7 +1436,7 @@ void AddrLabelExpr::setLabel(shared_ptr<LabelStmt> S)
 
 bool AddrLabelExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == AddrLabelExprClass;
+    return T.lock()->getStmtClass() == StmtClass::AddrLabelExprClass;
 }
 
 bool AddrLabelExpr::classof(const weak_ptr<AddrLabelExpr>)
@@ -1312,10 +1456,10 @@ Stmt::child_iterator AddrLabelExpr::child_end()
 
 StmtExpr::StmtExpr(shared_ptr<CompoundStmt> substmt, shared_ptr<QualType> T,
                    SourceLocation lp, SourceLocation rp) :
-    Expr(StmtExprClass, T), SubStmt(substmt),  LParenLoc(lp), RParenLoc(rp) { }
+    Expr(StmtClass::StmtExprClass, T), SubStmt(substmt),  LParenLoc(lp), RParenLoc(rp) { }
 
 StmtExpr::StmtExpr(Stmt::EmptyShell Empty)
-    : Expr(StmtExprClass, Empty) { }
+    : Expr(StmtClass::StmtExprClass, Empty) { }
 
 weak_ptr<CompoundStmt> StmtExpr::getSubStmt()
 {
@@ -1354,7 +1498,7 @@ void StmtExpr::setRParenLoc(SourceLocation L)
 
 bool StmtExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == StmtExprClass;
+    return T.lock()->getStmtClass() == StmtClass::StmtExprClass;
 }
 
 bool StmtExpr::classof(const weak_ptr<StmtExpr>)
@@ -1375,10 +1519,10 @@ Stmt::child_iterator StmtExpr::child_end()
 TypesCompatibleExpr::TypesCompatibleExpr(shared_ptr<QualType> ReturnType, SourceLocation BLoc,
                                          shared_ptr<QualType> t1, shared_ptr<QualType> t2,
                                          SourceLocation RP)
-    : Expr(TypesCompatibleExprClass, ReturnType), Type1(t1), Type2(t2), BuiltinLoc(BLoc), RParenLoc(RP) {}
+    : Expr(StmtClass::TypesCompatibleExprClass, ReturnType), Type1(t1), Type2(t2), BuiltinLoc(BLoc), RParenLoc(RP) {}
 
 TypesCompatibleExpr::TypesCompatibleExpr(Stmt::EmptyShell Empty)
-    : Expr(TypesCompatibleExprClass, Empty) { }
+    : Expr(StmtClass::TypesCompatibleExprClass, Empty) { }
 
 weak_ptr<QualType> TypesCompatibleExpr::getArgType1() const
 {
@@ -1422,7 +1566,7 @@ void TypesCompatibleExpr::setRParenLoc(SourceLocation L)
 
 bool TypesCompatibleExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == TypesCompatibleExprClass;
+    return T.lock()->getStmtClass() == StmtClass::TypesCompatibleExprClass;
 }
 
 bool TypesCompatibleExpr::classof(const weak_ptr<TypesCompatibleExpr>)
@@ -1442,14 +1586,14 @@ Stmt::child_iterator TypesCompatibleExpr::child_end()
 
 ShuffleVectorExpr::ShuffleVectorExpr(std::list<std::shared_ptr<Expr> > args, unsigned nexpr,
                                      shared_ptr<QualType> Type, SourceLocation BLoc, SourceLocation RP)
-    : Expr(ShuffleVectorExprClass, Type), BuiltinLoc(BLoc), RParenLoc(RP), NumExprs(nexpr)
+    : Expr(StmtClass::ShuffleVectorExprClass, Type), BuiltinLoc(BLoc), RParenLoc(RP), NumExprs(nexpr)
 {
     SubExprs.resize(nexpr);
     SubExprs.insert(SubExprs.end(), args.begin(), args.end());
 }
 
 ShuffleVectorExpr::ShuffleVectorExpr(Stmt::EmptyShell Empty)
-    : Expr(ShuffleVectorExprClass, Empty), SubExprs(0) { }
+    : Expr(StmtClass::ShuffleVectorExprClass, Empty), SubExprs(0) { }
 
 weak_ptr<Expr> ShuffleVectorExpr::getExpr(unsigned Index)
 {
@@ -1478,7 +1622,7 @@ void ShuffleVectorExpr::setRParenLoc(SourceLocation L)
 
 bool ShuffleVectorExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ShuffleVectorExprClass;
+    return T.lock()->getStmtClass() == StmtClass::ShuffleVectorExprClass;
 }
 
 bool ShuffleVectorExpr::classof(const weak_ptr<ShuffleVectorExpr>)
@@ -1504,7 +1648,7 @@ Stmt::child_iterator ShuffleVectorExpr::child_end()
 ChooseExpr::ChooseExpr(SourceLocation BLoc, shared_ptr<Expr> cond,
                        shared_ptr<Expr> lhs, shared_ptr<Expr> rhs,
                        shared_ptr<QualType> t, SourceLocation RP)
-    : Expr(ChooseExprClass, t),
+    : Expr(StmtClass::ChooseExprClass, t),
       BuiltinLoc(BLoc), RParenLoc(RP)
 {
     SubExprs[COND] = cond;
@@ -1513,7 +1657,7 @@ ChooseExpr::ChooseExpr(SourceLocation BLoc, shared_ptr<Expr> cond,
 }
 
 ChooseExpr::ChooseExpr(Stmt::EmptyShell Empty)
-    : Expr(ChooseExprClass, Empty) { }
+    : Expr(StmtClass::ChooseExprClass, Empty) { }
 
 weak_ptr<Expr> ChooseExpr::getCond() const
 {
@@ -1567,7 +1711,7 @@ void ChooseExpr::setRParenLoc(SourceLocation L)
 
 bool ChooseExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ChooseExprClass;
+    return T.lock()->getStmtClass() == StmtClass::ChooseExprClass;
 }
 
 bool ChooseExpr::classof(const weak_ptr<ChooseExpr>)
@@ -1596,11 +1740,11 @@ Stmt::child_iterator ChooseExpr::child_end()
 }
 
 GNUNullExpr::GNUNullExpr(shared_ptr<QualType> Ty, SourceLocation Loc)
-    : Expr(GNUNullExprClass, Ty), TokenLoc(Loc)
+    : Expr(StmtClass::GNUNullExprClass, Ty), TokenLoc(Loc)
 { }
 
 GNUNullExpr::GNUNullExpr(Stmt::EmptyShell Empty)
-    : Expr(GNUNullExprClass, Empty) { }
+    : Expr(StmtClass::GNUNullExprClass, Empty) { }
 
 SourceLocation GNUNullExpr::getTokenLocation() const
 {
@@ -1614,7 +1758,7 @@ void GNUNullExpr::setTokenLocation(SourceLocation L)
 
 bool GNUNullExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == GNUNullExprClass;
+    return T.lock()->getStmtClass() == StmtClass::GNUNullExprClass;
 }
 
 bool GNUNullExpr::classof(const weak_ptr<GNUNullExpr>)
@@ -1634,14 +1778,14 @@ Stmt::child_iterator GNUNullExpr::child_end()
 
 VAArgExpr::VAArgExpr(SourceLocation BLoc, shared_ptr<Expr> e,
                      shared_ptr<QualType> t, SourceLocation RPLoc)
-    : Expr(VAArgExprClass, t),
+    : Expr(StmtClass::VAArgExprClass, t),
       Val(e),
       BuiltinLoc(BLoc),
       RParenLoc(RPLoc)
 { }
 
 VAArgExpr::VAArgExpr(Stmt::EmptyShell Empty)
-    : Expr(VAArgExprClass, Empty) { }
+    : Expr(StmtClass::VAArgExprClass, Empty) { }
 
 const weak_ptr<Expr> VAArgExpr::getSubExpr() const
 {
@@ -1680,7 +1824,7 @@ void VAArgExpr::setRParenLoc(SourceLocation L)
 
 bool VAArgExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == VAArgExprClass;
+    return T.lock()->getStmtClass() == StmtClass::VAArgExprClass;
 }
 
 bool VAArgExpr::classof(const weak_ptr<VAArgExpr>)
@@ -1702,7 +1846,7 @@ InitListExpr::InitListExpr(SourceLocation lbraceloc,
                            std::list<shared_ptr<Expr> > initexprs,
                            unsigned numinits,
                            SourceLocation rbraceloc)
-    : Expr(InitListExprClass, make_shared<QualType>()),
+    : Expr(StmtClass::InitListExprClass, make_shared<QualType>()),
       LBraceLoc(lbraceloc), RBraceLoc(rbraceloc), SyntacticForm(0),
       HadArrayRangeDesignator(false)
 {
@@ -1710,7 +1854,7 @@ InitListExpr::InitListExpr(SourceLocation lbraceloc,
 }
 
 InitListExpr::InitListExpr(Stmt::EmptyShell Empty)
-    : Expr(InitListExprClass, Empty) { }
+    : Expr(StmtClass::InitListExprClass, Empty) { }
 
 SourceLocation InitListExpr::getLBraceLoc() const
 {
@@ -1744,7 +1888,7 @@ void InitListExpr::setSyntacticForm(shared_ptr<InitListExpr> Init)
 
 bool InitListExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == InitListExprClass;
+    return T.lock()->getStmtClass() == StmtClass::InitListExprClass;
 }
 
 bool InitListExpr::classof(const weak_ptr<InitListExpr>)
@@ -1762,15 +1906,15 @@ Stmt::child_iterator InitListExpr::child_end()
 }
 
 ImplicitValueInitExpr::ImplicitValueInitExpr(shared_ptr<QualType> ty)
-    : Expr(ImplicitValueInitExprClass, ty)
+    : Expr(StmtClass::ImplicitValueInitExprClass, ty)
 { }
 
 ImplicitValueInitExpr::ImplicitValueInitExpr(Stmt::EmptyShell Empty)
-    : Expr(ImplicitValueInitExprClass, Empty) { }
+    : Expr(StmtClass::ImplicitValueInitExprClass, Empty) { }
 
 bool ImplicitValueInitExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ImplicitValueInitExprClass;
+    return T.lock()->getStmtClass() == StmtClass::ImplicitValueInitExprClass;
 }
 
 bool ImplicitValueInitExpr::classof(const weak_ptr<ImplicitValueInitExpr>)
@@ -1791,7 +1935,7 @@ Stmt::child_iterator ImplicitValueInitExpr::child_end()
 SizeOfAlignOfExpr::SizeOfAlignOfExpr(bool issizeof, shared_ptr<QualType> T,
                                      shared_ptr<QualType> resultType,
                                      SourceLocation op, SourceLocation rp)
-    : Expr(SizeOfAlignOfExprClass, resultType, false, (*T.get())->isDependentType()),
+    : Expr(StmtClass::SizeOfAlignOfExprClass, resultType, false, (*T.get())->isDependentType()),
       isSizeof(issizeof), isType(true), OpLoc(op), RParenLoc(rp)
 {
     Ty = T;
@@ -1800,14 +1944,14 @@ SizeOfAlignOfExpr::SizeOfAlignOfExpr(bool issizeof, shared_ptr<QualType> T,
 SizeOfAlignOfExpr::SizeOfAlignOfExpr(bool issizeof, shared_ptr<Expr> E,
                                      shared_ptr<QualType> resultType,
                                      SourceLocation op, SourceLocation rp)
-    : Expr(SizeOfAlignOfExprClass, resultType, false, E->isTypeDependent()),
+    : Expr(StmtClass::SizeOfAlignOfExprClass, resultType, false, E->isTypeDependent()),
       isSizeof(issizeof), isType(false), OpLoc(op), RParenLoc(rp)
 {
     Ex = E;
 }
 
 SizeOfAlignOfExpr::SizeOfAlignOfExpr(Stmt::EmptyShell Empty)
-    : Expr(SizeOfAlignOfExprClass, Empty)
+    : Expr(StmtClass::SizeOfAlignOfExprClass, Empty)
 { }
 
 Stmt::child_iterator SizeOfAlignOfExpr::child_begin(){
@@ -1828,7 +1972,7 @@ Stmt::child_iterator SizeOfAlignOfExpr::child_end(){
 
 bool SizeOfAlignOfExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == SizeOfAlignOfExprClass;
+    return T.lock()->getStmtClass() == StmtClass::SizeOfAlignOfExprClass;
 }
 
 bool SizeOfAlignOfExpr::classof(const weak_ptr<SizeOfAlignOfExpr>)
@@ -1906,7 +2050,7 @@ ParenListExpr::ParenListExpr(SourceLocation lparenloc,
                              std::list<shared_ptr<Expr> > exprs,
                              unsigned numexprs,
                              SourceLocation rparenloc)
-    : Expr(ParenListExprClass, make_shared<QualType>()),
+    : Expr(StmtClass::ParenListExprClass, make_shared<QualType>()),
       NumExprs(numexprs), LParenLoc(lparenloc), RParenLoc(rparenloc)
 {
     Exprs.insert(Exprs.end(), exprs.begin(), exprs.end());
@@ -1929,7 +2073,7 @@ SourceLocation ParenListExpr::getRParenLoc() const
 
 bool ParenListExpr::classof(const weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ParenListExprClass;
+    return T.lock()->getStmtClass() == StmtClass::ParenListExprClass;
 }
 
 bool ParenListExpr::classof(const std::weak_ptr<ParenListExpr>)

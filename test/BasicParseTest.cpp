@@ -18,17 +18,18 @@
 using std::make_shared;				using std::shared_ptr;
 using std::fstream;					using std::string;
 using std::dynamic_pointer_cast;	using std::weak_ptr;
+using Printer::ASTPrinter;
 
 class BasicParseTest : public testing::Test {
 protected:
 	void SetUp() override {}
 	void TearDown() override {
-		printer.resetPrinter();
+		Printer::resetPrinter();
 		adapter.clean();
 	}
 
 	void reset() {
-		printer.resetPrinter();
+		Printer::resetPrinter();
 		adapter.clean();
 	}
 
@@ -38,7 +39,7 @@ protected:
 	YaccAdapter adapter{astContext, declContext, openHelper};
 	Driver driver{openHelper, adapter};
 	StringStreamOpenHelper printerOutput;
-	Printer printer{printerOutput};
+	ASTPrinter printer{printerOutput};
 };
 
 TEST_F(BasicParseTest, LiteralExpression)
@@ -469,7 +470,7 @@ TEST_F(BasicParseTest, PointerTypeTest)
 			dynamic_pointer_cast<VarDecl>(
 					declContext.getContextRoot()->lookup("a").lock()
 			)->getType().lock()->getTypePtr()->getTypeClass(),
-			Type::Pointer
+			Type::TypeClass::Pointer
 	);
 	reset();
 
@@ -478,7 +479,7 @@ TEST_F(BasicParseTest, PointerTypeTest)
 	auto b = dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("b").lock());
 	EXPECT_EQ(
 			b->getType().lock()->getTypePtr()->getTypeClass(),
-			Type::Pointer
+			Type::TypeClass::Pointer
 	);
 	EXPECT_EQ(
 			b->getType().lock()->getCVRQualifiers(),
@@ -498,11 +499,19 @@ TEST_F(BasicParseTest, VariableTest)
 	);
 	reset();
 
-	openHelper << "long int b[][];";
+	openHelper << "long int b[1];";
 	driver.parse();
 	EXPECT_EQ(
 			dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("b").lock())->getNameAsString(),
 			string("b")
+	);
+	reset();
+
+	openHelper << "long int f[12][1 + 2];";
+	driver.parse();
+	EXPECT_EQ(
+			dynamic_pointer_cast<VarDecl>(declContext.getContextRoot()->lookup("f").lock())->getNameAsString(),
+			string("f")
 	);
 	reset();
 
@@ -543,7 +552,7 @@ TEST_F(BasicParseTest, FunctionWithParmNoProtoTypeDeclTest)
 			string("a")
 	);
 	shared_ptr<FunctionDecl> func = dynamic_pointer_cast<FunctionDecl>(declContext.getContextRoot()->lookup("a").lock());
-	EXPECT_EQ(func->getKind(), Decl::Function);
+	EXPECT_EQ(func->getKind(), Decl::Kind::Function);
 	reset();
 }
 
@@ -560,7 +569,7 @@ TEST_F(BasicParseTest, FunctionWithParmNoProtoTypeDefinitionTest)
 			string("a")
 	);
 	shared_ptr<FunctionDecl> func = dynamic_pointer_cast<FunctionDecl>(declContext.getContextRoot()->lookup("a").lock());
-	EXPECT_EQ(func->getKind(), Decl::Function);
+	EXPECT_EQ(func->getKind(), Decl::Kind::Function);
 	reset();
 }
 
@@ -612,4 +621,11 @@ TEST_F(BasicParseTest, EnumTest)
 	EXPECT_NO_THROW(driver.parse());
 }
 
+TEST_F(BasicParseTest, TypedefTest)
+{
+	openHelper <<
+"typedef int A;"
+"A a;";
+	EXPECT_NO_THROW(driver.parse());
+}
 #endif

@@ -37,7 +37,7 @@ class NamedDecl : public Decl {
 public:
 	NamedDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
 			DeclName name);
-	~NamedDecl() override = default;
+	~NamedDecl() override = 0;
 
 	DeclName getDeclarationName() const;
 	std::string getNameAsString() const;
@@ -152,11 +152,11 @@ public:
 			std::shared_ptr<IdentifierInfo> info);
 	~TypeDecl() override = 0;
 
-	std::weak_ptr<Type> getTypeForDecl() const;
-	void setTypeForDecl(std::shared_ptr<Type> type);
+	std::weak_ptr<QualType> getTypeForDecl() const;
+	void setTypeForDecl(std::shared_ptr<QualType> type);
 
 private:
-	std::shared_ptr<Type> m_typeForDecl;
+	std::shared_ptr<QualType> m_typeForDecl;
 };
 
 /// @brief Represent a typedef type
@@ -166,9 +166,6 @@ public:
 	TypedefDecl(std::weak_ptr<DeclContext> context, SourceLocation l, std::shared_ptr<IdentifierInfo> info,
 			std::shared_ptr<QualType> type);
 	~TypedefDecl() override = default;
-
-private:
-	std::shared_ptr<QualType> underlyingType;
 };
 
 /// @brief Represent a declaration of a struct/enum/union
@@ -183,7 +180,7 @@ public:
 	TagDecl(Kind declKind, TagKind tagKind, std::weak_ptr<DeclContext> context,
 			SourceLocation location, std::shared_ptr<IdentifierInfo> info,
 			SourceLocation tkl);
-	~TagDecl() override = default;
+	~TagDecl() override = 0;
 
 	std::weak_ptr<DeclContext> getParent() override;
 	const std::weak_ptr<DeclContext> getParent() const override;
@@ -275,6 +272,7 @@ public:
     const std::weak_ptr<ParmVarDecl> getParamDecl(unsigned i) const;
     std::weak_ptr<ParmVarDecl> getParamDecl(unsigned i);
     void setParams(std::vector<std::shared_ptr<ParmVarDecl>> &NewParamInfo);
+    void addArg(std::shared_ptr<ParmVarDecl> newParam);
 
 	FunctionDecl::StorageClass getStorageClass() const;
     void setStorageClass(FunctionDecl::StorageClass SC);
@@ -284,9 +282,7 @@ public:
 
 private:
 	std::vector<std::shared_ptr<ParmVarDecl>> ParamInfo;
-
 	std::shared_ptr<Stmt> Body;
-
 	StorageClass SClass;
 	/*bool IsInline : 1;*/
 	bool C99InlineDefinition;
@@ -312,6 +308,7 @@ public:
                                SourceLocation L,std::shared_ptr<IdentifierInfo> Id,
                                std::shared_ptr<QualType> T,
                                StorageClass S, std::shared_ptr<Expr> DefArg);*/
+    bool paramHasName() const;
     std::weak_ptr<QualType> getOriginalType() const;
 };
 

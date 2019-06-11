@@ -4,7 +4,9 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <list>
 #include "Basic/SourceLocation.h"
+#include "DeclIterator.h"
 
 class DeclContext;
 class NamedDecl;
@@ -13,7 +15,7 @@ class NamedDecl;
 class Decl {
 public:
 	/// @brief The Kind of declaration
-	enum Kind {
+	enum class Kind : unsigned {
 #define DECL(Derived, Base) Derived,
 #define DECL_RANGE(CommonBase, Start, End) \
     CommonBase##First = Start, CommonBase##Last = End,
@@ -150,11 +152,15 @@ public:
 	/// @throw SymbolAlreadyExist: if find the symbol
 	void lookupForExistence(StoredDecl &name, bool lookIntoParent);
 
+	DeclIterator decl_begin();
+	DeclIterator decl_end();
+
 	//void makeDeclVisibleInContext(std::shared_ptr<NamedDecl> d);
 
 private:
 	Decl::Kind m_declKind;
 	std::unordered_map<StoredDecl, std::shared_ptr<Decl>, StoredDeclHash> m_decls;
+	std::list<std::shared_ptr<Decl>> m_declsList;
 };
 
 #endif

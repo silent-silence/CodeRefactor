@@ -37,6 +37,7 @@ public:
 	std::shared_ptr<Decl> createEnum(std::shared_ptr<DeclContext> &context, SourceLocation &&location);
 	std::shared_ptr<Decl> createEnumConstant(std::shared_ptr<DeclContext> &context, SourceLocation &&location, std::string name, std::shared_ptr<Expr> init);
 	std::shared_ptr<Decl> createFunction(std::shared_ptr<DeclContext> &context, std::string &name, SourceLocation &location, std::shared_ptr<QualType> type);
+	std::shared_ptr<Decl> createParmVar(std::shared_ptr<DeclContext> &context, std::string &name, SourceLocation &location, std::shared_ptr<QualType> type);
 
 private:
 	std::shared_ptr<DeclContext> m_contextRoot;

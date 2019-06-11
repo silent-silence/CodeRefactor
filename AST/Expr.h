@@ -63,7 +63,7 @@ public:
 
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<Expr>);
-
+    virtual int EvaluateAsInt() const = 0;
 protected:
     Expr(StmtClass SC, std::shared_ptr<QualType> T);
     Expr(StmtClass SC, std::shared_ptr<QualType> T, bool TD, bool VD);
@@ -104,6 +104,8 @@ public:
 
 	SourceLocation getLocation() const;
 	void setLocation(SourceLocation L);
+
+    virtual int EvaluateAsInt() const;
 protected:
     DeclRefExpr(StmtClass SC, std::shared_ptr<NamedDecl> d,
                 std::shared_ptr<QualType> t, SourceLocation l);
@@ -139,6 +141,7 @@ public:
     SourceLocation getLocation() const;
     void setLocation(SourceLocation L);
 
+    virtual int EvaluateAsInt() const;
 private:
     IdentType Type;
     SourceLocation Loc;
@@ -160,6 +163,8 @@ public:
     SourceLocation getLocation() const;
     void setValue(const int Val);
     void setLocation(SourceLocation Location);
+
+    virtual int EvaluateAsInt() const;
 private:
     int Value;
     SourceLocation Loc;
@@ -185,6 +190,9 @@ public:
     void setLocation(SourceLocation Location);
     void setWide(bool W);
     void setValue(unsigned Val);
+
+    virtual int EvaluateAsInt() const;
+
 private:
     unsigned Value;
     bool IsWide;
@@ -212,6 +220,8 @@ public:
 
     SourceLocation getLocation() const;
     void setLocation(SourceLocation L);
+
+    virtual int EvaluateAsInt() const;
 private:
     float Value;
     bool IsExact : 1;
@@ -237,6 +247,7 @@ public:
 
     std::weak_ptr<Expr>getSubExpr();
     void setSubExpr(std::shared_ptr<Expr>E);
+
 private:
     std::shared_ptr<Stmt> Val;
 };
@@ -268,6 +279,8 @@ public:
     unsigned getNumConcatenated() const { return NumConcatenated; }
 
     SourceLocation getTokloc() const { return TokLocs; }
+
+    virtual int EvaluateAsInt() const;
 private:
     StringLiteral(std::shared_ptr<QualType> Ty);
 
@@ -296,6 +309,8 @@ public:
 
     SourceLocation getRParen() const;
     void setRParen(SourceLocation Loc);
+
+    virtual int EvaluateAsInt() const;
 private:
     std::shared_ptr<Stmt> Val;
     SourceLocation L;
@@ -336,6 +351,8 @@ public:
     void setOperatorLoc(SourceLocation L);
 
     virtual SourceLocation getExprLoc() const;
+
+    virtual int EvaluateAsInt() const;
 private:
     std::shared_ptr<Stmt> Val;
     Opcode Opc;
@@ -380,6 +397,7 @@ public:
 
     SourceLocation getRParenLoc() const;
     void setRParenLoc(SourceLocation L);
+    virtual int EvaluateAsInt() const{}
 
 private:
     bool isSizeof : 1;  // true if sizeof, false if alignof.
@@ -418,6 +436,7 @@ public:
     SourceLocation getRBracketLoc() const;
     void setRBracketLoc(SourceLocation L);
 
+    virtual int EvaluateAsInt() const;
 private:
     enum { LHS, RHS, END_EXPR=2 };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -450,6 +469,7 @@ public:
     SourceLocation getRParenLoc() const;
     void setRParenLoc(SourceLocation L);
 
+    virtual int EvaluateAsInt() const;
 protected:
     CallExpr(StmtClass SC, std::shared_ptr<Expr> fn,
              std::list<std::shared_ptr<Expr>> args, unsigned numargs,
@@ -489,7 +509,7 @@ public:
     SourceLocation getMemberLoc() const;
     void setMemberLoc(SourceLocation L);
     virtual SourceLocation getExprLoc() const;
-
+    virtual int EvaluateAsInt() const{}
 private:
     std::shared_ptr<Stmt> Base;
     std::shared_ptr<NamedDecl> MemberDecl;
@@ -623,6 +643,7 @@ public:
 
     SourceLocation getRParenLoc() const;
     void setRParenLoc(SourceLocation L);
+    virtual int EvaluateAsInt() const{}
 private:
     SourceLocation LPLoc;
     SourceLocation RPLoc;
@@ -668,6 +689,8 @@ public:
     void setLHS(std::shared_ptr<Expr> E);
     std::weak_ptr<Expr> getRHS() const;
     void setRHS(std::shared_ptr<Expr> E);
+
+    virtual int EvaluateAsInt() const;
 
     static bool classof(const std::weak_ptr<Stmt> S);
     static bool classof(const std::weak_ptr<BinaryOperator>);
@@ -731,6 +754,8 @@ public:
 
     std::weak_ptr<Expr> getRHS() const;
     void setRHS(std::shared_ptr<Expr> E);
+
+    virtual int EvaluateAsInt() const;
 
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<ConditionalOperator>);
@@ -992,7 +1017,7 @@ private:
     std::shared_ptr<Designator> Designators;
     unsigned NumSubExprs : 16;
     static bool classof(const std::shared_ptr<Stmt> T) {
-        return T->getStmtClass() == DesignatedInitExprClass;
+        return T->getStmtClass() == StmtClass::DesignatedInitExprClass;
     }
     static bool classof(const std::shared_ptr<DesignatedInitExpr>) { return true; }
 

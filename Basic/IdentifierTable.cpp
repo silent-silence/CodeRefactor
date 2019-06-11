@@ -5,7 +5,7 @@ using std::to_string;
 unsigned IdentifierInfo::anonymousNameId = 0;
 
 IdentifierInfo::IdentifierInfo()
-	: IdentifierInfo("%%" + to_string(++anonymousNameId))
+	: IdentifierInfo("%" + to_string(++anonymousNameId))
 {}
 
 IdentifierInfo::IdentifierInfo(std::string name)
@@ -37,6 +37,11 @@ bool IdentifierInfo::hasMacroDefinition() const
 void IdentifierInfo::setHasMacroDefinition(bool Val)
 {
     HasMacro = Val;
+}
+
+bool IdentifierInfo::isAnonymous() const
+{
+	return m_entry[0] == '%';
 }
 
 /*bool IdentifierInfo::isExtensionToken() const

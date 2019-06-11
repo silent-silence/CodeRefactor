@@ -46,7 +46,7 @@ std::shared_ptr<Decl> DeclContextHolder::createVariable(std::shared_ptr<DeclCont
 	}
 	// The name is token, check if it's a variable declaration
 	Decl::Kind foundDeclKind = foundDecl.lock()->getKind();
-	if(foundDeclKind == Decl::Var || foundDeclKind == Decl::Typedef)
+	if(foundDeclKind == Decl::Kind::Var || foundDeclKind == Decl::Kind::Typedef)
 		throw SymbolAlreadyExist("Symbol '" + name + "' already exist");
 	auto decl = make_shared<VarDecl>(
 			Decl::Kind::Var, context, location, make_shared<IdentifierInfo>(name), type, VarDecl::StorageClass::None
@@ -70,7 +70,7 @@ std::shared_ptr<Decl> DeclContextHolder::createTypedefDecl(std::shared_ptr<DeclC
 	}
 	// The name is token, check if it's a variable declaration
 	Decl::Kind foundDeclKind = foundDecl.lock()->getKind();
-	if(foundDeclKind == Decl::Var || foundDeclKind == Decl::Typedef)
+	if(foundDeclKind == Decl::Kind::Var || foundDeclKind == Decl::Kind::Typedef)
 		throw SymbolAlreadyExist("Symbol '" + name + "' already exist");
 	auto typedefDecl = make_shared<TypedefDecl>(
 			context, location, make_shared<IdentifierInfo>(name), type
@@ -88,15 +88,14 @@ std::shared_ptr<DeclContext> DeclContextHolder::createBlock(std::shared_ptr<Decl
 
 std::shared_ptr<DeclContext> DeclContextHolder::createStruct(std::shared_ptr<DeclContext> &context, SourceLocation &&location, std::string &name)
 {
-	auto structBlock = make_shared<RecordDecl>(Decl::Record, TagDecl::TagKind::KindStruct, context, location, make_shared<IdentifierInfo>());
+	auto structBlock = make_shared<RecordDecl>(Decl::Kind::Record, TagDecl::TagKind::KindStruct, context, location, make_shared<IdentifierInfo>());
 	context->addDecl(structBlock);
 	return structBlock;
 }
 
-std::shared_ptr<DeclContext> DeclContextHolder::createStruct(std::shared_ptr<DeclContext> &context,
-															 SourceLocation &&location)
+std::shared_ptr<DeclContext> DeclContextHolder::createStruct(std::shared_ptr<DeclContext> &context, SourceLocation &&location)
 {
-	auto structBlock = make_shared<RecordDecl>(Decl::Record, TagDecl::TagKind::KindStruct, context, location, make_shared<IdentifierInfo>());
+	auto structBlock = make_shared<RecordDecl>(Decl::Kind::Record, TagDecl::TagKind::KindStruct, context, location, make_shared<IdentifierInfo>());
 	context->addDecl(structBlock);
 	return structBlock;
 }
@@ -133,8 +132,18 @@ std::shared_ptr<Decl> DeclContextHolder::createFunction(std::shared_ptr<DeclCont
 									   SourceLocation &location, std::shared_ptr<QualType> type)
 {
 	auto func = make_shared<FunctionDecl>(
-			Decl::Function, context, location, make_shared<IdentifierInfo>(name), type, FunctionDecl::StorageClass::None, false
+			Decl::Kind::Function, context, location, make_shared<IdentifierInfo>(name), type, FunctionDecl::StorageClass::None, false
 			);
 	context->addDecl(func);
 	return func;
+}
+
+std::shared_ptr<Decl> DeclContextHolder::createParmVar(std::shared_ptr<DeclContext> &context, std::string &name,
+													   SourceLocation &location, std::shared_ptr<QualType> type)
+{
+	auto parm = make_shared<ParmVarDecl>(
+			Decl::Kind::ParmVar, context, location, make_shared<IdentifierInfo>(name), type, VarDecl::StorageClass::None
+	);
+	context->addDecl(parm);
+	return parm;
 }

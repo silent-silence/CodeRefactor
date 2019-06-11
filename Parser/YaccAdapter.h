@@ -41,8 +41,9 @@ public:
 		ENUM	=	0x1000,
 		CONST	=	0x2000,
 		VOLATILE=	0x4000,
+		USER_DEF=	0x8000,
 		/// @brief represent storage class specifiers, which can be appear only one time
-		STORAGE	=	0x8000,
+		STORAGE	=	0x10000,
 		TYPEDEF, EXTERN, STATIC, AUTO, REGISTER
 	};
 
@@ -61,6 +62,7 @@ public:
 		STRUCT_JMP	=	STORAGE | CONST | VOLATILE,
 		UNION_JMP	=	STORAGE | CONST | VOLATILE,
 		ENUM_JMP	=	STORAGE | CONST | VOLATILE,
+		USER_DEF_JMP=	CONST | VOLATILE,
 		STORAGE_JMP	=	VOID | CHAR | SHORT | INT | FLOAT | DOUBLE | SIGNED | UNSIGNED | LONG | LONGLONG
 	};
 
@@ -128,6 +130,8 @@ public:
 	void makeFixedWidthIntType();
 	void makeComplexType();
 	void makePointerType();
+	// store a decl stmt base type before make pointer
+	void storeDeclType();
 	void makeBlockPointerType();
 	//void makeReferenceType(std::vector<var_t> &value);//
 	//void makeLValueReferenceType(std::vector<var_t> &value);
@@ -168,6 +172,9 @@ public:
 	void makeUnnamedFunParam(yy::location &l);
 	void makeFunctionDefinition();
 	void makeEnumConstant(std::string &name, yy::location &l, bool hasInit);
+
+	void findTypeByName(std::string &name);
+	bool hasTheType(std::string &name);
 
 private:
 	/// @brief A method to create build in type

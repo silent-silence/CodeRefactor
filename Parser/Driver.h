@@ -33,6 +33,9 @@ public:
     YaccAdapter &getAdapter();
     std::string &getOpenedFrom() const;
 
+    /// @brief Look for type name existence
+	yy::Parser::symbol_type identifier_or_type_name(std::string id, yy::Parser::location_type loc);
+
 private:
 	/// @brief Start scan
 	void scan_begin();

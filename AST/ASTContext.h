@@ -72,42 +72,42 @@ public:
 		(value.push_back(var_t{args}), ...);
 		std::shared_ptr<Stmt> stmt;
 		switch (type) {
-			case Stmt::DeclStmtClass:				return createDeclStmt(value);
-			case Stmt::NullStmtClass:				return createNullStmt(value);
-			case Stmt::CompoundStmtClass:			return createCompoundStmt(value);
-			case Stmt::CaseStmtClass:				return createCaseStmt(value);
-			case Stmt::DefaultStmtClass:			return createDefaultStmt(value);
-			case Stmt::LabelStmtClass:				return createLabelStmt(value);
-			case Stmt::IfStmtClass:					return createIfStmt(value);
-			case Stmt::SwitchStmtClass:				return createSwitchStmt(value);
-			case Stmt::WhileStmtClass:				return createWhileStmt(value);
-			case Stmt::DoStmtClass:					return createDoStmt(value);
-			case Stmt::ForStmtClass:				return createForStmt(value);
-			case Stmt::GotoStmtClass:				return createGotoStmt(value);
-			case Stmt::IndirectGotoStmtClass:		return createIndirectGotoStmt(value);
-			case Stmt::ContinueStmtClass:			return createContinueStmt(value);
-			case Stmt::BreakStmtClass:				return createBreakStmt(value);
-			case Stmt::ReturnStmtClass:				return createReturnStmt(value);
-			case Stmt::CommentStmtClass:            return createCommentStmt(value);
-			case Expr::DeclRefExprClass:			return createDeclRefExpr(value);
-			case Expr::PredefinedExprClass:			return createPredefinedExpr(value);
-			case Expr::IntegerLiteralClass:			return createIntegerLiteral(value);
-			case Expr::CharacterLiteralClass:		return createCharacterLiteral(value);
-			case Expr::FloatingLiteralClass:		return createFloatingLiteral(value);
-			case Expr::ImaginaryLiteralClass:		return createImaginaryLiteral(value);
-			case Expr::StringLiteralClass:			return createStringLiteral(value);
-			case Expr::ParenExprClass:				return createParenExpr(value);
-			case Expr::UnaryOperatorClass:			return createUnaryOperator(value);
-			case Expr::SizeOfAlignOfExprClass:		return createSizeOfAlignOfExpr(value);
-			case Expr::ArraySubscriptExprClass:		return createArraySubscriptExpr(value);
-			case Expr::CallExprClass:				return createCallExpr(value);
-			case Expr::MemberExprClass:				return createMemberExpr(value);
-			case Expr::CompoundLiteralExprClass:	return createCompoundLiteralExpr(value);
-			case Expr::ImplicitCastExprClass:		return createImplicitCastExpr(value);
-			case Expr::CStyleCastExprClass:			return createCStyleCastExpr(value);
-			case Expr::BinaryOperatorClass:			return createBinaryOperator(value);
-			case Expr::CompoundAssignOperatorClass:	return createCompoundAssignOperator(value);
-			case Expr::ConditionalOperatorClass:	return createConditionalOperator(value);
+			case Stmt::StmtClass::DeclStmtClass:				return createDeclStmt(value);
+			case Stmt::StmtClass::NullStmtClass:				return createNullStmt(value);
+			case Stmt::StmtClass::CompoundStmtClass:			return createCompoundStmt(value);
+			case Stmt::StmtClass::CaseStmtClass:				return createCaseStmt(value);
+			case Stmt::StmtClass::DefaultStmtClass:				return createDefaultStmt(value);
+			case Stmt::StmtClass::LabelStmtClass:				return createLabelStmt(value);
+			case Stmt::StmtClass::IfStmtClass:					return createIfStmt(value);
+			case Stmt::StmtClass::SwitchStmtClass:				return createSwitchStmt(value);
+			case Stmt::StmtClass::WhileStmtClass:				return createWhileStmt(value);
+			case Stmt::StmtClass::DoStmtClass:					return createDoStmt(value);
+			case Stmt::StmtClass::ForStmtClass:					return createForStmt(value);
+			case Stmt::StmtClass::GotoStmtClass:				return createGotoStmt(value);
+			case Stmt::StmtClass::IndirectGotoStmtClass:		return createIndirectGotoStmt(value);
+			case Stmt::StmtClass::ContinueStmtClass:			return createContinueStmt(value);
+			case Stmt::StmtClass::BreakStmtClass:				return createBreakStmt(value);
+			case Stmt::StmtClass::ReturnStmtClass:				return createReturnStmt(value);
+			case Stmt::StmtClass::CommentStmtClass:				return createCommentStmt(value);
+			case Expr::StmtClass::DeclRefExprClass:				return createDeclRefExpr(value);
+			case Expr::StmtClass::PredefinedExprClass:			return createPredefinedExpr(value);
+			case Expr::StmtClass::IntegerLiteralClass:			return createIntegerLiteral(value);
+			case Expr::StmtClass::CharacterLiteralClass:		return createCharacterLiteral(value);
+			case Expr::StmtClass::FloatingLiteralClass:			return createFloatingLiteral(value);
+			case Expr::StmtClass::ImaginaryLiteralClass:		return createImaginaryLiteral(value);
+			case Expr::StmtClass::StringLiteralClass:			return createStringLiteral(value);
+			case Expr::StmtClass::ParenExprClass:				return createParenExpr(value);
+			case Expr::StmtClass::UnaryOperatorClass:			return createUnaryOperator(value);
+			case Expr::StmtClass::SizeOfAlignOfExprClass:		return createSizeOfAlignOfExpr(value);
+			case Expr::StmtClass::ArraySubscriptExprClass:		return createArraySubscriptExpr(value);
+			case Expr::StmtClass::CallExprClass:				return createCallExpr(value);
+			case Expr::StmtClass::MemberExprClass:				return createMemberExpr(value);
+			case Expr::StmtClass::CompoundLiteralExprClass:		return createCompoundLiteralExpr(value);
+			case Expr::StmtClass::ImplicitCastExprClass:		return createImplicitCastExpr(value);
+			case Expr::StmtClass::CStyleCastExprClass:			return createCStyleCastExpr(value);
+			case Expr::StmtClass::CompoundAssignOperatorClass:	return createCompoundAssignOperator(value);
+			case Expr::StmtClass::ConditionalOperatorClass:		return createConditionalOperator(value);
+			case Stmt::StmtClass::BinaryOperatorClass:			return createBinaryOperator(value);
 				/*case Expr::AddrLabelExprClass:
 					createAddrLabelExpr(value);
 					break;*/
@@ -126,9 +126,57 @@ public:
 				/*case Expr::GNUNullExprClass:
 					createGNUNullExpr(value);
 					break;*/
-			case Expr::VAArgExprClass:				return createVAArgExpr(value);
-			case Expr::InitListExprClass:			return createInitListExpr(value);
-			case Expr::ParenListExprClass:			return createParenListExpr(value);
+			case Expr::StmtClass::VAArgExprClass:				return createVAArgExpr(value);
+			case Expr::StmtClass::InitListExprClass:			return createInitListExpr(value);
+			case Expr::StmtClass::ParenListExprClass:			return createParenListExpr(value);
+			case Stmt::StmtClass::NoStmtClass:break;
+			case Stmt::StmtClass::SwitchCaseClass:break;
+			case Stmt::StmtClass::AsmStmtClass:break;
+			case Stmt::StmtClass::CXXCatchStmtClass:break;
+			case Stmt::StmtClass::CXXTryStmtClass:break;
+			case Stmt::StmtClass::ExprClass:break;
+			case Stmt::StmtClass::CastExprClass:break;
+			case Stmt::StmtClass::ExplicitCastExprClass:break;
+			case Stmt::StmtClass::ExtVectorElementExprClass:break;
+			case Stmt::StmtClass::DesignatedInitExprClass:break;
+			case Stmt::StmtClass::ImplicitValueInitExprClass:break;
+			case Stmt::StmtClass::AddrLabelExprClass:break;
+			case Stmt::StmtClass::StmtExprClass:break;
+			case Stmt::StmtClass::TypesCompatibleExprClass:break;
+			case Stmt::StmtClass::ChooseExprClass:break;
+			case Stmt::StmtClass::GNUNullExprClass:break;
+			case Stmt::StmtClass::CXXOperatorCallExprClass:break;
+			case Stmt::StmtClass::CXXMemberCallExprClass:break;
+			case Stmt::StmtClass::CXXNamedCastExprClass:break;
+			case Stmt::StmtClass::CXXStaticCastExprClass:break;
+			case Stmt::StmtClass::CXXDynamicCastExprClass:break;
+			case Stmt::StmtClass::CXXReinterpretCastExprClass:break;
+			case Stmt::StmtClass::CXXConstCastExprClass:break;
+			case Stmt::StmtClass::CXXFunctionalCastExprClass:break;
+			case Stmt::StmtClass::CXXTypeidExprClass:break;
+			case Stmt::StmtClass::CXXBoolLiteralExprClass:break;
+			case Stmt::StmtClass::CXXNullPtrLiteralExprClass:break;
+			case Stmt::StmtClass::CXXThisExprClass:break;
+			case Stmt::StmtClass::CXXThrowExprClass:break;
+			case Stmt::StmtClass::CXXDefaultArgExprClass:break;
+			case Stmt::StmtClass::CXXZeroInitValueExprClass:break;
+			case Stmt::StmtClass::CXXConditionDeclExprClass:break;
+			case Stmt::StmtClass::CXXNewExprClass:break;
+			case Stmt::StmtClass::CXXDeleteExprClass:break;
+			case Stmt::StmtClass::UnresolvedFunctionNameExprClass:break;
+			case Stmt::StmtClass::UnaryTypeTraitExprClass:break;
+			case Stmt::StmtClass::QualifiedDeclRefExprClass:break;
+			case Stmt::StmtClass::UnresolvedDeclRefExprClass:break;
+			case Stmt::StmtClass::TemplateIdRefExprClass:break;
+			case Stmt::StmtClass::CXXConstructExprClass:break;
+			case Stmt::StmtClass::CXXBindTemporaryExprClass:break;
+			case Stmt::StmtClass::CXXExprWithTemporariesClass:break;
+			case Stmt::StmtClass::CXXTemporaryObjectExprClass:break;
+			case Stmt::StmtClass::CXXUnresolvedConstructExprClass:break;
+			case Stmt::StmtClass::CXXUnresolvedMemberExprClass:break;
+			case Stmt::StmtClass::ShuffleVectorExprClass:break;
+			case Stmt::StmtClass::BlockExprClass:break;
+			case Stmt::StmtClass::BlockDeclRefExprClass:break;
 		}
 
 		// silent no return statement warnings
@@ -142,36 +190,36 @@ public:
 		(value.push_back(var_t{args}), ...);
 
 		switch (type) {
-			case Type::ExtQual:break;
-			case Type::Builtin:					return createBuiltinType(value);
-			case Type::FixedWidthInt:break;
-			case Type::Complex:break;
-			case Type::Pointer:					return createPointerType(value);
-			case Type::BlockPointer:break;
-			case Type::LValueReference:break;
-			case Type::RValueReference:break;
-			case Type::MemberPointer:break;
-			case Type::ConstantArray:break;
-			case Type::ConstantArrayWithExpr:break;
-			case Type::ConstantArrayWithoutExpr:break;
-			case Type::IncompleteArray:			return createIncompleteArrayType(value);
-			case Type::VariableArray:break;
-			case Type::DependentSizedArray:break;
-			case Type::DependentSizedExtVector:break;
-			case Type::Vector:break;
-			case Type::ExtVector:break;
-			case Type::FunctionProto:			return createFunctionProtoType(value);
-			case Type::FunctionNoProto:			return createFunctionNoProtoType(value);
-			case Type::Typedef:					return createTypedefType(value);
-			case Type::TypeOfExpr:break;
-			case Type::TypeOf:break;
-			case Type::Decltype:break;
-			case Type::Record:					return createRecordType(value);
-			case Type::Enum:					return createEnumType(value);
-			case Type::TemplateTypeParm:break;
-			case Type::TemplateSpecialization:break;
-			case Type::QualifiedName:break;
-			case Type::Typename:break;
+			case Type::TypeClass::ExtQual:break;
+			case Type::TypeClass::Builtin:					return createBuiltinType(value);
+			case Type::TypeClass::FixedWidthInt:break;
+			case Type::TypeClass::Complex:break;
+			case Type::TypeClass::Pointer:					return createPointerType(value);
+			case Type::TypeClass::BlockPointer:break;
+			case Type::TypeClass::LValueReference:break;
+			case Type::TypeClass::RValueReference:break;
+			case Type::TypeClass::MemberPointer:break;
+			case Type::TypeClass::ConstantArray:break;
+			case Type::TypeClass::ConstantArrayWithExpr:	return createConstantArrayWithExprType(value);
+			case Type::TypeClass::ConstantArrayWithoutExpr:break;
+			case Type::TypeClass::IncompleteArray:			return createIncompleteArrayType(value);
+			case Type::TypeClass::VariableArray:break;
+			case Type::TypeClass::DependentSizedArray:break;
+			case Type::TypeClass::DependentSizedExtVector:break;
+			case Type::TypeClass::Vector:break;
+			case Type::TypeClass::ExtVector:break;
+			case Type::TypeClass::FunctionProto:			return createFunctionProtoType(value);
+			case Type::TypeClass::FunctionNoProto:			return createFunctionNoProtoType(value);
+			case Type::TypeClass::Typedef:					return createTypedefType(value);
+			case Type::TypeClass::TypeOfExpr:break;
+			case Type::TypeClass::TypeOf:break;
+			case Type::TypeClass::Decltype:break;
+			case Type::TypeClass::Record:					return createRecordType(value);
+			case Type::TypeClass::Enum:						return createEnumType(value);
+			case Type::TypeClass::TemplateTypeParm:break;
+			case Type::TypeClass::TemplateSpecialization:break;
+			case Type::TypeClass::QualifiedName:break;
+			case Type::TypeClass::Typename:break;
 		}
 
 		// silent no return statement warnings
@@ -249,7 +297,7 @@ private:
 	//std::shared_ptr<Type> createMemberPointerType(std::vector<var_t> &value);
 //    void createArrayType(std::vector<var_t> &value);      protected
 	std::shared_ptr<QualType> createConstantArrayType(std::vector<var_t> &value);//
-	std::shared_ptr<QualType> createConstantArrayWithExprType(std::vector<var_t> &value);//
+	std::shared_ptr<QualType> createConstantArrayWithExprType(std::vector<var_t> &value);
 	std::shared_ptr<QualType> createConstantArrayWithoutExprType(std::vector<var_t> &value);//
 	std::shared_ptr<QualType> createIncompleteArrayType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createVariableArrayType(std::vector<var_t> &value);//

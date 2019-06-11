@@ -18,10 +18,16 @@ class Driver;
 
 class Scanner : public yyFlexLexer {
 public:
+	Scanner(Driver &driver)
+		: m_driver{driver}
+	{}
+
 	using yyFlexLexer::yyFlexLexer;
 	//~Scanner() override = default;
 
 	yy::Parser::symbol_type yylex(Driver &driver);
+private:
+	Driver &m_driver;
 };
 
 #endif //CODEREFACTOR_SCANNER_H

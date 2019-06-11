@@ -21,6 +21,8 @@ public:
 	bool hasMacroDefinition() const;
 	void setHasMacroDefinition(bool Val);
 
+	bool isAnonymous() const;
+
 	//  tok::TokenKind getTokenID() const { return (tok::TokenKind)TokenID; }
 	//  void setTokenID(tok::TokenKind ID) { TokenID = ID; }
 

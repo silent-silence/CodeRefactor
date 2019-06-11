@@ -1,6 +1,7 @@
 %{
 	#include "parser.hpp"
 	#include "Parser/Scanner.h"
+	#include "Parser/Driver.h"
 	#include <string.h>
 
 	#define YY_NO_UNISTD_H
@@ -73,7 +74,7 @@ multi_comment       (\/\*(.|\n)*?\*\/)
 
 {float}			{ return yy::Parser::make_FLOATING_LITERAL(atof(yytext), loc); }
 {integer}		{ return yy::Parser::make_INTEGER_LITERAL(atoi(yytext), loc); }
-{identifier}	{ return yy::Parser::make_IDENTIFIER(yytext, loc); }
+{identifier}	{ return m_driver.identifier_or_type_name(yytext, loc); }
 
 {single_comment} |
 {multi_comment}  { return yy::Parser::make_COMMENT(yytext, loc);}

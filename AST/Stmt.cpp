@@ -25,9 +25,9 @@ Stmt::Stmt(Stmt::StmtClass SC, Stmt::EmptyShell)
 }
 
 DeclStmt::DeclStmt(std::shared_ptr<DeclGroupRef> dg, SourceLocation startLoc, SourceLocation endLoc)
-    : Stmt(DeclStmtClass), m_dg{dg}, StartLoc(startLoc), EndLoc(endLoc) {}
+    : Stmt(StmtClass::DeclStmtClass), m_dg{dg}, StartLoc(startLoc), EndLoc(endLoc) {}
 
-DeclStmt::DeclStmt(EmptyShell Empty) : Stmt(DeclStmtClass, Empty) { }
+DeclStmt::DeclStmt(EmptyShell Empty) : Stmt(StmtClass::DeclStmtClass, Empty) { }
 
 SourceLocation DeclStmt::getStartLoc() const
 {
@@ -56,7 +56,7 @@ std::weak_ptr<DeclGroupRef> DeclStmt::getDeclGroup()
 
 bool DeclStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == DeclStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::DeclStmtClass;
 }
 
 bool DeclStmt::classof(const std::weak_ptr<DeclStmt>)
@@ -74,9 +74,9 @@ Stmt::child_iterator DeclStmt::child_end()
     return child_iterator(nullptr);
 }
 
-NullStmt::NullStmt(SourceLocation L) : Stmt(NullStmtClass), SemiLoc(L) {}
+NullStmt::NullStmt(SourceLocation L) : Stmt(StmtClass::NullStmtClass), SemiLoc(L) {}
 
-NullStmt::NullStmt(EmptyShell Empty) : Stmt(NullStmtClass, Empty) { }
+NullStmt::NullStmt(EmptyShell Empty) : Stmt(StmtClass::NullStmtClass, Empty) { }
 
 SourceLocation NullStmt::getSemiLoc() const
 {
@@ -90,7 +90,7 @@ void NullStmt::setSemiLoc(SourceLocation L)
 
 bool NullStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == NullStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::NullStmtClass;
 }
 
 bool NullStmt::classof(const std::weak_ptr<NullStmt>)
@@ -110,12 +110,10 @@ Stmt::child_iterator NullStmt::child_end()
 
 CompoundStmt::CompoundStmt(std::list<std::shared_ptr<Stmt>> StmtStart,
                            SourceLocation LB, SourceLocation RB)
-    :Stmt (CompoundStmtClass), Body{StmtStart}, LBracLoc(LB), RBracLoc(RB)
-{
-}
+    :Stmt (StmtClass::CompoundStmtClass), Body{StmtStart}, LBracLoc(LB), RBracLoc(RB)
+{}
 
-
-CompoundStmt::CompoundStmt(EmptyShell Empty):Stmt(CompoundStmtClass, Empty)
+CompoundStmt::CompoundStmt(EmptyShell Empty):Stmt(StmtClass::CompoundStmtClass, Empty)
 {}
 
 void CompoundStmt::setStmts(std::list<std::shared_ptr<Stmt> > Stmts)
@@ -155,7 +153,7 @@ void CompoundStmt::setRBracLoc(SourceLocation L)
 
 bool CompoundStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == CompoundStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::CompoundStmtClass;
 }
 
 bool CompoundStmt::classof(const std::weak_ptr<CompoundStmt>)
@@ -185,8 +183,8 @@ void SwitchCase::setNextSwitchCase(std::shared_ptr<SwitchCase> SC)
 
 bool SwitchCase::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == CaseStmtClass ||
-            T.lock()->getStmtClass() == DefaultStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::CaseStmtClass ||
+            T.lock()->getStmtClass() == StmtClass::DefaultStmtClass;
 }
 
 bool SwitchCase::classof(const std::weak_ptr<SwitchCase>)
@@ -201,7 +199,7 @@ SwitchCase::SwitchCase(StmtClass SC)
 CaseStmt::CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs,
                    SourceLocation caseLoc, SourceLocation ellipsisLoc,
                    SourceLocation colonLoc)
-    : SwitchCase(CaseStmtClass)
+    : SwitchCase(StmtClass::CaseStmtClass)
 {
     SubExprs[SUBSTMT] = nullptr;
     SubExprs[LHS] = lhs;
@@ -212,7 +210,7 @@ CaseStmt::CaseStmt(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs,
 }
 
 CaseStmt::CaseStmt(EmptyShell Empty)
-    :SwitchCase (CaseStmtClass)
+    :SwitchCase (StmtClass::CaseStmtClass)
 {}
 
 SourceLocation CaseStmt::getCaseLoc() const
@@ -277,7 +275,7 @@ void CaseStmt::setRHS(std::shared_ptr<Expr> Val)
 
 bool CaseStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == CaseStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::CaseStmtClass;
 }
 
 bool CaseStmt::classof(const std::weak_ptr<CaseStmt>)
@@ -304,11 +302,11 @@ Stmt::child_iterator CaseStmt::child_end()
 }
 
 DefaultStmt::DefaultStmt(SourceLocation DL, SourceLocation CL, std::shared_ptr<Stmt> substmt)
-    :SwitchCase(DefaultStmtClass), SubStmt(substmt), DefaultLoc(DL), ColonLoc(CL)
+    :SwitchCase(StmtClass::DefaultStmtClass), SubStmt(substmt), DefaultLoc(DL), ColonLoc(CL)
 {}
 
 DefaultStmt::DefaultStmt(EmptyShell)
-    : SwitchCase(DefaultStmtClass)
+    : SwitchCase(StmtClass::DefaultStmtClass)
 { }
 
 std::weak_ptr<Stmt> DefaultStmt::getSubStmt()
@@ -343,7 +341,7 @@ void DefaultStmt::setColonLoc(SourceLocation L)
 
 bool DefaultStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == DefaultStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::DefaultStmtClass;
 }
 
 bool DefaultStmt::classof(const std::weak_ptr<DefaultStmt>)
@@ -362,11 +360,11 @@ Stmt::child_iterator DefaultStmt::child_end()
 }
 
 LabelStmt::LabelStmt(SourceLocation IL, std::shared_ptr<Stmt> substmt)
-    : Stmt(LabelStmtClass),
+    : Stmt(StmtClass::LabelStmtClass),
       SubStmt(substmt), IdentLoc(IL) {}
 
 LabelStmt::LabelStmt(EmptyShell Empty)
-    :Stmt (LabelStmtClass,Empty)
+    :Stmt (StmtClass::LabelStmtClass,Empty)
 {}
 
 SourceLocation LabelStmt::getIdentLoc() const
@@ -391,7 +389,7 @@ void LabelStmt::setSubStmt(std::shared_ptr<Stmt> SS)
 
 bool LabelStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == LabelStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::LabelStmtClass;
 }
 
 bool LabelStmt::classof(const std::weak_ptr<LabelStmt>)
@@ -410,14 +408,14 @@ Stmt::child_iterator LabelStmt::child_end()
 }
 
 SwitchStmt::SwitchStmt(SourceLocation SL, std::shared_ptr<Expr> cond)
-    :Stmt (SwitchStmtClass),FirstCase(0), SwitchLoc{SL}
+    :Stmt (StmtClass::SwitchStmtClass),FirstCase(0), SwitchLoc{SL}
 {
     SubExprs[COND]=cond;
     SubExprs[BODY]=nullptr;
 }
 
 SwitchStmt::SwitchStmt(EmptyShell Empty)
-    : Stmt(SwitchStmtClass, Empty)
+    : Stmt(StmtClass::SwitchStmtClass, Empty)
 { }
 
 std::weak_ptr<Expr> SwitchStmt::getCond()
@@ -468,7 +466,7 @@ void SwitchStmt::setBody(std::shared_ptr<Stmt> S, SourceLocation SL)
 
 bool SwitchStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == SwitchStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::SwitchStmtClass;
 }
 
 bool SwitchStmt::classof(const std::weak_ptr<SwitchStmt>)
@@ -496,7 +494,7 @@ Stmt::child_iterator SwitchStmt::child_end()
                 END_EXPR>::iterator>>(SubExprs.end()));
 }
 WhileStmt::WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body, SourceLocation WL)
-    : Stmt(WhileStmtClass)
+    : Stmt(StmtClass::WhileStmtClass)
 {
     SubExprs[COND] = cond;
     SubExprs[BODY] = body;
@@ -504,7 +502,7 @@ WhileStmt::WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body, Sou
 }
 
 WhileStmt::WhileStmt(Stmt::EmptyShell Empty)
-    : Stmt(WhileStmtClass, Empty) { }
+    : Stmt(StmtClass::WhileStmtClass, Empty) { }
 
 std::weak_ptr<Expr> WhileStmt::getCond()
 {
@@ -538,7 +536,7 @@ void WhileStmt::setWhileLoc(SourceLocation L)
 
 bool WhileStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == WhileStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::WhileStmtClass;
 }
 
 bool WhileStmt::classof(const std::weak_ptr<WhileStmt>)
@@ -571,13 +569,13 @@ DoStmt::DoStmt(std::shared_ptr<Stmt> body,
                SourceLocation DL,
                SourceLocation WL,
                SourceLocation RP)
-    : Stmt(DoStmtClass), DoLoc(DL), WhileLoc(WL), RParenLoc(RP) {
+    : Stmt(StmtClass::DoStmtClass), DoLoc(DL), WhileLoc(WL), RParenLoc(RP) {
     SubExprs[COND] = cond;
     SubExprs[BODY] = body;
 }
 
 DoStmt::DoStmt(Stmt::EmptyShell Empty)
-    : Stmt(DoStmtClass, Empty) { }
+    : Stmt(StmtClass::DoStmtClass, Empty) { }
 
 std::weak_ptr<Expr> DoStmt::getCond()
 {
@@ -631,7 +629,7 @@ void DoStmt::setRParenLoc(SourceLocation L)
 
 bool DoStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == DoStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::DoStmtClass;
 }
 
 bool DoStmt::classof(const std::weak_ptr<DoStmt>)
@@ -660,7 +658,7 @@ Stmt::child_iterator DoStmt::child_end()
 }
 
 ForStmt::ForStmt(std::shared_ptr<Stmt> Init, std::shared_ptr<Stmt> Cond, std::shared_ptr<Expr> Inc, std::shared_ptr<Stmt> Body, SourceLocation FL, SourceLocation LP, SourceLocation RP)
-    : Stmt(ForStmtClass)
+    : Stmt(StmtClass::ForStmtClass)
 {
     SubExprs[INIT] = Init;
     SubExprs[COND] = Cond;
@@ -672,7 +670,7 @@ ForStmt::ForStmt(std::shared_ptr<Stmt> Init, std::shared_ptr<Stmt> Cond, std::sh
 }
 
 ForStmt::ForStmt(Stmt::EmptyShell Empty)
-    : Stmt(ForStmtClass, Empty) { }
+    : Stmt(StmtClass::ForStmtClass, Empty) { }
 
 std::weak_ptr<Stmt> ForStmt::getInit()
 {
@@ -746,7 +744,7 @@ void ForStmt::setRParenLoc(SourceLocation L)
 
 bool ForStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ForStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::ForStmtClass;
 }
 
 bool ForStmt::classof(const std::weak_ptr<ForStmt>)
@@ -775,10 +773,10 @@ Stmt::child_iterator ForStmt::child_end()
 }
 
 GotoStmt::GotoStmt(std::shared_ptr<LabelStmt> label, SourceLocation GL, SourceLocation LL)
-    : Stmt(GotoStmtClass), Label(label), GotoLoc(GL), LabelLoc(LL) {}
+    : Stmt(StmtClass::GotoStmtClass), Label(label), GotoLoc(GL), LabelLoc(LL) {}
 
 GotoStmt::GotoStmt(Stmt::EmptyShell Empty)
-    : Stmt(GotoStmtClass, Empty) { }
+    : Stmt(StmtClass::GotoStmtClass, Empty) { }
 
 std::weak_ptr<LabelStmt> GotoStmt::getLabel() const
 {
@@ -812,7 +810,7 @@ void GotoStmt::setLabelLoc(SourceLocation L)
 
 bool GotoStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == GotoStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::GotoStmtClass;
 }
 
 bool GotoStmt::classof(const std::weak_ptr<GotoStmt>)
@@ -831,13 +829,13 @@ Stmt::child_iterator GotoStmt::child_end()
 }
 
 IndirectGotoStmt::IndirectGotoStmt(SourceLocation gotoLoc, SourceLocation starLoc, std::shared_ptr<Expr> target)
-    : Stmt(IndirectGotoStmtClass), GotoLoc(gotoLoc), StarLoc(starLoc), Target(target)
+    : Stmt(StmtClass::IndirectGotoStmtClass), GotoLoc(gotoLoc), StarLoc(starLoc), Target(target)
 {
 
 }
 
 IndirectGotoStmt::IndirectGotoStmt(Stmt::EmptyShell Empty)
-    : Stmt(IndirectGotoStmtClass, Empty) { }
+    : Stmt(StmtClass::IndirectGotoStmtClass, Empty) { }
 
 SourceLocation IndirectGotoStmt::getGotoLoc() const
 {
@@ -866,7 +864,7 @@ void IndirectGotoStmt::setTarget(std::shared_ptr<Expr> E)
 
 bool IndirectGotoStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == IndirectGotoStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::IndirectGotoStmtClass;
 }
 
 bool IndirectGotoStmt::classof(const std::weak_ptr<IndirectGotoStmt>)
@@ -885,10 +883,10 @@ Stmt::child_iterator IndirectGotoStmt::child_end()
 }
 
 ContinueStmt::ContinueStmt(SourceLocation CL)
-    : Stmt(ContinueStmtClass), ContinueLoc(CL) {}
+    : Stmt(StmtClass::ContinueStmtClass), ContinueLoc(CL) {}
 
 ContinueStmt::ContinueStmt(Stmt::EmptyShell Empty)
-    : Stmt(ContinueStmtClass, Empty) { }
+    : Stmt(StmtClass::ContinueStmtClass, Empty) { }
 
 SourceLocation ContinueStmt::getContinueLoc() const
 {
@@ -902,7 +900,7 @@ void ContinueStmt::setContinueLoc(SourceLocation L)
 
 bool ContinueStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ContinueStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::ContinueStmtClass;
 }
 
 bool ContinueStmt::classof(const std::weak_ptr<ContinueStmt>)
@@ -921,10 +919,10 @@ Stmt::child_iterator ContinueStmt::child_end()
 }
 
 BreakStmt::BreakStmt(SourceLocation BL)
-    : Stmt(BreakStmtClass), BreakLoc(BL) {}
+    : Stmt(StmtClass::BreakStmtClass), BreakLoc(BL) {}
 
 BreakStmt::BreakStmt(Stmt::EmptyShell Empty)
-    : Stmt(BreakStmtClass, Empty) { }
+    : Stmt(StmtClass::BreakStmtClass, Empty) { }
 
 SourceLocation BreakStmt::getBreakLoc() const
 {
@@ -938,7 +936,7 @@ void BreakStmt::setBreakLoc(SourceLocation L)
 
 bool BreakStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == BreakStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::BreakStmtClass;
 }
 
 bool BreakStmt::classof(const std::weak_ptr<BreakStmt>)
@@ -957,12 +955,12 @@ Stmt::child_iterator BreakStmt::child_end()
 }
 
 ReturnStmt::ReturnStmt(SourceLocation RL, std::shared_ptr<Expr> E)
-    : Stmt(ReturnStmtClass),
+    : Stmt(StmtClass::ReturnStmtClass),
       RetExpr(E),
       RetLoc(RL) {}
 
 ReturnStmt::ReturnStmt(Stmt::EmptyShell Empty)
-    : Stmt(ReturnStmtClass, Empty) { }
+    : Stmt(StmtClass::ReturnStmtClass, Empty) { }
 
 std::weak_ptr<Expr> ReturnStmt::getRetValue()
 {
@@ -986,7 +984,7 @@ void ReturnStmt::setReturnLoc(SourceLocation L)
 
 bool ReturnStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == ReturnStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::ReturnStmtClass;
 }
 
 bool ReturnStmt::classof(const std::weak_ptr<ReturnStmt>)
@@ -1009,7 +1007,7 @@ AsmStmt::AsmStmt(SourceLocation asmloc, bool issimple, bool isvolatile,
                  std::list<std::string> names, std::list<std::shared_ptr<StringLiteral>> constraints,
                  std::list<std::shared_ptr<Expr>> exprs, std::shared_ptr<StringLiteral> asmstr, unsigned numclobbers,
                  std::list<std::shared_ptr<StringLiteral>> clobbers, SourceLocation rparenloc)
-    : Stmt(AsmStmtClass), AsmLoc(asmloc), RParenLoc(rparenloc), AsmStr(asmstr),
+    : Stmt(StmtClass::AsmStmtClass), AsmLoc(asmloc), RParenLoc(rparenloc), AsmStr(asmstr),
       IsSimple(issimple), IsVolatile(isvolatile), NumOutputs(numoutputs), NumInputs(numinputs)
 {
 //    for (unsigned i = 0, e = numinputs + numoutputs; i != e; i++) {
@@ -1043,7 +1041,7 @@ void AsmStmt::setRParenLoc(SourceLocation L)
 
 bool AsmStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == AsmStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::AsmStmtClass;
 }
 
 bool AsmStmt::classof(const std::weak_ptr<AsmStmt>)
@@ -1052,10 +1050,10 @@ bool AsmStmt::classof(const std::weak_ptr<AsmStmt>)
 }
 
 AsmStmt::AsmStmt(Stmt::EmptyShell Empty)
-    : Stmt(AsmStmtClass, Empty) { }
+    : Stmt(StmtClass::AsmStmtClass, Empty) { }
 
 IfStmt::IfStmt(SourceLocation IL, std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> then, SourceLocation EL, std::shared_ptr<Stmt> elsev)
-    : Stmt(IfStmtClass)
+    : Stmt(StmtClass::IfStmtClass)
 {
     SubExprs[COND] = cond;
     SubExprs[THEN] = then;
@@ -1065,7 +1063,7 @@ IfStmt::IfStmt(SourceLocation IL, std::shared_ptr<Expr> cond, std::shared_ptr<St
 }
 
 IfStmt::IfStmt(Stmt::EmptyShell Empty)
-    : Stmt(IfStmtClass, Empty)
+    : Stmt(StmtClass::IfStmtClass, Empty)
 { }
 
 std::weak_ptr<Expr> IfStmt::getCond()
@@ -1120,7 +1118,7 @@ void IfStmt::setElseLoc(SourceLocation L)
 
 bool IfStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    return T.lock()->getStmtClass() == IfStmtClass;
+    return T.lock()->getStmtClass() == StmtClass::IfStmtClass;
 }
 
 bool IfStmt::classof(const std::weak_ptr<IfStmt>)
@@ -1149,16 +1147,12 @@ Stmt::child_iterator IfStmt::child_end()
 }
 
 CommentStmt::CommentStmt(std::string comment, SourceLocation SL)
-    :Stmt(CommentStmtClass), Comment{comment}, CommentLoc{SL}
-{
-
-}
+    :Stmt(StmtClass::CommentStmtClass), Comment{comment}, CommentLoc{SL}
+{}
 
 CommentStmt::CommentStmt(Stmt::EmptyShell Empty)
-    :Stmt(CommentStmtClass, Empty)
-{
-
-}
+    :Stmt(StmtClass::CommentStmtClass, Empty)
+{}
 
 SourceLocation CommentStmt::getCommentLoc() const
 {
@@ -1172,9 +1166,7 @@ void CommentStmt::setCommetLoc(SourceLocation L)
 
 bool CommentStmt::classof(const std::weak_ptr<Stmt> T)
 {
-    if(T.lock()->getStmtClass() == Stmt::CommentStmtClass)
-        return true;
-    return false;
+    return T.lock()->getStmtClass() == StmtClass::CommentStmtClass;
 }
 
 bool CommentStmt::classof(const std::weak_ptr<CommentStmt>)

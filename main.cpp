@@ -10,29 +10,26 @@ int main(int argc, char *argv[])
 
 #else
 
-#include "OpenHelper/StringStreamOpenHelper.h"
-#include "OpenHelper/FileOpenHelper.h"
-#include "Parser/YaccAdapter.h"
-#include "Decl/DeclContextHolder.h"
-#include "Parser/Driver.h"
-#include "AST/ASTContext.h"
-#include "ASTOperation/Printer.h"
+#include <string>
+#include <iostream>
+#include <memory>
+#include <unistd.h>
+#include "CodeRefactor.h"
 
+using std::cin;
+using std::cout;
+using std::endl;
 using std::string;
+using std::weak_ptr;
+using std::shared_ptr;
+using std::make_shared;
 
-int main()
+int main(int argc, char **argv)
 {
-    FileOpenHelper openHelper("a.txt", "b.txt");
-	ASTContext context;
-	DeclContextHolder declContextHolder;
-	YaccAdapter adapter(context, declContextHolder, openHelper);
-
-	Driver driver(openHelper, adapter);
-    Printer printer(openHelper);
-
-	driver.parse();
-    printer.print(context.getRoot().lock());
-
+    string str(argv[1]);
+    auto ptr = make_shared<CodeRefactor>(str);
+    ptr->run();
+    ptr->show();
 	return 0;
 }
 #endif

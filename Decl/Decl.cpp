@@ -4,6 +4,7 @@
 
 #include "Decl.h"
 #include "AST/Type.h"
+#include "Basic/IdentifierTable.h"
 
 /// @TranslationUnitDecl
 TranslationUnitDecl::TranslationUnitDecl()
@@ -24,6 +25,9 @@ const std::weak_ptr<DeclContext> TranslationUnitDecl::getParent() const
 NamedDecl::NamedDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
 		DeclName name)
 	: Decl(declKind, context, location), m_name{name}
+{}
+
+NamedDecl::~NamedDecl()
 {}
 
 DeclName NamedDecl::getDeclarationName() const
@@ -48,6 +52,10 @@ ValueDecl::ValueDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLo
 	: NamedDecl{declKind, context, location, name}, m_declType{type}
 {}
 
+/// pure-virtual
+ValueDecl::~ValueDecl()
+{}
+
 std::weak_ptr<QualType> ValueDecl::getType() const
 {
 	return m_declType;
@@ -58,10 +66,6 @@ void ValueDecl::setType(std::shared_ptr<QualType> newType)
 	m_declType = newType;
 }
 
-/// @destructor pure-virtual
-ValueDecl::~ValueDecl()
-{}
-
 /// @DeclaratorDecl
 DeclaratorDecl::DeclaratorDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
 		DeclName name,
@@ -70,7 +74,7 @@ DeclaratorDecl::DeclaratorDecl(Kind declKind, std::weak_ptr<DeclContext> context
 	: ValueDecl{declKind, context, location, name, type}/*, m_declInfo{info}*/
 {}
 
-/// @destructor pure-virtual
+/// pure-virtual
 DeclaratorDecl::~DeclaratorDecl()
 {}
 
@@ -105,7 +109,7 @@ EnumConstantDecl::EnumConstantDecl(std::weak_ptr<DeclContext> context, SourceLoc
 								   DeclName name,
 								   std::shared_ptr<QualType> type,
 								   std::shared_ptr<Expr> init)
-	: ValueDecl(EnumConstant, context, location, name, type), m_init{init}// TODO, m_value{m_init->getValue()}
+	: ValueDecl(Kind::EnumConstant, context, location, name, type), m_init{init}// TODO, m_value{m_init->getValue()}
 {}
 
 std::weak_ptr<Expr> EnumConstantDecl::getInitExpr()
@@ -163,16 +167,16 @@ TypeDecl::TypeDecl(Kind kind, std::weak_ptr<DeclContext> context, SourceLocation
 	: NamedDecl{kind, context, l, info}, m_typeForDecl{nullptr}
 {}
 
-/// @destructor pure-virtual
+/// pure-virtual
 TypeDecl::~TypeDecl()
 {}
 
-std::weak_ptr<Type> TypeDecl::getTypeForDecl() const
+std::weak_ptr<QualType> TypeDecl::getTypeForDecl() const
 {
 	return m_typeForDecl;
 }
 
-void TypeDecl::setTypeForDecl(std::shared_ptr<Type> type)
+void TypeDecl::setTypeForDecl(std::shared_ptr<QualType> type)
 {
 	m_typeForDecl = type;
 }
@@ -180,9 +184,9 @@ void TypeDecl::setTypeForDecl(std::shared_ptr<Type> type)
 /// @TypedefDecl
 TypedefDecl::TypedefDecl(std::weak_ptr<DeclContext> context, SourceLocation l, std::shared_ptr<IdentifierInfo> info,
 		std::shared_ptr<QualType> type)
-	: TypeDecl{Typedef, context, l, info}, underlyingType{type}
+	: TypeDecl{Kind::Typedef, context, l, info}
 {
-	setTypeForDecl(type->getTypePtr());
+	setTypeForDecl(type);
 }
 
 /// @TagDecl
@@ -190,6 +194,10 @@ TagDecl::TagDecl(Decl::Kind declKind, TagDecl::TagKind tagKind, std::weak_ptr<De
 				 SourceLocation location, std::shared_ptr<IdentifierInfo> info,
 				 SourceLocation tkl)
 	: TypeDecl{declKind, context, location, info}, DeclContext{declKind}, TagKeyWordLoc{tkl}, m_kind{tagKind}
+{}
+
+/// pure-virtual
+TagDecl::~TagDecl()
 {}
 
 std::weak_ptr<DeclContext> TagDecl::getParent()
@@ -282,7 +290,7 @@ void RecordDecl::setHasObjectMember(bool has)
 /// @brief
 EnumDecl::EnumDecl(std::weak_ptr<DeclContext> context,
 		SourceLocation l, std::shared_ptr<IdentifierInfo> info, SourceLocation tkl)
-	: TagDecl(Enum, TagKind::KindEnum, context, l, info, tkl)
+	: TagDecl(Kind::Enum, TagKind::KindEnum, context, l, info, tkl)
 {}
 
 std::shared_ptr<QualType> EnumDecl::getIntegerType() const
@@ -329,7 +337,7 @@ void FunctionDecl::setBody(std::shared_ptr<Stmt> B)
 
 unsigned FunctionDecl::getNumParams() const
 {
-	return getNumParams();
+	return ParamInfo.size();
 }
 
 const std::weak_ptr<ParmVarDecl> FunctionDecl::getParamDecl(unsigned i) const
@@ -345,6 +353,11 @@ std::weak_ptr<ParmVarDecl> FunctionDecl::getParamDecl(unsigned i)
 void FunctionDecl::setParams(std::vector<std::shared_ptr<ParmVarDecl>> &NewParamInfo)
 {
 	ParamInfo = NewParamInfo;
+}
+
+void FunctionDecl::addArg(std::shared_ptr<ParmVarDecl> newParam)
+{
+	ParamInfo.push_back(newParam);
 }
 
 FunctionDecl::StorageClass FunctionDecl::getStorageClass() const
@@ -375,4 +388,9 @@ ParmVarDecl::ParmVarDecl(Decl::Kind declKind, std::shared_ptr<DeclContext> conte
 std::weak_ptr<QualType> ParmVarDecl::getOriginalType() const
 {
 	return getType();
+}
+
+bool ParmVarDecl::paramHasName() const
+{
+	return !getIdentifier().lock()->isAnonymous();
 }

@@ -77,6 +77,7 @@ void DeclContext::addDecl(std::shared_ptr<Decl> decl)
 			lookupForExistence(storedDecl, false);
 		} catch (SymbolNotFound &s) {		// normal flow
 			m_decls[storedDecl] = decl;
+			m_declsList.push_back(decl);
 		} catch(SymbolAlreadyExist &s) {	// throw
 			throw s;
 		}
@@ -155,6 +156,16 @@ void DeclContext::lookupForExistence(StoredDecl &name, bool lookIntoParent)
 		throw SymbolNotFound("Symbol '" + name.getDeclAsString() + "' not found!");
 	else if(findInCurrentContext)
 		throw SymbolAlreadyExist("Symbol '" + name.getDeclAsString() + "' already exist");
+}
+
+DeclIterator DeclContext::decl_begin()
+{
+	return DeclIterator(m_declsList.begin());
+}
+
+DeclIterator DeclContext::decl_end()
+{
+	return DeclIterator(m_declsList.end());
 }
 
 /// @StoredDecl

@@ -90,6 +90,12 @@ TEST_F(OpenHelperTest, stringOpener)
 	opener.getInputStream() >> readBuf;
 	EXPECT_EQ("input", readBuf);
 
+	// TODO input twice and read once
+	/*opener << std::string("input1");
+	opener << std::string("input2");
+	opener.getInputStream() >> readBuf;
+	EXPECT_EQ("input1input2", readBuf);*/
+
 	dynamic_cast<std::ostringstream &>(opener.getOutputStream()).str("output");
 	opener >> readBuf;
 	EXPECT_EQ("output", readBuf);
