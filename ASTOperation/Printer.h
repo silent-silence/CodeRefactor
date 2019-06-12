@@ -14,7 +14,7 @@ class QualType;
 class DeclContext;
 class Decl;
 
-// TODO: refactor Printer, returning vector of string,
+// TODO: Use decorator refactor Printer, returning vector of string,
 // TODO: reformat strings in higher level(such as if stmt).
 // TODO: for example: 'if stmt', it's sub statement just return a string of expr or stmt,
 // TODO: if will add indent or '\n' in condition
@@ -32,7 +32,7 @@ namespace Printer {
 	class ASTPrinter;
 	class TypePrinter;
 
-/// @brief Print type
+	/// @brief Print type
 	class TypePrinter {
 	public:
 		TypePrinter(OpenHelper &stream, ASTPrinter &printer);
@@ -57,11 +57,12 @@ namespace Printer {
 		ASTPrinter &ast;
 	};
 
-/// @brief Print AST
+	/// @brief Print AST
 	class ASTPrinter {
 	public:
 		explicit ASTPrinter(OpenHelper &stream);
 
+		/// @brief Print all child in root
 		void printAST(std::shared_ptr<Stmt> root);
 
 	private:
@@ -126,6 +127,7 @@ namespace Printer {
 	public:
 		explicit ContextPrinter(OpenHelper &stream);
 
+		/// @brief Print all decls in context
 		void printContext(std::shared_ptr<DeclContext> context);
 
 	private:

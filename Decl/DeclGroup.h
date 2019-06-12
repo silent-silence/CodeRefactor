@@ -7,7 +7,7 @@
 class Decl;
 class DeclGroup;
 
-/// @brief A reference to DeclGroup, can be one of a Decl or a DeclGroup
+/// @brief Represent reference to decls, can be a single Decl or multiply decls in DeclGroup
 class DeclGroupRef {
 public:
 	enum class Kind { SingleDeclKind, DeclGroupKind };
@@ -26,8 +26,6 @@ public:
 	std::weak_ptr<DeclGroup> getDeclGroup();
 	const std::weak_ptr<DeclGroup> getDeclGroup() const;
 
-	/*void *getAsOpaquePtr() const { return D; }
-	static DeclGroupRef getFromOpaquePtr(std::shared_ptr<void> Ptr);*/
 private:
 	std::shared_ptr<Decl> D;
 	std::shared_ptr<DeclGroup> groupRef;

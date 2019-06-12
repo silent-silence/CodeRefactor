@@ -8,6 +8,7 @@
 #include <sstream>
 #include "OpenHelper.h"
 
+/// @brief Open stream stream
 class StringStreamOpenHelper : public OpenHelper {
 	friend StringStreamOpenHelper &operator <<(StringStreamOpenHelper &opener, std::string &newInput);
 	friend StringStreamOpenHelper &operator <<(StringStreamOpenHelper &opener, std::string &&newInput);

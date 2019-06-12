@@ -803,10 +803,14 @@ void YaccAdapter::makeVariables(bool hasInit)
 
 		if (!m_typeSpecifier.empty() && (m_typeSpecifier.top().first & TYPEDEF))    // if is typedef type
 		{
-			m_varDecls.push(
+			auto typeDecl = dynamic_pointer_cast<TypedefDecl>(
 					m_declContextHolder.createTypedefDecl(m_declContextStack.top(), type, varName.first, varName.second)
 			);
-		} else                                        // is normal variable
+			auto typedefType = m_ASTContext.createType(Type::TypeClass::Typedef, typeDecl, type);
+			typeDecl->setTypeForDecl(typedefType);
+			m_varDecls.push(typeDecl);
+		}
+		else                                        // is normal variable
 		{
 			auto var = m_declContextHolder.createVariable(m_declContextStack.top(), varName.first, varName.second, type
 			);

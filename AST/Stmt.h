@@ -34,10 +34,11 @@ class ReturnStmt;
 class AsmStmt;//GNU内联汇编语句扩展
 class CommentStmt;
 
-//Stmt - This represents one statement.
+/// @brief This represents one statement, super class of all Stmt and Expr
 class Stmt
 {
 public:
+	/// @brief List stmt and expr kind
     enum class StmtClass : unsigned {
         NoStmtClass = 0,
 #define STMT(CLASS, PARENT) CLASS##Class,
@@ -63,7 +64,8 @@ private:
     unsigned RefCount : 24;//The reference count for this statement.
 };
 
-// DeclStmt - Adaptor class for mixing declarations with statements and expressions.
+/// @brief This represent a stmt who declared a name
+/// @example: 'int a;' is a DeclStmt
 class DeclStmt : public Stmt
 {
 public:
@@ -84,12 +86,13 @@ public:
     virtual child_iterator child_begin();
     virtual child_iterator child_end();
 private:
+	/// @brief Save names that declared in the stmt
 	std::shared_ptr<DeclGroupRef> m_dg;
     SourceLocation StartLoc;
     SourceLocation EndLoc;
 };
 
-/// NullStmt - This is the null statement ";": C99 6.8.3p3.
+/// @brief This is the null statement ";"
 class NullStmt : public Stmt
 {
 public:
@@ -108,6 +111,8 @@ private:
     SourceLocation SemiLoc;
 };
 
+/// @brief This is a compound stmt
+/// @example '{ 1+2; }' is a compound stmt
 class CompoundStmt : public Stmt
 {
 public:
@@ -134,11 +139,13 @@ public:
 
     virtual child_iterator child_begin();
     virtual child_iterator child_end();
+
 private:
     std::list<std::shared_ptr<Stmt>> Body;
     SourceLocation LBracLoc, RBracLoc;
 };
 
+/// @brief The super class of switch/case stmt
 class SwitchCase : public Stmt
 {
 public:
@@ -153,6 +160,8 @@ protected:
     std::shared_ptr<SwitchCase> NextSwitchCase;
 };
 
+/// @brief Represent a case stmt
+/// @example 'case 1:'
 class CaseStmt : public SwitchCase
 {
 public:
@@ -183,6 +192,10 @@ public:
     virtual child_iterator child_end();
 
 private:
+	/// @brief
+	/// SUBSTMT: next stmt after case stmt
+	/// LHS: condition
+	/// RHS: GUN 'case 1...4' extension
     enum { SUBSTMT, LHS, RHS, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
     SourceLocation CaseLoc;
@@ -190,6 +203,7 @@ private:
     SourceLocation ColonLoc;
 };
 
+/// @brief Represent default stmt
 class DefaultStmt : public SwitchCase
 {
 public:
@@ -211,11 +225,46 @@ public:
     virtual child_iterator child_end();
 
 private:
+	/// @brief Next stmt after default
     std::shared_ptr<Stmt> SubStmt;
     SourceLocation DefaultLoc;
     SourceLocation ColonLoc;
 };
 
+/// @brief Represent a switch stmt
+class SwitchStmt : public Stmt
+{
+public:
+	SwitchStmt(SourceLocation SL, std::shared_ptr<Expr> cond);
+	explicit SwitchStmt(EmptyShell Empty);
+
+	std::weak_ptr<Expr>getCond();
+	std::weak_ptr<Stmt>getBody();
+	std::weak_ptr<SwitchCase>getSwitchCaseList();
+
+	void setCond(std::shared_ptr<Expr>E);
+	void setBody(std::shared_ptr<Stmt>S);
+	void setSwitchCaseList(std::shared_ptr<SwitchCase>SC);
+
+	SourceLocation getSwitchLoc() const ;
+
+	void setSwitchLoc(SourceLocation L);
+	void setBody(std::shared_ptr<Stmt>S, SourceLocation SL);
+
+
+	static bool classof(const std::weak_ptr<Stmt>T);
+	static bool classof(const std::weak_ptr<SwitchStmt>);
+
+	virtual child_iterator child_begin();
+	virtual child_iterator child_end();
+private:
+	enum { COND, BODY, END_EXPR };
+	std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
+	std::shared_ptr<SwitchCase> FirstCase;
+	SourceLocation SwitchLoc;
+};
+
+/// @brief Represent a labeled stmt
 class LabelStmt : public Stmt
 {
 public:
@@ -244,10 +293,10 @@ private:
     //IdentifierInfo *Label;
 };
 
+/// @brief Represent a if stmt
 class IfStmt : public Stmt
 {
 public:
-
     IfStmt(SourceLocation IL, std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> then,
            SourceLocation EL = SourceLocation(), std::shared_ptr<Stmt> elsev= nullptr);
     explicit IfStmt(EmptyShell Empty);
@@ -278,38 +327,7 @@ private:
     SourceLocation ElseLoc;
 };
 
-class SwitchStmt : public Stmt
-{
-public:
-    SwitchStmt(SourceLocation SL, std::shared_ptr<Expr> cond);
-    explicit SwitchStmt(EmptyShell Empty);
-
-    std::weak_ptr<Expr>getCond();
-    std::weak_ptr<Stmt>getBody();
-    std::weak_ptr<SwitchCase>getSwitchCaseList();
-
-    void setCond(std::shared_ptr<Expr>E);
-    void setBody(std::shared_ptr<Stmt>S);
-    void setSwitchCaseList(std::shared_ptr<SwitchCase>SC);
-
-    SourceLocation getSwitchLoc() const ;
-
-    void setSwitchLoc(SourceLocation L);
-    void setBody(std::shared_ptr<Stmt>S, SourceLocation SL);
-
-
-    static bool classof(const std::weak_ptr<Stmt>T);
-    static bool classof(const std::weak_ptr<SwitchStmt>);
-
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
-private:
-    enum { COND, BODY, END_EXPR };
-    std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
-    std::shared_ptr<SwitchCase> FirstCase;
-    SourceLocation SwitchLoc;
-};
-
+/// @brief Represent a while stmt
 class WhileStmt : public Stmt
 {
 public:
@@ -336,6 +354,7 @@ private:
     SourceLocation WhileLoc;
 };
 
+/// @brief Represent a do-while stmt
 class DoStmt : public Stmt
 {
 public:
@@ -373,6 +392,7 @@ private:
     SourceLocation RParenLoc;
 };
 
+/// @brief Represent a for stmt
 class ForStmt : public Stmt
 {
 public:
@@ -415,6 +435,7 @@ private:
     SourceLocation LParenLoc, RParenLoc;
 };
 
+/// @brief Represent a goto stmt
 class GotoStmt : public Stmt
 {
 public:
@@ -467,6 +488,7 @@ private:
     std::shared_ptr<Stmt> Target;
 };
 
+/// @brief Represent a continue stmt
 class ContinueStmt : public Stmt
 {
 public:
@@ -485,6 +507,7 @@ private:
     SourceLocation ContinueLoc;
 };
 
+/// @brief Represent a break stmt
 class BreakStmt : public Stmt
 {
 public:
@@ -503,6 +526,7 @@ private:
     SourceLocation BreakLoc;
 };
 
+/// @brief Represent a return stmt
 class ReturnStmt : public Stmt
 {
 public:
@@ -544,7 +568,6 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<AsmStmt>);
 
-
 private:
     SourceLocation AsmLoc, RParenLoc;
     std::shared_ptr<StringLiteral> AsmStr;
@@ -561,6 +584,7 @@ private:
     std::array<std::shared_ptr<StringLiteral>, 4> Clobbers;
 };
 
+/// @brief Represent a comment
 class CommentStmt : public Stmt
 {
 public:

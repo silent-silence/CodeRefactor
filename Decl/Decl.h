@@ -11,9 +11,7 @@ class Expr;
 class Type;
 class Stmt;
 class CompoundStmt;
-class SourceRange;
 class SourceLocation;
-class Parameter;
 
 class FunctionDecl;
 class ParmVarDecl;
@@ -284,21 +282,11 @@ private:
 	std::vector<std::shared_ptr<ParmVarDecl>> ParamInfo;
 	std::shared_ptr<Stmt> Body;
 	StorageClass SClass;
-	/*bool IsInline : 1;*/
 	bool C99InlineDefinition;
-	/*bool IsVirtualAsWritten : 1;
-	bool IsPure : 1;
-	bool HasInheritedPrototype : 1;
-	bool HasWrittenPrototype : 1;
-	bool IsDeleted : 1;
-	bool IsTrivial : 1; // sunk from CXXMethodDecl
-	bool IsCopyAssignment : 1;  // sunk from CXXMethodDecl
-	bool HasImplicitReturnZero : 1;*/
 	SourceLocation EndRangeLoc;
-
-	/*std::shared_ptr<FunctionDecl> TemplateOrSpecialization;*/
 };
 
+/// @brief Represent a parameter for function
 class ParmVarDecl : public VarDecl {
 public:
     ParmVarDecl(Kind DK, std::shared_ptr<DeclContext> DC, SourceLocation L,

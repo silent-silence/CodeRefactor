@@ -654,18 +654,24 @@ QualifierSet::QualifierSet()
 {}
 
 /// @TypedefType
-TypedefType::TypedefType(TypeClass tc, std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl)
-	: Type(tc, false/*TODO: this should be (*can)->isDependentType()*/), Decl{decl}
+TypedefType::TypedefType(TypeClass tc, std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl, std::shared_ptr<QualType> declFor)
+	: Type(tc, false/*TODO: this should be (*can)->isDependentType()*/), Decl{decl}, declForType{declFor}
 {}
 
-std::shared_ptr<Type> TypedefType::creator(std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl)
+std::shared_ptr<Type> TypedefType::creator(std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl, std::shared_ptr<QualType> declFor)
 {
-	return make_shared<TypedefType>(TypeClass::Typedef, can, decl);
+	return make_shared<TypedefType>(TypeClass::Typedef, can, decl, declFor);
 }
 
 std::string TypedefType::getTypePrefixAsString() const
 {
-	return "typedef " + Decl->getTypeForDecl().lock()->getTypePrefixAsString();
+	return Decl->getNameAsString();
+	/*return "typedef " + declForType->getTypePrefixAsString();*/
+}
+
+std::weak_ptr<QualType> TypedefType::getDeclForType() const
+{
+	return declForType;
 }
 
 /// @TagType

@@ -3,6 +3,7 @@
 
 #include <string>
 
+/// @brief Represent the location（file name, lines, rows) of a token in code
 class SourceLocation
 {
 public:

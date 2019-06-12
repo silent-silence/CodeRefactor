@@ -28,14 +28,6 @@ public:
 	Decl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location);
 	virtual ~Decl() = 0;
 
-	/*/// @brief According to C99 6.2.3, there are four namespaces, labels, tags, members and ordinary
-	enum IdentifierNamespace {
-		IDNS_Label = 0x1,
-		IDNS_Tag = 0x2,
-		IDNS_Member = 0x4,
-		IDNS_Ordinary = 0x8,
-	};*/
-
 	/// @brief Get locations in code
 	/*virtual SourceRange getSourceRange() const;
 	SourceLocation getLocStart() const;*/

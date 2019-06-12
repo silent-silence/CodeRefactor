@@ -12,59 +12,19 @@
 class ASTContext
 {
 public:
-	enum Marker {
-		Marker_1 = 0x01,
-		Marker_2 = 0x02,
-		Marker_3 = 0x04,
-		Marker_4 = 0x08
-	};
+	/// @brief Package all needed type together
 	typedef std::variant<
-			unsigned,
-			unsigned long,
-			int,
-			double,
-			float,
-			bool,
-			char *,
-			SourceLocation,
-			UnaryOperator::Opcode,
-			BinaryOperator::Opcode,
-			PredefinedExpr::IdentType,
-			BuiltinType::Kind,
-			Type::TypeClass,
-			CastExpr::CastKind,
-			ArrayType::ArraySizeModifier,
-			std::string,
-			std::vector<std::shared_ptr<Stmt>>,
-			std::vector<std::shared_ptr<Expr>>,
-			std::list<std::shared_ptr<Stmt>>,
-			std::list<std::shared_ptr<Expr>>,
-			std::shared_ptr<Expr>,
-			std::shared_ptr<Stmt>,
-			std::shared_ptr<QualType>,
-			std::shared_ptr<NamedDecl>,
-			std::shared_ptr<TypedefDecl>,
-			std::shared_ptr<DeclGroupRef>,
-			std::shared_ptr<Decl>,
-			std::shared_ptr<RecordDecl>,
-			std::vector<std::shared_ptr<QualType>>,
-			std::shared_ptr<EnumDecl>,
-			QualType::TQ
+			unsigned, unsigned long, int, double, float, bool, char *, std::string, SourceLocation,
+			UnaryOperator::Opcode, BinaryOperator::Opcode, PredefinedExpr::IdentType, BuiltinType::Kind,
+			Type::TypeClass, CastExpr::CastKind, ArrayType::ArraySizeModifier, QualType::TQ,
+			std::vector<std::shared_ptr<Stmt>>, std::vector<std::shared_ptr<Expr>>,
+			std::list<std::shared_ptr<Stmt>>, std::list<std::shared_ptr<Expr>>,
+			std::shared_ptr<Expr>, std::shared_ptr<Stmt>, std::shared_ptr<QualType>, std::shared_ptr<NamedDecl>,
+			std::shared_ptr<TypedefDecl>, std::shared_ptr<DeclGroupRef>, std::shared_ptr<Decl>, std::shared_ptr<RecordDecl>,
+			std::vector<std::shared_ptr<QualType>>, std::shared_ptr<EnumDecl>
 	> var_t;
-    /*template<auto type, typename... Args>
-	std::shared_ptr<Stmt> create(Args... args){
-        std::vector<var_t> value;
-        (value.push_back(var_t{args}), ...);
-        if(typeid (type)==typeid (Stmt::StmtClass)){
-            return createStmt(static_cast<Stmt::StmtClass>(type), value);
-        }
-        else if(typeid (type)==typeid (Type::TypeClass)){
-            createType(static_cast<Type::TypeClass>(type), value);
-        }
-        else {
-            throw std::string("Unable to identify identifier!");
-        }
-    }*/
+
+	/// @brief Create stmt by type
 	template<typename... Args>
 	std::shared_ptr<Stmt> createStmt(Stmt::StmtClass type, Args... args)
 	{
@@ -108,24 +68,12 @@ public:
 			case Expr::StmtClass::CompoundAssignOperatorClass:	return createCompoundAssignOperator(value);
 			case Expr::StmtClass::ConditionalOperatorClass:		return createConditionalOperator(value);
 			case Stmt::StmtClass::BinaryOperatorClass:			return createBinaryOperator(value);
-				/*case Expr::AddrLabelExprClass:
-					createAddrLabelExpr(value);
-					break;*/
-				/*case Expr::StmtExprClass:
-					createStmtExpr(value);
-					break;*/
-				/*case Expr::TypesCompatibleExprClass:
-					createTypesCompatibleExpr(value);
-					break;*/
-				/*case Expr::ShuffleVectorExprClass:
-					createShuffleVectorExpr(value);
-					break;*/
-				/*case Expr::ChooseExprClass:
-					createChooseExpr(value);
-					break;*/
-				/*case Expr::GNUNullExprClass:
-					createGNUNullExpr(value);
-					break;*/
+			/*case Expr::AddrLabelExprClass:createAddrLabelExpr(value);break;*/
+			/*case Expr::StmtExprClass:createStmtExpr(value);break;*/
+			/*case Expr::TypesCompatibleExprClass:createTypesCompatibleExpr(value);break;*/
+			/*case Expr::ShuffleVectorExprClass:createShuffleVectorExpr(value);break;*/
+			/*case Expr::ChooseExprClass:createChooseExpr(value);break;*/
+			/*case Expr::GNUNullExprClass:createGNUNullExpr(value);break;*/
 			case Expr::StmtClass::VAArgExprClass:				return createVAArgExpr(value);
 			case Expr::StmtClass::InitListExprClass:			return createInitListExpr(value);
 			case Expr::StmtClass::ParenListExprClass:			return createParenListExpr(value);
@@ -183,6 +131,7 @@ public:
 		return nullptr;
 	}
 
+	/// @brief Create type by given type
 	template<typename... Args>
 	std::shared_ptr<QualType> createType(Type::TypeClass type, Args... args)
 	{
@@ -237,6 +186,7 @@ public:
     ASTContext &operator =(ASTContext &) = delete;
 
 private:
+	/// @brief Do create stmts
 	std::shared_ptr<Stmt> createDeclStmt(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createNullStmt(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createCompoundStmt(std::vector<var_t> &value);
@@ -255,6 +205,7 @@ private:
 	std::shared_ptr<Stmt> createReturnStmt(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createCommentStmt(std::vector<var_t> &value);
 
+	/// @brief Do create exprs
 	std::shared_ptr<Stmt> createDeclRefExpr(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createPredefinedExpr(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createIntegerLiteral(std::vector<var_t> &value);
@@ -284,6 +235,7 @@ private:
 	std::shared_ptr<Stmt> createInitListExpr(std::vector<var_t> &value);
 	std::shared_ptr<Stmt> createParenListExpr(std::vector<var_t> &value);
 
+	/// @brief Do create types
 	//std::shared_ptr<Type> createExtQualType(std::vector<var_t> &value);
 //    void createQualifierSet(std::vector<var_t> &value);
 	std::shared_ptr<QualType> createBuiltinType(std::vector<var_t> &value);//
@@ -302,11 +254,8 @@ private:
 	std::shared_ptr<QualType> createIncompleteArrayType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createVariableArrayType(std::vector<var_t> &value);//
 	//std::shared_ptr<Type> createDependentSizedArrayType(std::vector<var_t> &value);//
-
-
 	//std::shared_ptr<Type> createVectorType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createExtVectorType(std::vector<var_t> &value);
-
 	std::shared_ptr<QualType> createFunctionNoProtoType(std::vector<var_t> &value);
 	std::shared_ptr<QualType> createFunctionProtoType(std::vector<var_t> &value);
 	std::shared_ptr<QualType> createTypedefType(std::vector<var_t> &value);
@@ -318,26 +267,8 @@ private:
 	//std::shared_ptr<Type> createDecltypeType(std::vector<var_t> &value);
 	//std::shared_ptr<Type> createDependentDecltypeType(std::vector<var_t> &value);
 
+	/// @brief The root of ast
 	std::shared_ptr<Stmt> m_ASTRoot;
-	/*std::stack<std::shared_ptr<Stmt>> queue;
-	std::stack<std::shared_ptr<Type>> queue_type;
-
-	template<typename T=Stmt>
-	std::shared_ptr<T> pop_stmt(){
-		if(queue.empty())
-			throw std::range_error("Queue empty");
-		std::shared_ptr<Stmt> ptr=queue.top();
-		queue.pop();
-		return std::dynamic_pointer_cast<T>(ptr);
-	}
-	template<typename T=Type>
-	std::shared_ptr<T> pop_type(){
-		if(queue_type.empty())
-			return nullptr;
-		std::shared_ptr<Type> ptr=queue_type.top();
-		queue_type.pop();
-		return std::dynamic_pointer_cast<T>(ptr);
-	}*/
 };
 
 #endif // ASTCONTEXT_H

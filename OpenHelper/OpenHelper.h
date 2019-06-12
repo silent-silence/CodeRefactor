@@ -8,6 +8,8 @@
 #include <istream>
 #include <ostream>
 
+/// @brief A base helper class to open input/output stream
+// TODO: override << and >> operators
 class OpenHelper {
 public:
 	OpenHelper(std::istream &is, std::ostream &os, std::string streamName);

@@ -8,6 +8,7 @@
 #include <fstream>
 #include "OpenHelper.h"
 
+/// @brief Open file stream
 class FileOpenHelper : public OpenHelper {
 public:
 	FileOpenHelper(std::string readFileName);

@@ -7,6 +7,7 @@
 
 #include "OpenHelper.h"
 
+/// @brief Open stander I/O stream
 class StdioOpenHelper : public OpenHelper {
 public:
 	StdioOpenHelper();

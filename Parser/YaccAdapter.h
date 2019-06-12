@@ -210,6 +210,7 @@ private:
 
 	/// @brief first: Temporary save the basic type of specifiers(int/long/double...)
 	/// @brief seconde: Temporary save the storage class specifiers(typedef/extern/static/register)
+	// TODO: this can be packaged with m_typeStack in a same stake
 	std::stack<std::pair<unsigned, TypeSpecifier>> m_typeSpecifier;
 
 	/// @brief Temporary save the variable name and it's location
@@ -218,23 +219,6 @@ private:
 	/// @brief Temporary save the variable decls
 	std::shared_ptr<Decl> popVarDecl();
 	std::queue<std::shared_ptr<Decl>> m_varDecls;
-
-	/*template<typename T=Stmt>
-	std::shared_ptr<T> pop_stmt(){
-		if(stmtQueue.empty())
-			throw std::range_error("Queue empty");
-		std::shared_ptr<Stmt> ptr=stmtQueue.top();
-		stmtQueue.pop();
-		return std::dynamic_pointer_cast<T>(ptr);
-	}
-	template<typename T=Type>
-	std::shared_ptr<T> pop_type(){
-		if(queue_type.empty())
-			return nullptr;
-		void ptr=typeQueue.top();
-		typeQueue.pop();
-		return std::dynamic_pointer_cast<T>(ptr);
-	}*/
 };
 
 #endif //CODEREFACTOR_YACCADAPTER_H

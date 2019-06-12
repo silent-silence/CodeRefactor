@@ -10,6 +10,8 @@
 
 class Decl;
 
+/// @brief The decl iterator, used to iterate decls in decl context
+// TODO: this can use same iterator interface declared in "AST/StmtIterator.h"
 class DeclIterator {
 public:
 	DeclIterator(std::list<std::shared_ptr<Decl>>::iterator it);

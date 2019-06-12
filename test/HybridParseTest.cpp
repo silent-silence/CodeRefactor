@@ -130,6 +130,24 @@ TEST_F(HybridParseTest, FunctionDeclInContext)
 ));
 }
 
+TEST_F(HybridParseTest,TypedefDeclInContext)
+{
+	openHelper <<
+"typedef int A;"
+"typedef int B;"
+"A a;"
+"B b;";
+	driver.parse();
+	printer.printContext(declContext.getContextRoot());
+	printHelper >> output;
+	EXPECT_EQ(output, string(
+"typedef int A;\n"
+"typedef int B;\n"
+"A a;\n"
+"B b;\n"
+	));
+}
+
 TEST_F(HybridParseTest, AllSupportedFutures)
 {
 	string input =

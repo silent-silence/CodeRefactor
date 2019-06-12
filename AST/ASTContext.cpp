@@ -764,7 +764,8 @@ std::shared_ptr<QualType> ASTContext::createTypedefType(std::vector<var_t> &valu
 	shared_ptr<QualType> qualifier = make_shared<QualType>();
 	auto type = TypedefType::creator(
 			qualifier,
-			get<shared_ptr<TypedefDecl>>(value[0])
+			get<shared_ptr<TypedefDecl>>(value[0]),
+			get<shared_ptr<QualType>>(value[1])
 	);
 	qualifier->Value.first = type;
 	return qualifier;

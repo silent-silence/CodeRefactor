@@ -22,6 +22,7 @@ public:
     Driver(OpenHelper &opener, YaccAdapter &adapter);
     ~Driver() = default;
 
+    /// @brief Start parse
     int parse ();
 
     /// @brief Called on an error occurred while parsing

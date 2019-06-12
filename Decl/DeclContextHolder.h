@@ -28,6 +28,7 @@ public:
 	void clean();
 #endif
 
+	/// @brief Do create decls
 	std::shared_ptr<Decl> createVariable(std::shared_ptr<DeclContext> &context, std::string &name, SourceLocation &location, std::shared_ptr<QualType> type);
 	std::shared_ptr<Decl> createTypedefDecl(std::shared_ptr<DeclContext> &context, std::shared_ptr<QualType> type, std::string &name, SourceLocation &location);
 	std::shared_ptr<DeclContext> createBlock(std::shared_ptr<DeclContext> &context, SourceLocation &&location);

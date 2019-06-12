@@ -6,6 +6,7 @@
 class IdentifierInfo;
 
 /// @brief The identity of a declaration
+// TODO: this class can be removed
 class DeclName {
 public:
 	DeclName(const std::shared_ptr<IdentifierInfo> id)

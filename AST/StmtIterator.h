@@ -11,6 +11,8 @@ class ListIterator;
 class PtrIterator;
 template<typename T>class ArrayIterator;
 
+/// @interface
+/// @brief The interface of stmt iterator, use this to iterate stmt child
 class Iterator
 {
 public:
@@ -32,6 +34,8 @@ public:
     virtual ~Iterator() = 0;
 };
 
+/// @brief A wrapper of stmt iterator,
+/// child_begin()/child_end() should return this, instead of a pointer or a reference of super class Iterator
 class StmtIterator : public Iterator
 {
 public:
@@ -59,6 +63,7 @@ private:
     std::shared_ptr<Iterator> iterator_;
 };
 
+/// @brief Provide an adapter to std::list<>::iterator
 class ListIterator : public Iterator
 {
 public:
@@ -85,6 +90,7 @@ private:
     std::list<std::shared_ptr<Stmt>>::iterator iterator_;
 };
 
+/// @brief Provide an adapter to std::shared_ptr<>
 class PtrIterator : public Iterator
 {
 public:
@@ -111,6 +117,7 @@ private:
     std::shared_ptr<Stmt> iterator_;
 };
 
+/// @brief Provide an adapter to std::array<>
 template <typename T>
 class ArrayIterator : public Iterator
 {

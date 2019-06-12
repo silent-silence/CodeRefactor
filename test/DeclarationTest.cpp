@@ -169,7 +169,13 @@ TEST_F(SymbolTableTest, SimpleTypedefTest)
 	driver.parse();
 	EXPECT_EQ(declContextHolder.getContextRoot()->lookup("a").lock()->getKind(), Decl::Kind::Typedef);
 	shared_ptr<TypedefDecl> typedefType = dynamic_pointer_cast<TypedefDecl>(declContextHolder.getContextRoot()->lookup("a").lock());
-	EXPECT_EQ(dynamic_pointer_cast<BuiltinType>(typedefType->getTypeForDecl().lock()->getTypePtr())->getKind(), BuiltinType::Int);
+	EXPECT_EQ(dynamic_pointer_cast<TypedefType>(typedefType->getTypeForDecl().lock()->getTypePtr())->getTypeClass(), Type::TypeClass::Typedef);
+	EXPECT_EQ(
+			dynamic_pointer_cast<BuiltinType>(
+					dynamic_pointer_cast<TypedefType>(
+							typedefType->getTypeForDecl().lock()->getTypePtr()
+					)->getDeclForType().lock()->getTypePtr()
+			)->getKind(), BuiltinType::Int);
 }
 
 TEST_F(SymbolTableTest, TypedefRedfineTest)

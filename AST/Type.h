@@ -584,17 +584,19 @@ class TypedefType : public Type
 {
 	friend class ASTContext;
 public:
-	static std::shared_ptr<Type> creator(std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl);
+	static std::shared_ptr<Type> creator(std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl, std::shared_ptr<QualType> declFor);
 
     /*TypedefType(TypeClass tc, TypedefDecl *D, QualType can)
         : Type(tc, can, can->isDependentType()), Decl(D) {
         assert(!isa<TypedefType>(can) && "Invalid canonical type");
     }*/
-    TypedefType(TypeClass tc, std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl);
+    TypedefType(TypeClass tc, std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl, std::shared_ptr<QualType> declFor);
 
+    std::weak_ptr<QualType> getDeclForType() const;
 	std::string getTypePrefixAsString() const override;
 
 private:
+	std::shared_ptr<QualType> declForType;
     std::shared_ptr<TypedefDecl> Decl;
 };
 

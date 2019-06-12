@@ -41,7 +41,7 @@ void Printer::ContextPrinter::printContext(std::shared_ptr<DeclContext> context)
 				printVar((*it));
 				break;
 			case Decl::Kind::Typedef:
-				//printTypedef(*it);
+				printTypedef(*it);
 				break;
 			case Decl::Kind::Record:
 				printRecord(*it);
@@ -63,11 +63,17 @@ void Printer::ContextPrinter::printVar(std::shared_ptr<Decl> decl)
 	m_openHelper.getOutputStream() << ";\n";
 }
 
-/*void Printer::ContextPrinter::printTypedef(std::shared_ptr<Decl> decl)
+void Printer::ContextPrinter::printTypedef(std::shared_ptr<Decl> decl)
 {
 	auto typedefDecl = dynamic_pointer_cast<TypedefDecl>(decl);
-	typedefDecl->getTypeForDecl().lock()->getCanonicalType();
-}*/
+	auto type = dynamic_pointer_cast<TypedefType>(typedefDecl->getTypeForDecl().lock()->getTypePtr());
+	m_openHelper.getOutputStream() << indent();
+	m_openHelper.getOutputStream() << "typedef ";
+	typePrinter.printTypePrefix(type->getDeclForType().lock());
+	m_openHelper.getOutputStream() << " " << typedefDecl->getNameAsString();
+	typePrinter.printTypePostfix(type->getDeclForType().lock());
+	m_openHelper.getOutputStream() << ";\n";
+}
 
 void Printer::ContextPrinter::printRecord(std::shared_ptr<Decl> decl)
 {
@@ -645,6 +651,7 @@ void Printer::ASTPrinter::processCStyleCastExpr(std::shared_ptr<Stmt> &s)
 	printAST(caseExpr->getSubExpr().lock());
 }
 
+// TODO: move type print into TypePinter
 void Printer::ASTPrinter::processDeclStmt(std::shared_ptr<Stmt> &s)
 {
 	auto declStmt = dynamic_pointer_cast<DeclStmt>(s);
@@ -668,15 +675,15 @@ void Printer::ASTPrinter::processDeclStmt(std::shared_ptr<Stmt> &s)
 			if (!stmtInOneLine)
 				m_openHelper.getOutputStream() << "\n";
 		}
-		else	// typedef
+		else if(dynamic_pointer_cast<TypedefDecl>(declRef->getSingleDecl().lock()))	// typedef
 		{
 			auto decl = dynamic_pointer_cast<TypedefDecl>(declRef->getSingleDecl().lock());
-			auto type = decl->getTypeForDecl().lock();
+			auto type = dynamic_pointer_cast<TypedefType>(decl->getTypeForDecl().lock()->getTypePtr());;
 			m_openHelper.getOutputStream() << indent();
 			m_openHelper.getOutputStream() << "typedef ";
-			m_typePrinter.printTypePrefix(type);
+			m_typePrinter.printTypePrefix(type->getDeclForType().lock());
 			m_openHelper.getOutputStream() << " " << decl->getNameAsString();
-			m_typePrinter.printTypePostfix(type);
+			m_typePrinter.printTypePostfix(type->getDeclForType().lock());
 			m_openHelper.getOutputStream() << ";";
 			if (!stmtInOneLine)
 				m_openHelper.getOutputStream() << "\n";
@@ -710,19 +717,23 @@ void Printer::ASTPrinter::processDeclStmt(std::shared_ptr<Stmt> &s)
 		}
 		else	// typedef
 		{
-			auto type = dynamic_pointer_cast<TypedefDecl>((*decls)[0])->getTypeForDecl().lock();
+			auto type = dynamic_pointer_cast<TypedefType>(
+					dynamic_pointer_cast<TypedefDecl>((*decls)[0])->getTypeForDecl().lock()->getTypePtr()
+			);
 			m_openHelper.getOutputStream() << indent();
 			m_openHelper.getOutputStream() << "typedef ";
-			m_typePrinter.printTypePrefix(type);
+			m_typePrinter.printTypePrefix(type->getDeclForType().lock());
 			m_openHelper.getOutputStream() << " ";
 			for (unsigned i = 0; i < decls->size(); ++i)
 			{
-				type = dynamic_pointer_cast<TypedefDecl>((*decls)[i])->getTypeForDecl().lock();
+				type = dynamic_pointer_cast<TypedefType>(
+						dynamic_pointer_cast<TypedefDecl>((*decls)[i])->getTypeForDecl().lock()->getTypePtr()
+				);
 				// skip first
 				if (i != 0)
-					m_typePrinter.printTypeInfix(type);
+					m_typePrinter.printTypeInfix(type->getDeclForType().lock());
 				m_openHelper.getOutputStream() << dynamic_pointer_cast<TypedefDecl>((*decls)[i])->getNameAsString();
-				m_typePrinter.printTypePostfix(type);
+				m_typePrinter.printTypePostfix(type->getDeclForType().lock());
 				if (i + 1 != decls->size())
 					m_openHelper.getOutputStream() << ", ";
 			}

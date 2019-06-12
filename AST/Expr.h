@@ -14,7 +14,7 @@ class IntegerLiteral;
 class CharacterLiteral;
 class FloatingLiteral;
 class ImaginaryLiteral;
-class StringLiteral;//
+class StringLiteral;
 class ParenExpr;
 class UnaryOperator;
 class SizeOfAlignOfExpr;
@@ -45,15 +45,13 @@ class ExtVectorElementExpr;
 class BlockExpr;
 class BlockDeclRefExpr;
 
-/// Expr - This represents one expression.  Note that Expr's are subclasses of
-/// Stmt.  This allows an expression to be transparently used any place a Stmt
-/// is required.
-///
+/// @brief This represents one expression, super class of all expressions
+/// @note Expr is subclass of Stmt
 class Expr : public Stmt
 {
 public:
     std::weak_ptr<QualType> getType() const;
-    void setType(const std::shared_ptr<QualType> &value);/**/
+    void setType(const std::shared_ptr<QualType> &value);
 
     bool isTypeDependent() const;
     void setTypeDependent(bool value);
@@ -83,8 +81,7 @@ private:
 // Primary Expressions.
 //===----------------------------------------------------------------------===//
 
-/// DeclRefExpr - [C99 6.5.1p2] - A reference to a declared variable, function,
-/// enum, etc.
+/// @brief A reference to a declared variable, function, enum, etc
 class DeclRefExpr : public Expr
 {
 public:
@@ -147,6 +144,8 @@ private:
     SourceLocation Loc;
 };
 
+/// @brief Represent a integer literal
+/// @example '1' is an integer literal
 class IntegerLiteral : public Expr
 {
 public:
@@ -170,6 +169,8 @@ private:
     SourceLocation Loc;
 };
 
+/// @brief Represent a character
+/// @example 'a' is a character literal
 class CharacterLiteral : public Expr
 {
 public:
@@ -199,6 +200,8 @@ private:
     SourceLocation Loc;
 };
 
+/// @brief Represent a float
+/// @example '1.2' is a floating literal
 class FloatingLiteral : public Expr
 {
 public:
@@ -252,7 +255,8 @@ private:
     std::shared_ptr<Stmt> Val;
 };
 
-/// StringLiteral - This represents a string literal expression, e.g.
+/// @brief Represents a string literal
+/// @example "abcd" is a string literal
 class StringLiteral : public Expr
 {
 public:
@@ -291,6 +295,8 @@ private:
     SourceLocation TokLocs;
 };
 
+/// @brief Represent a expr with parentheses
+/// @example '(1)'
 class ParenExpr : public Expr
 {
 public:
@@ -317,15 +323,17 @@ private:
     SourceLocation R;
 };
 
+/// @brief Represent unary operations
 class UnaryOperator : public Expr
 {
 public:
+	/// @brief List all unary operators
     enum Opcode {
-        PostInc, PostDec, // [C99 6.5.2.4] Postfix increment and decrement operators
-        PreInc, PreDec,   // [C99 6.5.3.1] Prefix increment and decrement operators.
-        AddrOf, Deref,    // [C99 6.5.3.2] Address and indirection operators.
-        Plus, Minus,      // [C99 6.5.3.3] Unary arithmetic operators.
-        Not, LNot,        // [C99 6.5.3.3] Unary arithmetic operators.
+        PostInc, PostDec, // Postfix increment(++) and decrement operators(--)
+        PreInc, PreDec,   // (++)Prefix increment and (--)decrement operators
+        AddrOf, Deref,    // Address(&) and indirection operators(*)
+        Plus, Minus,      // Unary arithmetic operators(+, -)
+        Not, LNot,        // Unary arithmetic operators(~, !)
         Real, Imag,       // "__real expr"/"__imag expr" Extension.
         Extension,        // __extension__ marker.
         OffsetOf          // __builtin_offsetof
@@ -359,8 +367,7 @@ private:
     SourceLocation Loc;
 };
 
-/// SizeOfAlignOfExpr - [C99 6.5.3.4] - This is for sizeof/alignof, both of
-/// types and expressions.
+/// @brief This is for sizeof/alignof, both of types and expressions.
 class SizeOfAlignOfExpr : public Expr
 {
 public:
@@ -411,7 +418,8 @@ private:
 // Postfix Operators.
 //===----------------------------------------------------------------------===//
 
-/// ArraySubscriptExpr - [C99 6.5.2.1] Array Subscripting.
+/// @brief Represent array subscripting
+/// @example 'a[11]'
 class ArraySubscriptExpr : public Expr
 {
 public:
@@ -443,10 +451,7 @@ private:
     SourceLocation RBracketLoc;
 };
 
-/// CallExpr - Represents a function call (C99 6.5.2.2, C++ [expr.call]).
-/// CallExpr itself represents a normal function call, e.g., "f(x, 2)",
-/// while its subclasses may represent alternative syntax that (semantically)
-/// results in a function call.
+/// @brief Represents a function call
 class CallExpr : public Expr
 {
 public:
@@ -481,8 +486,8 @@ private:
     SourceLocation RParenLoc;
 };
 
-/// MemberExpr - [C99 6.5.2.3] Structure and Union Members.  X->F and X.F.
-///
+/// @brief Structure and union members
+/// @example X->F and X.F.
 class MemberExpr : public Expr
 {
 public:
@@ -547,7 +552,7 @@ private:
     SourceLocation LParenLoc;
 };
 
-/// CastExpr - Base class for type casts, including both implicit
+/// @brief Base class for type casts, including both implicit
 /// casts (ImplicitCastExpr) and explicit casts that have some
 /// representation in the source code (ExplicitCastExpr's derived
 /// classes).
@@ -589,6 +594,7 @@ private:
     std::shared_ptr<Stmt> Op;
 };
 
+/// @brief Implicit case in compiler
 class ImplicitCastExpr : public CastExpr
 {
 public:
@@ -605,9 +611,7 @@ private:
     bool LvalueCast;
 };
 
-/// ExplicitCastExpr - An explicit cast written in the source
-/// code.
-///
+/// @brief An explicit cast written in the source code
 class ExplicitCastExpr : public CastExpr
 {
 protected:
@@ -624,9 +628,8 @@ private:
     std::shared_ptr<QualType> TypeAsWritten;
 };
 
-/// CStyleCastExpr - An explicit cast in C (C99 6.5.4) or a C-style
-/// cast in C++ (C++ [expr.cast]), which uses the syntax
-/// (Type)expr. For example: @c (int)f.
+/// @brief An explicit cast in C or a C-style cast in C++
+/// @example '(int)a'
 class CStyleCastExpr : public ExplicitCastExpr
 {
 public:
@@ -649,31 +652,31 @@ private:
     SourceLocation RPLoc;
 };
 
-/// \brief A builtin binary operation expression such as "x + y" or "x <= y".
-///
+/// @brief Builtin binary operation expression
+/// @example "x + y" or "x <= y"
 class BinaryOperator : public Expr
 {
 public:
     enum Opcode {
         // Operators listed in order of precedence.
-        PtrMemD, PtrMemI, // [C++ 5.5] Pointer-to-member operators.
-        Mul, Div, Rem,    // [C99 6.5.5] Multiplicative operators.
-        Add, Sub,         // [C99 6.5.6] Additive operators.
-        Shl, Shr,         // [C99 6.5.7] Bitwise shift operators.
-        LT, GT, LE, GE,   // [C99 6.5.8] Relational operators.
-        EQ, NE,           // [C99 6.5.9] Equality operators.
-        And,              // [C99 6.5.10] Bitwise AND operator.
-        Xor,              // [C99 6.5.11] Bitwise XOR operator.
-        Or,               // [C99 6.5.12] Bitwise OR operator.
-        LAnd,             // [C99 6.5.13] Logical AND operator.
-        LOr,              // [C99 6.5.14] Logical OR operator.
-        Assign, MulAssign,// [C99 6.5.16] Assignment operators.
-        DivAssign, RemAssign,
-        AddAssign, SubAssign,
-        ShlAssign, ShrAssign,
-        AndAssign, XorAssign,
-        OrAssign,
-        Comma             // [C99 6.5.17] Comma operator.
+        PtrMemD, PtrMemI,		// Pointer-to-member operators(., ->)
+        Mul, Div, Rem,			// Multiplicative operators(*, /, %)
+        Add, Sub,				// Additive operators(+, -)
+        Shl, Shr,				// Bitwise shift operators(<<, >>)
+        LT, GT, LE, GE,			// Relational operators(<, >, <=, >=)
+        EQ, NE,					// Equality operators(==, !=)
+        And,					// Bitwise AND operator(&)
+        Xor,					// Bitwise XOR operator(^)
+        Or,						// Bitwise OR operator(|)
+        LAnd,					// Logical AND operator(&&)
+        LOr,					// Logical OR operator(||)
+        Assign, MulAssign,		// Assignment operators(=, *=)
+        DivAssign, RemAssign,	// /=, %=
+        AddAssign, SubAssign,	// +=, -=
+        ShlAssign, ShrAssign,	// <<=, >>=
+        AndAssign, XorAssign,	// &=, ^=
+        OrAssign,				// |=
+        Comma					// Comma operator','
     };
     BinaryOperator(std::shared_ptr<Expr> lhs, std::shared_ptr<Expr> rhs,
                    Opcode opc, std::shared_ptr<QualType> ResTy, SourceLocation opLoc);
@@ -709,8 +712,7 @@ private:
     SourceLocation OpLoc;
 };
 
-/// CompoundAssignOperator - For compound assignments (e.g. +=), we keep
-/// track of the type the operation is performed in.
+/// @brief For compound assignments (e.g. +=), we keep track of the type the operation is performed in.
 class CompoundAssignOperator : public BinaryOperator
 {
 public:
@@ -735,7 +737,6 @@ private:
 
 /// ConditionalOperator - The ?: operator.  Note that LHS may be null when the
 /// GNU "missing LHS" extension is in use.
-///
 class ConditionalOperator : public Expr
 {
 public:
