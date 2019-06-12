@@ -741,13 +741,13 @@ TEST_F(ASTStructurePrintTest, FunctionDeclTest)
 	reset();
 
 	openHelper <<
-"int d(int e, double f, void, float g);";
+"int d(int *e, double f, void, float g);";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<DeclStmt>(astContext.getRoot().lock()));
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"int d(int e, double f, void, float g);\n"
+"int d(int *e, double f, void, float g);\n"
 	));
 	reset();
 }

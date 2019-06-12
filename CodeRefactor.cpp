@@ -10,7 +10,7 @@
 
 #include "Decl/DeclContextHolder.h"
 
-using std::weak_ptr;				using Printer::ASTPrinter;
+using std::weak_ptr;				using Printer::ContextPrinter;
 using std::shared_ptr;
 using std::make_shared;
 
@@ -34,15 +34,15 @@ void CodeRefactor::run()
 void CodeRefactor::show()
 {
     cout_open_helper_ = make_shared<StdioOpenHelper>();
-    printer_ = make_shared<ASTPrinter>(*cout_open_helper_);
-	printer_->printAST(context_.getRoot().lock());
+    printer_ = make_shared<ContextPrinter>(*cout_open_helper_);
+	printer_->printContext(context_holder_.getContextRoot());
 }
 
 void CodeRefactor::show(std::string output)
 {
     cout_open_helper_ = make_shared<FileOpenHelper>(output);
-    printer_ = make_shared<ASTPrinter>(*cout_open_helper_);
-	printer_->printAST(context_.getRoot().lock());
+    printer_ = make_shared<ContextPrinter>(*cout_open_helper_);
+	printer_->printContext(context_holder_.getContextRoot());
 }
 
 void CodeRefactor::config()

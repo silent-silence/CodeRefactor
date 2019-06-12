@@ -220,9 +220,9 @@ void Printer::TypePrinter::functionProtoPostfix(std::shared_ptr<QualType> type)
 		printTypePrefix(param->getType().lock());
 		if(param->paramHasName())
 			m_openHelper.getOutputStream() << " " << param->getNameAsString();
+        printTypePostfix(param->getType().lock());
 		if(i != funDecl->getNumParams() - 1)
 			m_openHelper.getOutputStream() << ", ";
-		printTypePostfix(param->getType().lock());
 	}
 	m_openHelper.getOutputStream() << ")";
 }
@@ -234,6 +234,8 @@ Printer::ASTPrinter::ASTPrinter(OpenHelper &stream)
 
 void Printer::ASTPrinter::printAST(std::shared_ptr<Stmt> root)
 {
+    if(root == nullptr)
+        return;
 	switch(root->getStmtClass())
 	{
 		case Stmt::StmtClass::NoStmtClass:break;

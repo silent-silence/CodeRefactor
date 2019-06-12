@@ -696,8 +696,8 @@ void YaccAdapter::makePointerType()
 			m_ASTContext.createType(Type::TypeClass::Pointer, pop_type(), getTypeCVRQualifier())
 	);
 	// clean pointer's CVR qualifiers
-	if(!m_typeSpecifier.empty())
-		m_typeSpecifier.pop();
+	/*if(!m_typeSpecifier.empty())
+		m_typeSpecifier.pop();*/
 }
 
 void YaccAdapter::storeDeclType()

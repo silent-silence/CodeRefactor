@@ -11,7 +11,7 @@ BISON_TARGET(Parser Parser/grammar.y ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp COMP
 FLEX_TARGET(Scanner Parser/lex.l ${CMAKE_CURRENT_BINARY_DIR}/scanner.cpp COMPILE_FLAGS "-+")
 ADD_FLEX_BISON_DEPENDENCY(Scanner Parser)
 
-option(_TEST_ENV "Switch to test enviroment" ON)
+option(_TEST_ENV "Switch to test enviroment" OFF)
 if(_TEST_ENV STREQUAL ON)
     message(STATUS "In test enviroment")
     add_definitions(-DENV_TEST)

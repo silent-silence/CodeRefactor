@@ -19,11 +19,11 @@
 
 letter		[a-zA-Z]
 digit		[0-9]
-string		((\"{letter}+\")|(\"{digit}+\")|(\"({letter}|{digit})+\"))
+string		({letter}?\"(\\.|[^\\"])*\")
 float		(({digit}|[1-9]{digit})+\.{digit}*)
 integer		({digit})+
 identifier	([_a-zA-Z][_0-9a-zA-Z]*)
-character   (\'{letter}\')
+character   (\'(\\{digit}|.)\')
 
 single_comment      (\/\/.*?)
 multi_comment       (\/\*(.|\n)*?\*\/)

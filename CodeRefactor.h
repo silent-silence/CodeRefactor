@@ -7,7 +7,7 @@
 
 class Driver;
 namespace Printer {
-	class ASTPrinter;
+	class ContextPrinter;
 }
 class Refactor;
 class OpenHelper;
@@ -33,7 +33,7 @@ private:
     bool While_For;
 
     std::shared_ptr<Driver> driver_;
-    std::shared_ptr<Printer::ASTPrinter> printer_;
+    std::shared_ptr<Printer::ContextPrinter> printer_;
     std::shared_ptr<Refactor> refactor_;
     std::shared_ptr<YaccAdapter> adapter_;
     std::shared_ptr<OpenHelper> cin_open_helper_;

@@ -177,10 +177,8 @@ public:
 
 	void updateASTRoot(std::shared_ptr<Stmt> root);
 
-#ifdef ENV_TEST
     std::weak_ptr<Stmt> getRoot() const;
     void cleanAST();
-#endif
 
     /// @brief Not allow copy
     ASTContext &operator =(ASTContext &) = delete;
