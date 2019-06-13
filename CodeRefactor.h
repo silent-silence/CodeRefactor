@@ -13,6 +13,7 @@ class Refactor;
 class OpenHelper;
 class YaccAdapter;
 class DeclContextHolder;
+class NameRefactor;
 
 class CodeRefactor
 {
@@ -35,9 +36,10 @@ private:
     std::shared_ptr<Driver> driver_;
     std::shared_ptr<Printer::ContextPrinter> printer_;
     std::shared_ptr<Refactor> refactor_;
-    std::shared_ptr<YaccAdapter> adapter_;
-    std::shared_ptr<OpenHelper> cin_open_helper_;
-    std::shared_ptr<OpenHelper> cout_open_helper_;
+	std::shared_ptr<NameRefactor> nameRefactor;
+	std::shared_ptr<YaccAdapter> adapter_;
+	std::shared_ptr<OpenHelper> cin_open_helper_;
+	std::shared_ptr<OpenHelper> cout_open_helper_;
 
     ASTContext context_;
     DeclContextHolder context_holder_;

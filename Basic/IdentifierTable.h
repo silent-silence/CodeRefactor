@@ -17,6 +17,7 @@ public:
 
 	bool isStr(const std::string name) const;
 	const std::string getName() const;
+	void setName(std::string newName);
 
 	bool hasMacroDefinition() const;
 	void setHasMacroDefinition(bool Val);

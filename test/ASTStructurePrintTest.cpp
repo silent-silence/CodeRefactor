@@ -327,7 +327,7 @@ TEST_F(ASTStructurePrintTest, IfTest)
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"if(1)\n"
+"if (1)\n"
 "  ;\n"
 ));
 	reset();
@@ -343,7 +343,7 @@ TEST_F(ASTStructurePrintTest, IfTest)
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"if(1)\n"
+"if (1)\n"
 "{\n"
 "  123;\n"
 "  23452;\n"
@@ -369,8 +369,8 @@ TEST_F(ASTStructurePrintTest, IfTest)
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"if(1)\n"
-"  if(2)\n"
+"if (1)\n"
+"  if (2)\n"
 "    ;\n"
 "  else \n"
 "  {\n"
@@ -389,10 +389,10 @@ TEST_F(ASTStructurePrintTest, IfTest)
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"if(1)\n"
+"if (1)\n"
 "{\n"
 "}\n"
-"else if(2)\n"
+"else if (2)\n"
 "{\n"
 "}\n"
 ));
@@ -412,10 +412,10 @@ TEST_F(ASTStructurePrintTest, IfTest)
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
 "{\n"
-"  if(1)\n"
+"  if (1)\n"
 "  {\n"
 "  }\n"
-"  else if(2)\n"
+"  else if (2)\n"
 "  {\n"
 "  }\n"
 "}\n"
@@ -431,8 +431,8 @@ TEST_F(ASTStructurePrintTest, ForTest)
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"for(;;)\n"
-";\n"
+"for (;;)\n"
+"  ;\n"
 ));
 	reset();
 
@@ -442,8 +442,8 @@ TEST_F(ASTStructurePrintTest, ForTest)
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"for(int a;;)\n"
-";\n"
+"for (int a;;)\n"
+"  ;\n"
 ));
 	reset();
 
@@ -453,8 +453,8 @@ TEST_F(ASTStructurePrintTest, ForTest)
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"for(1;2;3)\n"
-";\n"
+"for (1;2;3)\n"
+"  ;\n"
 ));
 	reset();
 
@@ -464,7 +464,7 @@ TEST_F(ASTStructurePrintTest, ForTest)
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"for(int b;2;3)\n"
+"for (int b;2;3)\n"
 "{\n"
 "  12;\n"
 "}\n"
@@ -485,7 +485,7 @@ TEST_F(ASTStructurePrintTest, WhileTest)
 	EXPECT_TRUE(dynamic_pointer_cast<WhileStmt>(astContext.getRoot().lock()));
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
-	EXPECT_EQ(output, string("while(1)\n{\n}\n"));
+	EXPECT_EQ(output, string("while (1)\n{\n}\n"));
 	reset();
 }
 
@@ -499,7 +499,7 @@ TEST_F(ASTStructurePrintTest, DoWhileTest)
 	EXPECT_EQ(output, string(
 "do\n"
 "12;\n"
-"while(1)\n"
+"while (1)\n"
 ));
 	reset();
 
@@ -513,7 +513,7 @@ TEST_F(ASTStructurePrintTest, DoWhileTest)
 "{\n"
 "  12;\n"
 "}\n"
-"while(1)\n"
+"while (1)\n"
 ));
 	reset();
 }
@@ -741,13 +741,13 @@ TEST_F(ASTStructurePrintTest, FunctionDeclTest)
 	reset();
 
 	openHelper <<
-"int d(int *e, double f, void, float g);";
+"int d(int *e, double f, void, float g[]);";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<DeclStmt>(astContext.getRoot().lock()));
 	printer.printAST(astContext.getRoot().lock());
 	printerOutput >> output;
 	EXPECT_EQ(output, string(
-"int d(int *e, double f, void, float g);\n"
+"int d(int* e, double f, void, float g[]);\n"
 	));
 	reset();
 }
@@ -777,4 +777,57 @@ TEST_F(ASTStructurePrintTest, TypedefDeclTest)
 	reset();
 }
 
+TEST_F(ASTStructurePrintTest, VarDeclWithInitTest)
+{
+	openHelper <<
+"int a = 1;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<DeclStmt>(astContext.getRoot().lock()));
+	printer.printAST(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"int a = 1;\n"
+	));
+	reset();
+
+	openHelper <<
+"int b = 1, c = 2;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<DeclStmt>(astContext.getRoot().lock()));
+	printer.printAST(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"int b = 1, c = 2;\n"
+	));
+	reset();
+
+	openHelper <<
+"int d[] = \"12344\";";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<DeclStmt>(astContext.getRoot().lock()));
+	printer.printAST(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"int d[] = \"12344\";\n"
+	));
+	reset();
+}
+
+TEST_F(ASTStructurePrintTest, EnumDeclWithInitTest)
+{
+	openHelper <<
+"enum {"
+"  a, b, c"
+"} d;";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<DeclStmt>(astContext.getRoot().lock()));
+	printer.printAST(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"enum {\n"
+"  a, b, c\n"
+"} d;\n"
+	));
+	reset();
+}
 #endif

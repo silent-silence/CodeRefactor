@@ -30,4 +30,4 @@ add_executable(CodeRefactor
 		test/BasicParseTest.cpp test/OpenHelperTest.cpp test/DeclarationTest.cpp Decl/DeclGroup.cpp Decl/DeclGroup.h Parser/YaccAdapter.cpp Parser/YaccAdapter.h Decl/DeclContextHolder.cpp Decl/DeclContextHolder.h Errors/SymbolError.hpp test/HybridParseTest.cpp Errors/TypeError.hpp test/ASTStructurePrintTest.cpp
 		ASTOperation/Printer.cpp ASTOperation/Printer.h ASTOperation/Corrector.cpp ASTOperation/Corrector.h ASTOperation/Refactor.h ASTOperation/Refactor.cpp
         Decl/DeclName.cpp Decl/Decl.cpp test/RefactorTest.cpp
-		CodeRefactor.h CodeRefactor.cpp Decl/DeclIterator.cpp Decl/DeclIterator.h)
+		CodeRefactor.h CodeRefactor.cpp Decl/DeclIterator.cpp Decl/DeclIterator.h test/NameRefactorTest.cpp)

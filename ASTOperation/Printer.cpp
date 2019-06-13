@@ -93,8 +93,14 @@ void Printer::ContextPrinter::printFunction(std::shared_ptr<Decl> decl)
 	typePrinter.printTypePrefix(fun->getType().lock());
 	m_openHelper.getOutputStream() << " " << fun->getNameAsString();
 	typePrinter.printTypePostfix(fun->getType().lock());
-	m_openHelper.getOutputStream() << "\n";
-	astPrinter.printAST(fun->getBody().lock());
+	if(fun->getBody().lock())
+	{
+		m_openHelper.getOutputStream() << "\n";
+		astPrinter.printAST(fun->getBody().lock());
+		m_openHelper.getOutputStream() << "\n";
+	}
+	else
+		m_openHelper.getOutputStream() << ";\n";
 }
 
 /// @TypePrinter
@@ -108,6 +114,9 @@ void Printer::TypePrinter::printTypePrefix(std::shared_ptr<QualType> type)
 	{
 		case Type::TypeClass::Record:
 			recordPrefix(type);
+			break;
+		case Type::TypeClass::Enum:
+			enumPrefix(type);
 			break;
 		default:
 			m_openHelper.getOutputStream() << type->getTypePrefixAsString();
@@ -227,9 +236,30 @@ void Printer::TypePrinter::functionProtoPostfix(std::shared_ptr<QualType> type)
 	m_openHelper.getOutputStream() << ")";
 }
 
+void Printer::TypePrinter::enumPrefix(std::shared_ptr<QualType> type)
+{
+	m_openHelper.getOutputStream() << type->getTypePrefixAsString();
+	m_openHelper.getOutputStream() << "\n";
+	auto enumType = dynamic_pointer_cast<EnumType>(type->getTypePtr());
+	auto decl = dynamic_pointer_cast<EnumDecl>(enumType->getDecl().lock());
+	++indentNum;
+	m_openHelper.getOutputStream() << indent();
+	unsigned enumConstantLocation = 0;
+	for(auto it = decl->decl_begin(); it != decl->decl_end(); ++it, ++enumConstantLocation)
+	{
+		auto d = dynamic_pointer_cast<EnumConstantDecl>(*it);
+		m_openHelper.getOutputStream() << d->getNameAsString();
+		if(++it != decl->decl_end())
+			m_openHelper.getOutputStream() << ", ";
+		--it;
+	}
+	--indentNum;
+	m_openHelper.getOutputStream() << "\n}";
+}
+
 /// @ASTPrinter
 Printer::ASTPrinter::ASTPrinter(OpenHelper &stream)
-	: m_openHelper{stream}, m_typePrinter{stream, *this}, stmtInOneLine{false}
+	: m_openHelper{stream}, m_typePrinter{stream, *this}, stmtInOneLine{false}, noIntent{false}
 {}
 
 void Printer::ASTPrinter::printAST(std::shared_ptr<Stmt> root)
@@ -271,7 +301,7 @@ void Printer::ASTPrinter::printAST(std::shared_ptr<Stmt> root)
 		case Stmt::StmtClass::UnaryOperatorClass:			processUnaryOperator(root);				break;
 		case Stmt::StmtClass::SizeOfAlignOfExprClass:		processSizeOfAlignOfExpr(root);			break;
 		case Stmt::StmtClass::ArraySubscriptExprClass:		processArraySubscriptExpr(root);		break;
-		case Stmt::StmtClass::CallExprClass:break;
+		case Stmt::StmtClass::CallExprClass:				processCallExpr(root);					break;
 		case Stmt::StmtClass::MemberExprClass:	break;
 		case Stmt::StmtClass::CastExprClass:break;
 		case Stmt::StmtClass::BinaryOperatorClass:			processBinaryOperator(root);			break;
@@ -327,10 +357,28 @@ void Printer::ASTPrinter::printAST(std::shared_ptr<Stmt> root)
 	}
 }
 
+void Printer::ASTPrinter::processCallExpr(std::shared_ptr<Stmt> &s)
+{
+	auto call = dynamic_pointer_cast<CallExpr>(s);
+	printAST(call->getCallee());
+	m_openHelper.getOutputStream() << "(";
+	auto args = call->getArgs();
+	// TODO: use child_begin/child_end instead
+	unsigned argPosition = 0;
+	for(auto it = ++args.begin(); it != args.end(); ++it, ++argPosition)
+	{
+		printAST(*it);
+		// skip last ', '
+		if(argPosition != call->getNumArgs() - 1)
+			m_openHelper.getOutputStream() << ", ";
+	}
+	m_openHelper.getOutputStream() << ")";
+}
+
 void Printer::ASTPrinter::formatExprAsStmt(std::shared_ptr<Stmt> s)
 {
-	if(dynamic_pointer_cast<Expr>(s))
-		m_openHelper.getOutputStream()<< indent();
+	if(dynamic_pointer_cast<Expr>(s) && !noIntent)
+		m_openHelper.getOutputStream() << indent();
 	printAST(s);
 	// if is a expr
 	if(dynamic_pointer_cast<Expr>(s))
@@ -344,19 +392,28 @@ void Printer::ASTPrinter::formatExprAsStmt(std::shared_ptr<Stmt> s)
 
 void Printer::ASTPrinter::processNullStmt(std::shared_ptr<Stmt> &s)
 {
-	m_openHelper.getOutputStream() << indent() << ";";
+	if(noIntent)
+		m_openHelper.getOutputStream() << ";";
+	else
+		m_openHelper.getOutputStream() << indent() << ";";
 	if(!stmtInOneLine)
 		m_openHelper.getOutputStream() << "\n";
 }
 
 void Printer::ASTPrinter::processCompoundStmt(std::shared_ptr<Stmt> &s)
 {
-	m_openHelper.getOutputStream() << indent() << "{\n";
+	if(noIntent)
+		m_openHelper.getOutputStream() << "{\n";
+	else
+		m_openHelper.getOutputStream() << indent() << "{\n";
 	++indentNum;
 	for(auto stmt = s->child_begin(); stmt != s->child_end(); ++stmt)
 		formatExprAsStmt(*stmt);
 	--indentNum;
-	m_openHelper.getOutputStream() << indent() << "}\n";
+	if(noIntent)
+		m_openHelper.getOutputStream() << "}\n";
+	else
+		m_openHelper.getOutputStream() << indent() << "}\n";
 }
 
 void Printer::ASTPrinter::processUnaryOperator(std::shared_ptr<Stmt> &s)
@@ -545,7 +602,7 @@ void Printer::ASTPrinter::processCharacterLiteral(std::shared_ptr<Stmt> &s)
 void Printer::ASTPrinter::processWhileStmt(std::shared_ptr<Stmt> &s)
 {
 	auto whileStmt = dynamic_pointer_cast<WhileStmt>(s);
-	m_openHelper.getOutputStream() << indent() << "while(";
+	m_openHelper.getOutputStream() << indent() << "while (";
 	printAST(whileStmt->getCond().lock());
 	m_openHelper.getOutputStream() << ")\n";
 	formatExprAsStmt(whileStmt->getBody().lock());
@@ -555,9 +612,9 @@ void Printer::ASTPrinter::processIfStmt(std::shared_ptr<Stmt> &s, bool isElseCon
 {
 	auto ifStmt = dynamic_pointer_cast<IfStmt>(s);
 	if(isElseCond)
-		m_openHelper.getOutputStream() << "if(";
+		m_openHelper.getOutputStream() << "if (";
 	else
-		m_openHelper.getOutputStream() << indent() << "if(";
+		m_openHelper.getOutputStream() << indent() << "if (";
 	printAST(ifStmt->getCond().lock());
 	m_openHelper.getOutputStream() << ")\n";
 	auto thenBlock = ifStmt->getThen().lock();
@@ -589,7 +646,7 @@ void Printer::ASTPrinter::processDoStmt(std::shared_ptr<Stmt> &s)
 	auto doStmt = dynamic_pointer_cast<DoStmt>(s);
 	m_openHelper.getOutputStream() << indent() << "do\n";
 	formatExprAsStmt(doStmt->getBody().lock());
-	m_openHelper.getOutputStream() << "while(";
+	m_openHelper.getOutputStream() << "while (";
 	printAST(doStmt->getCond().lock());
 	m_openHelper.getOutputStream() << ")\n";
 }
@@ -597,15 +654,24 @@ void Printer::ASTPrinter::processDoStmt(std::shared_ptr<Stmt> &s)
 void Printer::ASTPrinter::processForStmt(std::shared_ptr<Stmt> &s)
 {
 	auto forStmt = dynamic_pointer_cast<ForStmt>(s);
-	m_openHelper.getOutputStream() << indent() << "for(";
+	m_openHelper.getOutputStream() << indent() << "for (";
 	stmtInOneLine = true;
+	noIntent = true;
 	formatExprAsStmt(forStmt->getInit().lock());
 	formatExprAsStmt(forStmt->getCond().lock());
 	stmtInOneLine = false;
+	noIntent = false;
 	if(forStmt->getInc().lock())
 		printAST(forStmt->getInc().lock());
 	m_openHelper.getOutputStream() << ")\n";
-	formatExprAsStmt(forStmt->getBody().lock());
+	if(CompoundStmt::classof(forStmt->getBody().lock()))
+		formatExprAsStmt(forStmt->getBody().lock());
+	else
+	{
+		++indentNum;
+		formatExprAsStmt(forStmt->getBody().lock());
+		--indentNum;
+	}
 }
 
 void Printer::ASTPrinter::processCaseStmt(std::shared_ptr<Stmt> &s)
@@ -665,11 +731,30 @@ void Printer::ASTPrinter::processDeclStmt(std::shared_ptr<Stmt> &s)
 	else if(declRef->isSingleDecl())
 	{
 		// normal(struct/variable...)
-		if(dynamic_pointer_cast<ValueDecl>(declRef->getSingleDecl().lock()))
+		if(dynamic_pointer_cast<VarDecl>(declRef->getSingleDecl().lock()))
 		{
-			auto decl = dynamic_pointer_cast<ValueDecl>(declRef->getSingleDecl().lock());
+			auto decl = dynamic_pointer_cast<VarDecl>(declRef->getSingleDecl().lock());
 			auto type = decl->getType().lock();
-			m_openHelper.getOutputStream() << indent();
+			if(!noIntent)
+				m_openHelper.getOutputStream() << indent();
+			m_typePrinter.printTypePrefix(type);
+			m_openHelper.getOutputStream() << " " << decl->getNameAsString();
+			m_typePrinter.printTypePostfix(type);
+			if(decl->getInitExpr().lock())
+			{
+				m_openHelper.getOutputStream() << " = ";
+				printAST(decl->getInitExpr().lock());
+			}
+			m_openHelper.getOutputStream() << ";";
+			if (!stmtInOneLine)
+				m_openHelper.getOutputStream() << "\n";
+		}
+		else if(dynamic_pointer_cast<FunctionDecl>(declRef->getSingleDecl().lock()))
+		{
+			auto decl = dynamic_pointer_cast<FunctionDecl>(declRef->getSingleDecl().lock());
+			auto type = decl->getType().lock();
+			if(!noIntent)
+				m_openHelper.getOutputStream() << indent();
 			m_typePrinter.printTypePrefix(type);
 			m_openHelper.getOutputStream() << " " << decl->getNameAsString();
 			m_typePrinter.printTypePostfix(type);
@@ -680,8 +765,9 @@ void Printer::ASTPrinter::processDeclStmt(std::shared_ptr<Stmt> &s)
 		else if(dynamic_pointer_cast<TypedefDecl>(declRef->getSingleDecl().lock()))	// typedef
 		{
 			auto decl = dynamic_pointer_cast<TypedefDecl>(declRef->getSingleDecl().lock());
-			auto type = dynamic_pointer_cast<TypedefType>(decl->getTypeForDecl().lock()->getTypePtr());;
-			m_openHelper.getOutputStream() << indent();
+			auto type = dynamic_pointer_cast<TypedefType>(decl->getTypeForDecl().lock()->getTypePtr());
+			if(!noIntent)
+				m_openHelper.getOutputStream() << indent();
 			m_openHelper.getOutputStream() << "typedef ";
 			m_typePrinter.printTypePrefix(type->getDeclForType().lock());
 			m_openHelper.getOutputStream() << " " << decl->getNameAsString();
@@ -695,20 +781,28 @@ void Printer::ASTPrinter::processDeclStmt(std::shared_ptr<Stmt> &s)
 	{
 		auto decls = declRef->getDeclGroup().lock();
 		// normal(struct/variable...)
-		if(dynamic_pointer_cast<ValueDecl>((*decls)[0]))
+		if(dynamic_pointer_cast<VarDecl>((*decls)[0]))
 		{
-			auto type = dynamic_pointer_cast<ValueDecl>((*decls)[0])->getType().lock();
-			m_openHelper.getOutputStream() << indent();
+			auto type = dynamic_pointer_cast<VarDecl>((*decls)[0])->getType().lock();
+			if(!noIntent)
+				m_openHelper.getOutputStream() << indent();
 			m_typePrinter.printTypePrefix(type);
 			m_openHelper.getOutputStream() << " ";
 			for (unsigned i = 0; i < decls->size(); ++i)
 			{
-				type = dynamic_pointer_cast<ValueDecl>((*decls)[i])->getType().lock();
-				// skip first
+				auto varDecl = dynamic_pointer_cast<VarDecl>((*decls)[i]);
+				type = varDecl->getType().lock();
+				// skip first type infix
 				if (i != 0)
 					m_typePrinter.printTypeInfix(type);
-				m_openHelper.getOutputStream() << dynamic_pointer_cast<ValueDecl>((*decls)[i])->getNameAsString();
+				m_openHelper.getOutputStream() << varDecl->getNameAsString();
 				m_typePrinter.printTypePostfix(type);
+				if(varDecl->getInitExpr().lock())
+				{
+					m_openHelper.getOutputStream() << " = ";
+					printAST(varDecl->getInitExpr().lock());
+				}
+				// skip last ','
 				if (i + 1 != decls->size())
 					m_openHelper.getOutputStream() << ", ";
 			}
@@ -722,7 +816,8 @@ void Printer::ASTPrinter::processDeclStmt(std::shared_ptr<Stmt> &s)
 			auto type = dynamic_pointer_cast<TypedefType>(
 					dynamic_pointer_cast<TypedefDecl>((*decls)[0])->getTypeForDecl().lock()->getTypePtr()
 			);
-			m_openHelper.getOutputStream() << indent();
+			if(!noIntent)
+				m_openHelper.getOutputStream() << indent();
 			m_openHelper.getOutputStream() << "typedef ";
 			m_typePrinter.printTypePrefix(type->getDeclForType().lock());
 			m_openHelper.getOutputStream() << " ";

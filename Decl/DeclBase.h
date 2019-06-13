@@ -144,6 +144,8 @@ public:
 	/// @throw SymbolAlreadyExist: if find the symbol
 	void lookupForExistence(StoredDecl &name, bool lookIntoParent);
 
+	void renameDecl(std::shared_ptr<Decl> decl, std::string newName);
+
 	DeclIterator decl_begin();
 	DeclIterator decl_end();
 

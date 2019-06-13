@@ -465,8 +465,11 @@ public:
     static bool classof(const std::weak_ptr<Stmt>T);
     static bool classof(const std::weak_ptr<CallExpr>);
 
-    const std::weak_ptr<Expr>getCallee() const;
-    std::weak_ptr<Expr>getCallee();
+
+    const std::list<std::shared_ptr<Stmt>> getArgs() const;
+	std::list<std::shared_ptr<Stmt>> getArgs();
+	const std::shared_ptr<Expr> getCallee() const;
+	std::shared_ptr<Expr> getCallee();
     void setCallee(std::shared_ptr<Expr>F);
 
     unsigned getNumArgs() const;

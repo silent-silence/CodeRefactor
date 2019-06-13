@@ -5,6 +5,8 @@
 
 class Stmt;
 class OpenHelper;
+class DeclContext;
+class Decl;
 
 class Corrector
 {
@@ -58,7 +60,19 @@ private:
     }
 
     OpenHelper &m_openHelper;
+};
 
+class NameRefactor {
+public:
+	NameRefactor() = default;
+
+	void rename(std::shared_ptr<DeclContext> context);
+
+private:
+	void renameType(std::shared_ptr<DeclContext> context, std::shared_ptr<Decl> decl);
+	void renameVar(std::shared_ptr<DeclContext> context, std::shared_ptr<Decl> decl);
+	void renameFunction(std::shared_ptr<DeclContext> context, std::shared_ptr<Decl> decl);
+	void renameEnumConstant(std::shared_ptr<DeclContext> context, std::shared_ptr<Decl> decl);
 };
 
 #endif // CORRECTOR_H

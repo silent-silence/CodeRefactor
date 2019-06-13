@@ -421,18 +421,22 @@ void YaccAdapter::makeArraySubscripExpr(yy::location &l)
 
 void YaccAdapter::makeCallExpr(unsigned parameterNum, yy::location &l)
 {
-	// TODO Find member name in DeclContext
 	SourceLocation lp = toSourceLocation(l);
-	list<shared_ptr<Expr>> exprs;
+	stack<shared_ptr<Expr>> argStack;
+	list<shared_ptr<Expr>> args;
 	for(auto i = 0; i != parameterNum; i++) {
-		exprs.push_back(dynamic_pointer_cast<Expr>(pop_stmt()));
+		argStack.push(dynamic_pointer_cast<Expr>(pop_stmt()));
+	}
+	for(auto i = 0; i != parameterNum; i++) {
+		args.push_back(argStack.top());
+		argStack.pop();
 	}
 	/// @note The return type and parameter number can be found by ASTContext
 	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::StmtClass::CallExprClass,
 					dynamic_pointer_cast<Expr>(pop_stmt()),
-					exprs, lp
+					args, lp
 			)
 	);
 }
@@ -581,6 +585,7 @@ void YaccAdapter::makeFunctionNoProtoType()
 			)
 	);
 	m_typeStack.push(type);
+	m_declContextStack.pop();
 }
 
 void YaccAdapter::makeFunctionProtoType(int paramNum)
@@ -734,8 +739,9 @@ void YaccAdapter::makeIncompleteArrayType()
 
 void YaccAdapter::enterCompoundBlock(yy::location &l)
 {
+	auto top = m_declContextStack.top();
 	m_declContextStack.push(
-			m_declContextHolder.createBlock(m_declContextStack.top(), toSourceLocation(l))
+			m_declContextHolder.createBlock(top, toSourceLocation(l))
 	);
 }
 

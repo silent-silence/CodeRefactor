@@ -45,13 +45,12 @@ namespace Printer {
 
 	private:
 		void recordPrefix(std::shared_ptr<QualType> type);
+		void enumPrefix(std::shared_ptr<QualType> type);
 
 		void arrayWithExprPostfix(std::shared_ptr<QualType> type);
 		void arrayWithoutExprPostfix(std::shared_ptr<QualType> type);
 		void functionProtoPostfix(std::shared_ptr<QualType> type);
 		void functionNoProtoPostfix(std::shared_ptr<QualType> type);
-		void recordPostfix(std::shared_ptr<QualType> type);
-		void enumPostfix(std::shared_ptr<QualType> type);
 
 		OpenHelper &m_openHelper;
 		ASTPrinter &ast;
@@ -112,6 +111,7 @@ namespace Printer {
 		OpenHelper &m_openHelper;
 		TypePrinter m_typePrinter;
 		bool stmtInOneLine;
+		bool noIntent;
 
 		template<typename T>
 		std::string toString(T num)

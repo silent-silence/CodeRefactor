@@ -2,10 +2,12 @@
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
 #include "OpenHelper/OpenHelper.h"
+#include "Decl/Decl.h"
 
 #include <exception>
 
-using std::exception;
+using std::exception;			using std::dynamic_pointer_cast;
+using std::string;
 
 using std::weak_ptr;
 using std::shared_ptr;
@@ -203,4 +205,89 @@ void Corrector::processInitListExpr(std::weak_ptr<Stmt> s)
 void Corrector::processParenListExpr(std::weak_ptr<Stmt> s)
 {
     auto ptr = TypeConversion<ParenListExpr>(s);
+}
+
+void NameRefactor::rename(std::shared_ptr<DeclContext> context)
+{
+	for(auto it = context->decl_begin(); it != context->decl_end(); ++it)
+	{
+		switch ((*it)->getKind())
+		{
+			case Decl::Kind::TranslationUnit:break;
+			case Decl::Kind::OverloadedFunction:break;
+			case Decl::Kind::Namespace:break;
+			case Decl::Kind::UsingDirective:break;
+			case Decl::Kind::NamespaceAlias:break;
+			case Decl::Kind::Typedef:		renameType(context, *it);break;
+			case Decl::Kind::Enum:			renameType(context, *it);break;
+			case Decl::Kind::Record:		renameType(context, *it);break;
+			case Decl::Kind::CXXRecord:break;
+			case Decl::Kind::ClassTemplateSpecialization:break;
+			case Decl::Kind::ClassTemplatePartialSpecialization:break;
+			case Decl::Kind::TemplateTypeParm:break;
+			case Decl::Kind::EnumConstant:	renameEnumConstant(context, *it);break;
+			case Decl::Kind::Function:		renameFunction(context, *it);break;
+			case Decl::Kind::FriendFunction:break;
+			case Decl::Kind::CXXMethod:break;
+			case Decl::Kind::CXXConstructor:break;
+			case Decl::Kind::CXXDestructor:break;
+			case Decl::Kind::CXXConversion:break;
+			case Decl::Kind::Field:break;
+			case Decl::Kind::Var:			renameVar(context, *it);break;
+			case Decl::Kind::ImplicitParam:break;
+			case Decl::Kind::ParmVar:		renameVar(context, *it);break;
+			case Decl::Kind::OriginalParmVar:break;
+			case Decl::Kind::NonTypeTemplateParm:break;
+			case Decl::Kind::Template:break;
+			case Decl::Kind::FunctionTemplate:break;
+			case Decl::Kind::ClassTemplate:break;
+			case Decl::Kind::TemplateTemplateParm:break;
+			case Decl::Kind::Using:break;
+			case Decl::Kind::LinkageSpec:break;
+			case Decl::Kind::FileScopeAsm:break;
+			case Decl::Kind::FriendClass:break;
+			case Decl::Kind::StaticAssert:break;
+			case Decl::Kind::Block:			rename(dynamic_pointer_cast<BlockDecl>(*it));break;
+		}
+	}
+}
+
+void NameRefactor::renameType(std::shared_ptr<DeclContext> context, std::shared_ptr<Decl> decl)
+{
+	auto typeDecl = dynamic_pointer_cast<TypeDecl>(decl);
+	string name = typeDecl->getNameAsString();
+	name[0] = toupper(name[0]);
+	context->renameDecl(decl, name);
+}
+
+void NameRefactor::renameVar(std::shared_ptr<DeclContext> context, std::shared_ptr<Decl> decl)
+{
+	auto typeDecl = dynamic_pointer_cast<VarDecl>(decl);
+	string name = typeDecl->getNameAsString();
+	for(int i = 0; i < name.length(); ++i)
+		name[i] = tolower(name[i]);
+	if(typeDecl->getType().lock()->isConstQualified())
+		name = "k_" + name;
+	context->renameDecl(decl, name);
+}
+
+void NameRefactor::renameFunction(std::shared_ptr<DeclContext> context, std::shared_ptr<Decl> decl)
+{
+	auto typeDecl = dynamic_pointer_cast<FunctionDecl>(decl);
+	string name = typeDecl->getNameAsString();
+	if(name != "main")
+	{
+		name[0] = toupper(name[0]);
+		context->renameDecl(decl, name);
+	}
+	rename(typeDecl);
+}
+
+void NameRefactor::renameEnumConstant(std::shared_ptr<DeclContext> context, std::shared_ptr<Decl> decl)
+{
+	auto typeDecl = dynamic_pointer_cast<EnumConstantDecl>(decl);
+	string name = typeDecl->getNameAsString();
+	for(int i = 0; i < name.length(); ++i)
+		name[i] = toupper(name[i]);
+	context->renameDecl(decl, name);
 }

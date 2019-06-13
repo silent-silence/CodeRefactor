@@ -91,12 +91,12 @@ TEST_F(HybridParseTest, FunctionWithNoParamDeclInContext)
 "{\n"
 "  int b;\n"
 "  return 1;\n"
-"}\n"
+"}\n\n"
 "int b()\n"
 "{\n"
 "  int a;\n"
 "  return 1;\n"
-"}\n"
+"}\n\n"
 ));
 }
 
@@ -121,12 +121,12 @@ TEST_F(HybridParseTest, FunctionDeclInContext)
 "{\n"
 "  int d;\n"
 "  return 1;\n"
-"}\n"
+"}\n\n"
 "int b(int c, int d)\n"
 "{\n"
 "  int a;\n"
 "  return 1;\n"
-"}\n"
+"}\n\n"
 ));
 }
 

@@ -754,14 +754,14 @@ bool CallExpr::classof(const weak_ptr<CallExpr>)
     return true;
 }
 
-const weak_ptr<Expr> CallExpr::getCallee() const
+const std::list<std::shared_ptr<Stmt>> CallExpr::getArgs() const
 {
-    return dynamic_pointer_cast<Expr>(*SubExprs.begin());
+    return SubExprs;
 }
 
-weak_ptr<Expr> CallExpr::getCallee()
+std::list<std::shared_ptr<Stmt>> CallExpr::getArgs()
 {
-    return dynamic_pointer_cast<Expr>(*SubExprs.begin());
+    return SubExprs;
 }
 
 void CallExpr::setCallee(shared_ptr<Expr> F)
@@ -809,6 +809,16 @@ CallExpr::CallExpr(Stmt::StmtClass SC, shared_ptr<Expr> fn,
     SubExprs.insert(SubExprs.end(), args.begin(), args.end());
 
     RParenLoc = rparenloc;
+}
+
+const std::shared_ptr<Expr> CallExpr::getCallee() const
+{
+	return dynamic_pointer_cast<Expr>(SubExprs.front());
+}
+
+std::shared_ptr<Expr> CallExpr::getCallee()
+{
+	return dynamic_pointer_cast<Expr>(SubExprs.front());
 }
 
 MemberExpr::MemberExpr(shared_ptr<Expr> base, bool isarrow,

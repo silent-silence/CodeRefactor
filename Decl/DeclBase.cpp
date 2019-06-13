@@ -5,10 +5,11 @@
 #include "Errors/SymbolError.hpp"
 #include "DeclBase.h"
 #include "Decl.h"
+#include "Basic/IdentifierTable.h"
 #include <functional>
 
 using std::hash;				using std::string;
-using std::to_string;
+using std::to_string;			using std::dynamic_pointer_cast;
 
 /// @Decl
 Decl::Decl(Kind declKind, SourceLocation location)
@@ -82,8 +83,11 @@ void DeclContext::addDecl(std::shared_ptr<Decl> decl)
 			throw s;
 		}
 	}
-	else
+	else	// unnamed decls(compound stmt in funtion)
+	{
 		m_decls[StoredDecl(StoredDecl::StoredKind::DeclId)] = decl;
+		m_declsList.push_back(decl);
+	}
 }
 
 std::weak_ptr<Decl> DeclContext::lookup(StoredDecl &name)
@@ -166,6 +170,16 @@ DeclIterator DeclContext::decl_begin()
 DeclIterator DeclContext::decl_end()
 {
 	return DeclIterator(m_declsList.end());
+}
+
+void DeclContext::renameDecl(std::shared_ptr<Decl> decl, std::string newName)
+{
+	auto identifier = dynamic_pointer_cast<NamedDecl>(decl)->getIdentifier().lock();
+	auto it = m_decls.find(LookupStoredDecl(identifier->getName()));
+	StoredDecl storedDecl = it->first;
+	identifier->setName(newName);
+	m_decls.erase(it);
+	m_decls[storedDecl] = decl;
 }
 
 /// @StoredDecl

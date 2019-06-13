@@ -44,6 +44,11 @@ bool IdentifierInfo::isAnonymous() const
 	return m_entry[0] == '%';
 }
 
+void IdentifierInfo::setName(std::string newName)
+{
+	m_entry = newName;
+}
+
 /*bool IdentifierInfo::isExtensionToken() const
 {
     return IsExtension;
