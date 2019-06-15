@@ -28,6 +28,7 @@ CodeRefactor::CodeRefactor(std::string input)
 {
     cin_open_helper_ = make_shared<FileOpenHelper>(input);
 	nameRefactor = make_shared<NameRefactor>();
+    refactor_ = make_shared<Refactor>();
     config();
 }
 

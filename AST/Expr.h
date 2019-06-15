@@ -404,7 +404,8 @@ public:
 
     SourceLocation getRParenLoc() const;
     void setRParenLoc(SourceLocation L);
-    virtual int EvaluateAsInt() const{}
+    //todo
+    virtual int EvaluateAsInt() const{return 0; }
 
 private:
     bool isSizeof : 1;  // true if sizeof, false if alignof.
@@ -517,7 +518,8 @@ public:
     SourceLocation getMemberLoc() const;
     void setMemberLoc(SourceLocation L);
     virtual SourceLocation getExprLoc() const;
-    virtual int EvaluateAsInt() const{}
+    //todo
+    virtual int EvaluateAsInt() const{return 0; }
 private:
     std::shared_ptr<Stmt> Base;
     std::shared_ptr<NamedDecl> MemberDecl;
@@ -649,7 +651,8 @@ public:
 
     SourceLocation getRParenLoc() const;
     void setRParenLoc(SourceLocation L);
-    virtual int EvaluateAsInt() const{}
+    //todo
+    virtual int EvaluateAsInt() const{ return 0;}
 private:
     SourceLocation LPLoc;
     SourceLocation RPLoc;

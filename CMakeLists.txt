@@ -18,6 +18,13 @@ if(_TEST_ENV STREQUAL ON)
     link_libraries(gtest pthread)
 endif()
 
+#if(CMAKE_BUILD_TYPE STREQUAL Release)
+	message(STATUS "Build static version")
+	SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+	SET(BUILD_SHARED_LIBS OFF)
+	SET(CMAKE_EXE_LINKER_FLAGS "-static")
+#endif()
+
 add_executable(CodeRefactor
         main.cpp
         ${BISON_Parser_OUTPUTS} ${FLEX_Scanner_OUTPUTS}

@@ -600,8 +600,8 @@ public:
 
     std::string getComment() const;
 
-    virtual child_iterator child_begin(){}
-    virtual child_iterator child_end(){}
+    virtual child_iterator child_begin(){return child_iterator(std::make_shared<PtrIterator>(nullptr));}
+    virtual child_iterator child_end(){return child_iterator(std::make_shared<PtrIterator>(nullptr));}
 
 private:
     SourceLocation CommentLoc;
