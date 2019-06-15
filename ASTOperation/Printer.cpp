@@ -204,7 +204,9 @@ void Printer::TypePrinter::recordPrefix(std::shared_ptr<QualType> type)
 void Printer::TypePrinter::arrayWithExprPostfix(std::shared_ptr<QualType> type)
 {
 	auto arrayType = dynamic_pointer_cast<ConstantArrayWithExprType>(type->getTypePtr());
-	arrayType->getSizeSpecifier().lock();
+	m_openHelper.getOutputStream() << "[";
+	ast.printAST(arrayType->getSizeSpecifier().lock());
+	m_openHelper.getOutputStream() << "]";
 }
 
 void Printer::TypePrinter::arrayWithoutExprPostfix(std::shared_ptr<QualType> type)
@@ -287,6 +289,7 @@ void Printer::ASTPrinter::printAST(std::shared_ptr<Stmt> root)
 		case Stmt::StmtClass::DeclStmtClass:				processDeclStmt(root);					break;
 		case Stmt::StmtClass::SwitchCaseClass:break;
 		case Stmt::StmtClass::AsmStmtClass:break;
+		case Stmt::StmtClass::CommentStmtClass:             processCommentStmt(root);                  break;
 		case Stmt::StmtClass::CXXCatchStmtClass:break;
 		case Stmt::StmtClass::CXXTryStmtClass:break;
 		case Stmt::StmtClass::ExprClass:break;
@@ -453,11 +456,11 @@ void Printer::ASTPrinter::processUnaryOperator(std::shared_ptr<Stmt> &s)
 			printAST(subExpr);
 			break;
 		case UnaryOperator::Not:
-			m_openHelper.getOutputStream() << "!";
+			m_openHelper.getOutputStream() << "~";
 			printAST(subExpr);
 			break;
 		case UnaryOperator::LNot:
-			m_openHelper.getOutputStream() << "~";
+			m_openHelper.getOutputStream() << "!";
 			printAST(subExpr);
 			break;
 		case UnaryOperator::Real:break;
@@ -596,7 +599,23 @@ void Printer::ASTPrinter::processStringLiteral(std::shared_ptr<Stmt> &s)
 void Printer::ASTPrinter::processCharacterLiteral(std::shared_ptr<Stmt> &s)
 {
 	auto character = dynamic_pointer_cast<CharacterLiteral>(s);
-	m_openHelper.getOutputStream() << "'" << static_cast<char>(character->getValue()) << "'";
+	string output;
+	switch(character->getValue())
+	{
+		case '\a':	output = "\\a";	break;
+		case '\b':	output = "\\b";	break;
+		case '\f':	output = "\\f";	break;
+		case '\n':	output = "\\n";	break;
+		case '\r':	output = "\\r";	break;
+		case '\t':	output = "\\t";	break;
+		case '\v':	output = "\\v";	break;
+		case '\'':	output = "\\\'";break;
+		case '\"':	output = "\\\"";break;
+		case '\\':	output = "\\\\";break;
+		case '\0':	output = "\\0";	break;
+		default:	output = static_cast<char>(character->getValue());	break;
+	}
+	m_openHelper.getOutputStream() << "'" << output << "'";
 }
 
 void Printer::ASTPrinter::processWhileStmt(std::shared_ptr<Stmt> &s)
@@ -840,4 +859,10 @@ void Printer::ASTPrinter::processDeclStmt(std::shared_ptr<Stmt> &s)
 				m_openHelper.getOutputStream() << ";\n";
 		}
 	}
+}
+
+void Printer::ASTPrinter::processCommentStmt(std::shared_ptr<Stmt> &s)
+{
+    auto ptr = dynamic_pointer_cast<CommentStmt>(s);
+    m_openHelper.getOutputStream() <<indent()<< ptr->getComment() << "\n";
 }

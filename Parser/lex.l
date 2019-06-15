@@ -23,7 +23,8 @@ string		({letter}?\"(\\.|[^\\"])*\")
 float		(({digit}|[1-9]{digit})+\.{digit}*)
 integer		({digit})+
 identifier	([_a-zA-Z][_0-9a-zA-Z]*)
-character   (\'(\\{digit}|.)\')
+character   (\'.\')
+escape_character (\'\\[0ntvabrf]\')
 
 single_comment      (\/\/.*?)
 multi_comment       (\/\*(.|\n)*?\*\/)
@@ -138,6 +139,17 @@ multi_comment       (\/\*(.|\n)*?\*\/)
 
 {string}        { return yy::Parser::make_STRING_LITERAL(yytext, loc); }
 {character}     { return yy::Parser::make_CHARACTER_LITERAL(*(yytext + 1), loc); }
+{escape_character} { switch(*(yytext+2)){
+                        case '0': return yy::Parser::make_CHARACTER_LITERAL('\0', loc);
+                        case 't': return yy::Parser::make_CHARACTER_LITERAL('\t', loc);
+                        case 'n': return yy::Parser::make_CHARACTER_LITERAL('\n', loc);
+                        case 'a': return yy::Parser::make_CHARACTER_LITERAL('\a', loc);
+                        case 'b': return yy::Parser::make_CHARACTER_LITERAL('\b', loc);
+                        case 'f': return yy::Parser::make_CHARACTER_LITERAL('\f', loc);
+                        case 'r': return yy::Parser::make_CHARACTER_LITERAL('\r', loc);
+                        case 'v': return yy::Parser::make_CHARACTER_LITERAL('\v', loc);
+                    }
+                    }
 
 <<EOF>>    { return yy::Parser::make_EOF(loc); }
 

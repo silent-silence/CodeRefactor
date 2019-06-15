@@ -86,6 +86,7 @@ namespace Printer {
 		void processBreakStmt(std::shared_ptr<Stmt> &s);
 		void processReturnStmt(std::shared_ptr<Stmt> &s);
 		void processDeclStmt(std::shared_ptr<Stmt> &s);
+        void processCommentStmt(std::shared_ptr<Stmt> &s);
 
 		/// @brief Print exprs
 		void processRefExpr(std::shared_ptr<Stmt> &s);

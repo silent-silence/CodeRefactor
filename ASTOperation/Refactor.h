@@ -11,7 +11,7 @@ class OpenHelper;
 class Refactor
 {
 public:
-    Refactor(OpenHelper &openHelper);
+    Refactor();
 
     void refactor_MCIf(std::weak_ptr<Stmt> root);
     void refactor_SCMIf(std::weak_ptr<Stmt> root);
@@ -43,7 +43,7 @@ private:
         return std::move(std::dynamic_pointer_cast<T>(ptr.lock()));
     }
 
-    OpenHelper &m_openHelper;
+//    OpenHelper &m_openHelper;
 };
 
 #endif // REFACTOR_H

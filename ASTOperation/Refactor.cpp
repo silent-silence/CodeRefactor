@@ -12,8 +12,7 @@ using std::shared_ptr;
 using std::make_shared;
 using std::dynamic_pointer_cast;
 
-Refactor::Refactor(OpenHelper &openHelper)
-    : m_openHelper{openHelper}
+Refactor::Refactor()
 {}
 
 void Refactor::refactor_MCIf(std::weak_ptr<Stmt> root)
@@ -252,7 +251,7 @@ void Refactor::conversion_While(StmtIterator iter)
     std::shared_ptr<Expr> Cond=ptr->getCond().lock();
     std::shared_ptr<Stmt> Body=ptr->getBody().lock();
     SourceLocation fl=ptr->getWhileLoc();
-    std::shared_ptr<Stmt> forStmt=make_shared<ForStmt>(nullptr,
+    std::shared_ptr<Stmt> forStmt=make_shared<ForStmt>(make_shared<NullStmt>(SourceLocation()),
                                                        Cond,nullptr,
                                                        Body,fl,
                                                        SourceLocation(),
