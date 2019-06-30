@@ -13,7 +13,7 @@
 #include "AST/ASTContext.h"
 #include "Decl/DeclContextHolder.h"
 
-using std::string;				using Printer::ContextPrinter;
+using std::string;
 
 class HybridParseTest : public testing::Test {
 protected:
@@ -26,7 +26,7 @@ protected:
 	YaccAdapter adapter{astContext, declContext, openHelper};
 	Driver driver{openHelper, adapter};
 	StringStreamOpenHelper printHelper;
-	ContextPrinter printer{printHelper};
+	Printer printer{printHelper};
 	std::string output;
 };
 
@@ -38,7 +38,7 @@ TEST_F(HybridParseTest, VarDeclInContext)
 "double c;"
 "char *d;";
 	driver.parse();
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "int a;\n"
@@ -58,7 +58,7 @@ TEST_F(HybridParseTest, StructDeclInContext)
 "  int b;"
 "} b;";
 	driver.parse();
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "struct {\n"
@@ -84,7 +84,7 @@ TEST_F(HybridParseTest, FunctionWithNoParamDeclInContext)
 "	return 1;"
 "}";
 	driver.parse();
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "int a()\n"
@@ -114,7 +114,7 @@ TEST_F(HybridParseTest, FunctionDeclInContext)
 "	return 1;"
 "}";
 	driver.parse();
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "int a(int b, int c)\n"
@@ -138,13 +138,52 @@ TEST_F(HybridParseTest,TypedefDeclInContext)
 "A a;"
 "B b;";
 	driver.parse();
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "typedef int A;\n"
 "typedef int B;\n"
 "A a;\n"
 "B b;\n"
+	));
+}
+
+TEST_F(HybridParseTest, IfAndForTest)
+{
+	string input =
+"{"
+"	for(;;)"
+"	{"
+"		if(1)"
+"		{"
+"			continue;"
+"		}"
+"		else"
+"		{"
+"			break;"
+"		}"
+"	}"
+"}"
+;
+	openHelper << input;
+	EXPECT_NO_THROW(driver.parse());
+	//printer.print(declContext.getContextRoot());
+	printer.print(astContext.getRoot().lock());
+	printHelper >> output;
+	EXPECT_EQ(output, string(
+"{\n"
+"  for (;;)\n"
+"  {\n"
+"    if (1)\n"
+"    {\n"
+"      continue;\n"
+"    }\n"
+"    else \n"
+"    {\n"
+"      break;\n"
+"    }\n"
+"  }\n"
+"}"
 	));
 }
 

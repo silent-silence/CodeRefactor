@@ -125,7 +125,7 @@ void Refactor::conversion_MCIf(StmtIterator iter)
         break;
     default:break;
     }
-    iter=ptr;
+    iter.replaceNode(ptr);
     if(is_MCIf(iter))
         conversion_MCIf(iter);
     refactor_MCIf(*iter);
@@ -158,7 +158,7 @@ void Refactor::conversion_SCMIf(StmtIterator iter)
 
     auto ptr = make_shared<IfStmt>(L_stmt->getIfLoc(), cond, R_stmt->getThen().lock(),
                                    L_stmt->getElseLoc(), L_stmt->getElse().lock());
-    iter = ptr;
+    iter.replaceNode(ptr);
 }
 
 void Refactor::conversion_MIf(StmtIterator iter)
@@ -206,7 +206,7 @@ void Refactor::conversion_Switch(StmtIterator iter)
 
         auto ifstmt = make_shared<IfStmt>(SourceLocation(), cond, then);
         if(stmt == nullptr)
-            iter = ifstmt;
+            iter.replaceNode(ifstmt);
         else
             stmt->setElse(ifstmt);
         stmt = ifstmt;
@@ -242,7 +242,7 @@ void Refactor::conversion_For(StmtIterator iter)
         stmt = make_shared<CompoundStmt>(li, SourceLocation(), SourceLocation());
     }
 
-    iter = stmt;
+    iter.replaceNode(stmt);
 }
 
 void Refactor::conversion_While(StmtIterator iter)
@@ -256,7 +256,7 @@ void Refactor::conversion_While(StmtIterator iter)
                                                        Body,fl,
                                                        SourceLocation(),
                                                        SourceLocation());
-    iter = forStmt;
+    iter.replaceNode(forStmt);
 }
 
 ///                 ->  if(expr)        |                   ->  if(expr)

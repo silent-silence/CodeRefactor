@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <sstream>
+#include <vector>
 
 class OpenHelper;
 class Stmt;
@@ -14,133 +15,169 @@ class QualType;
 class DeclContext;
 class Decl;
 
-// TODO: Use decorator refactor Printer, returning vector of string,
-// TODO: reformat strings in higher level(such as if stmt).
-// TODO: for example: 'if stmt', it's sub statement just return a string of expr or stmt,
-// TODO: if will add indent or '\n' in condition
-namespace Printer {
+class Printer;
+
+/// @brief Print type
+class TypePrinter {
+public:
+	explicit TypePrinter(Printer &p);
+
+	/// @brief Print type
+	/// @example in 'int *a[1]', prefix is 'int *', infix is '*', postfix is '[1]'
+	std::string printTypePrefix(std::shared_ptr<QualType> type);
+	std::string printTypeInfix(std::shared_ptr<QualType> type);
+	std::string printTypePostfix(std::shared_ptr<QualType> type);
+
+private:
+	std::string qualifierPrefix(std::shared_ptr<QualType> type);
+
+	std::vector<std::string> builtinPrefix(std::shared_ptr<QualType> type);
+	std::vector<std::string> pointerPrefix(std::shared_ptr<QualType> type);
+	std::vector<std::string> arrayPrefix(std::shared_ptr<QualType> type);
+	std::vector<std::string> functionPrefix(std::shared_ptr<QualType> type);
+	std::vector<std::string> typedefPrefix(std::shared_ptr<QualType> type);
+	std::vector<std::string> recordPrefix(std::shared_ptr<QualType> type);
+	std::vector<std::string> enumPrefix(std::shared_ptr<QualType> type);
+
+	std::string formatBuiltinPrefix(std::vector<std::string> str);
+	std::string formatPointerPrefix(std::vector<std::string> str);
+	std::string formatArrayPrefix(std::vector<std::string> str);
+	std::string formatFunctionPrefix(std::vector<std::string> str);
+	std::string formatTypedefPrefix(std::vector<std::string> str);
+	std::string formatRecodePrefix(std::vector<std::string> str);
+	std::string formatEnumPrefix(std::vector<std::string> str);
+
+	std::vector<std::string> arrayWithExprPostfix(std::shared_ptr<QualType> type);
+	std::vector<std::string> arrayWithoutExprPostfix(std::shared_ptr<QualType> type);
+	std::vector<std::string> functionProtoPostfix(std::shared_ptr<QualType> type);
+	std::vector<std::string> functionNoProtoPostfix(std::shared_ptr<QualType> type);
+
+	std::string formatArrayWithExprPostfix(std::vector<std::string> str);
+	std::string formatArrayWithoutExprPostfix(std::vector<std::string> str);
+	std::string formatFunctionProtoPostfix(std::vector<std::string> str);
+	std::string formatFunctionNoProtoPostfix(std::vector<std::string> str);
+
+	Printer &printer;
+};
+
+/// @brief Print AST
+class ASTPrinter {
+public:
+	explicit ASTPrinter(Printer &p);
+
+	/// @brief Print all child in root
+	std::string printAST(std::shared_ptr<Stmt> root);
+
+private:
+	/// @brief Print an expr as a stmt(add ';\n' at end)
+	/// 		if s is a stmt type, just pass the parameter to print
+	std::string formatExprAsStmt(std::string str, std::shared_ptr<Stmt> s);
+
+	/// @brief Print stmts
+	std::string processNullStmt(std::shared_ptr<Stmt> &s);
+	std::string processCaseStmt(std::shared_ptr<Stmt> &s);
+	std::string processDefaultStmt(std::shared_ptr<Stmt> &s);
+	std::string processLabelStmt(std::shared_ptr<Stmt> &s);
+	std::string processGotoStmt(std::shared_ptr<Stmt> &s);
+	std::string processIndirectGotoStmt(std::shared_ptr<Stmt> &s);
+	std::string processContinueStmt(std::shared_ptr<Stmt> &s);
+	std::string processBreakStmt(std::shared_ptr<Stmt> &s);
+	std::string processReturnStmt(std::shared_ptr<Stmt> &s);
+	std::string processDeclStmt(std::shared_ptr<Stmt> &s);
+	std::string processCommentStmt(std::shared_ptr<Stmt> &s);
+	/// @note Only blocks can add '\n' for statements in it's block(NOT itself)
+	std::string processCompoundStmt(std::shared_ptr<Stmt> &s);
+	std::string processWhileStmt(std::shared_ptr<Stmt> &s);
+	std::string processDoStmt(std::shared_ptr<Stmt> &s);
+	std::string processForStmt(std::shared_ptr<Stmt> &s);
+	std::string processIfStmt(std::shared_ptr<Stmt> &s);
+	std::string processSwitchStmt(std::shared_ptr<Stmt> &s);
+
+
+	/// @brief Print exprs
+	std::string processRefExpr(std::shared_ptr<Stmt> &s);
+	std::string processIntergerLiteral(std::shared_ptr<Stmt> &s);
+	std::string processFloatingLiteral(std::shared_ptr<Stmt> &s);
+	std::string processImaginaryLiteral(std::shared_ptr<Stmt> &s);
+	std::string processStringLiteral(std::shared_ptr<Stmt> &s);
+	std::string processCharacterLiteral(std::shared_ptr<Stmt> &s);
+	std::string processParenExpr(std::shared_ptr<Stmt> &s);
+	std::string processUnaryOperator(std::shared_ptr<Stmt> &s);
+	std::string processSizeOfAlignOfExpr(std::shared_ptr<Stmt> &s);
+	std::string processArraySubscriptExpr(std::shared_ptr<Stmt> &s);
+	std::string processCallExpr(std::shared_ptr<Stmt> &s);
+	std::string processBinaryOperator(std::shared_ptr<Stmt> &s);
+	std::string processCompoundAssignOperator(std::shared_ptr<Stmt> &s);
+	std::string processConditionalOperator(std::shared_ptr<Stmt> &s);
+	std::string processImplicitCastExpr(std::shared_ptr<Stmt> &s);
+	std::string processCStyleCastExpr(std::shared_ptr<Stmt> &s);
+	std::string processVAArgExpr(std::shared_ptr<Stmt> &s);
+	std::string processInitListExpr(std::shared_ptr<Stmt> &s);
+	std::string processParenListExpr(std::shared_ptr<Stmt> &s);
+	std::string processMemberExpr(std::shared_ptr<Stmt> &s);
+
+	Printer &printer;
+
+	template<typename T>
+	std::string toString(T num)
+	{
+		std::ostringstream ss;
+		ss << num;
+		return ss.str();
+	}
+};
+
+/// @brief Print top level decl context
+class ContextPrinter {
+public:
+	explicit ContextPrinter(Printer &p);
+
+	/// @brief Print all decls in context
+	std::string printContext(std::shared_ptr<DeclContext> context);
+
+	std::string printDecl(std::shared_ptr<Decl> decl);
+
+private:
+	std::string printVar(std::shared_ptr<Decl> decl);
+	std::string printTypedef(std::shared_ptr<Decl> decl);
+	std::string printRecord(std::shared_ptr<Decl> decl);
+	std::string printFunction(std::shared_ptr<Decl> decl);
+
+	Printer &printer;
+};
+
+class Printer {
+
+	friend class TypePrinter;
+	friend class ASTPrinter;
+	friend class ContextPrinter;
+
+public:
+	explicit Printer(OpenHelper &openHelper);
+
+	/// @brief Print decl context or ast
+	void print(std::shared_ptr<DeclContext> context);
+	void print(std::shared_ptr<Stmt> root);
 
 	/// @brief Indent control
-	static std::string indent();
-	static int indentNum = 0;
-	static const char indentCharacter = ' ';
+	std::string oneIndentLessIndent();
+	std::string indent();
+	void forwardIndent();
+	void backwardIndent();
 
 #ifdef ENV_TEST
 	void resetPrinter();
 #endif
 
-	class ASTPrinter;
-	class TypePrinter;
+private:
+	OpenHelper &m_openHelper;
 
-	/// @brief Print type
-	class TypePrinter {
-	public:
-		TypePrinter(OpenHelper &stream, ASTPrinter &printer);
+	TypePrinter typePrinter;
+	ASTPrinter astPrinter;
+	ContextPrinter contextPrinter;
 
-		/// @brief Print type
-		/// @example in 'int *a[1]', prefix is int, infix is *, postfix is [1]
-		void printTypePrefix(std::shared_ptr<QualType> type);
-		void printTypeInfix(std::shared_ptr<QualType> type);
-		void printTypePostfix(std::shared_ptr<QualType> type);
-
-	private:
-		void recordPrefix(std::shared_ptr<QualType> type);
-		void enumPrefix(std::shared_ptr<QualType> type);
-
-		void arrayWithExprPostfix(std::shared_ptr<QualType> type);
-		void arrayWithoutExprPostfix(std::shared_ptr<QualType> type);
-		void functionProtoPostfix(std::shared_ptr<QualType> type);
-		void functionNoProtoPostfix(std::shared_ptr<QualType> type);
-
-		OpenHelper &m_openHelper;
-		ASTPrinter &ast;
-	};
-
-	/// @brief Print AST
-	class ASTPrinter {
-	public:
-		explicit ASTPrinter(OpenHelper &stream);
-
-		/// @brief Print all child in root
-		void printAST(std::shared_ptr<Stmt> root);
-
-	private:
-		/// @brief Print an expr as a stmt(add ';\n' at end)
-		/// 		if s is a stmt type, just pass the parameter to print
-		void formatExprAsStmt(std::shared_ptr<Stmt> s);
-
-		/// @brief Print stmts
-		void processNullStmt(std::shared_ptr<Stmt> &s);
-		void processCompoundStmt(std::shared_ptr<Stmt> &s);
-		void processCaseStmt(std::shared_ptr<Stmt> &s);
-		void processDefaultStmt(std::shared_ptr<Stmt> &s);
-		void processLabelStmt(std::shared_ptr<Stmt> &s);
-		void processIfStmt(std::shared_ptr<Stmt> &s, bool isElseCond = false);
-		void processSwitchStmt(std::shared_ptr<Stmt> &s);
-		void processWhileStmt(std::shared_ptr<Stmt> &s);
-		void processDoStmt(std::shared_ptr<Stmt> &s);
-		void processForStmt(std::shared_ptr<Stmt> &s);
-		void processGotoStmt(std::shared_ptr<Stmt> &s);
-		void processIndirectGotoStmt(std::shared_ptr<Stmt> &s);
-		void processContinueStmt(std::shared_ptr<Stmt> &s);
-		void processBreakStmt(std::shared_ptr<Stmt> &s);
-		void processReturnStmt(std::shared_ptr<Stmt> &s);
-		void processDeclStmt(std::shared_ptr<Stmt> &s);
-        void processCommentStmt(std::shared_ptr<Stmt> &s);
-
-		/// @brief Print exprs
-		void processRefExpr(std::shared_ptr<Stmt> &s);
-		void processIntergerLiteral(std::shared_ptr<Stmt> &s);
-		void processFloatingLiteral(std::shared_ptr<Stmt> &s);
-		void processImaginaryLiteral(std::shared_ptr<Stmt> &s);
-		void processStringLiteral(std::shared_ptr<Stmt> &s);
-		void processCharacterLiteral(std::shared_ptr<Stmt> &s);
-		void processParenExpr(std::shared_ptr<Stmt> &s);
-		void processUnaryOperator(std::shared_ptr<Stmt> &s);
-		void processSizeOfAlignOfExpr(std::shared_ptr<Stmt> &s);
-		void processArraySubscriptExpr(std::shared_ptr<Stmt> &s);
-		void processCallExpr(std::shared_ptr<Stmt> &s);
-		void processBinaryOperator(std::shared_ptr<Stmt> &s);
-		void processCompoundAssignOperator(std::shared_ptr<Stmt> &s);
-		void processConditionalOperator(std::shared_ptr<Stmt> &s);
-		void processImplicitCastExpr(std::shared_ptr<Stmt> &s);
-		void processCStyleCastExpr(std::shared_ptr<Stmt> &s);
-		void processVAArgExpr(std::shared_ptr<Stmt> &s);
-		void processInitListExpr(std::shared_ptr<Stmt> &s);
-		void processParenListExpr(std::shared_ptr<Stmt> &s);
-
-		OpenHelper &m_openHelper;
-		TypePrinter m_typePrinter;
-		bool stmtInOneLine;
-		bool noIntent;
-
-		template<typename T>
-		std::string toString(T num)
-		{
-			std::ostringstream ss;
-			ss << num;
-			return ss.str();
-		}
-	};
-
-	/// @brief Print top level decl context
-	class ContextPrinter {
-	public:
-		explicit ContextPrinter(OpenHelper &stream);
-
-		/// @brief Print all decls in context
-		void printContext(std::shared_ptr<DeclContext> context);
-
-	private:
-		void printVar(std::shared_ptr<Decl> decl);
-		void printTypedef(std::shared_ptr<Decl> decl);
-		void printRecord(std::shared_ptr<Decl> decl);
-		void printFunction(std::shared_ptr<Decl> decl);
-
-		OpenHelper &m_openHelper;
-		ASTPrinter astPrinter;
-		TypePrinter typePrinter;
-	};
-}
+	int indentNum;
+	const char indentCharacter = ' ';
+};
 
 #endif //CODEREFACTOR_PRINTER_H

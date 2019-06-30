@@ -9,14 +9,46 @@
 #include "Decl/DeclGroup.h"
 #include "Decl/DeclBase.h"
 #include "Basic/IdentifierTable.h"
+#include <regex>
 
 using std::string;					using std::dynamic_pointer_cast;
 using std::to_string;				using std::make_shared;
+using std::vector;					using std::regex;
 
 /// @Printer
+Printer::Printer(OpenHelper &openHelper)
+	: m_openHelper{openHelper}, typePrinter{*this}, astPrinter{*this}, contextPrinter{*this}, indentNum{0}
+{}
+
+void Printer::print(std::shared_ptr<DeclContext> context)
+{
+	m_openHelper.getOutputStream() << contextPrinter.printContext(context);
+}
+
+void Printer::print(std::shared_ptr<Stmt> root)
+{
+	m_openHelper.getOutputStream() << astPrinter.printAST(root);
+}
+
+std::string Printer::oneIndentLessIndent()
+{
+	return string(indentNum == 0 ? 0 : ((indentNum-1) * 2), indentCharacter);
+}
+
 std::string Printer::indent()
 {
 	return string(indentNum * 2, indentCharacter);
+}
+
+void Printer::forwardIndent()
+{
+	++indentNum;
+}
+
+void Printer::backwardIndent()
+{
+	if(indentNum != 0)
+		--indentNum;
 }
 
 #ifdef ENV_TEST
@@ -27,110 +59,186 @@ void Printer::resetPrinter()
 #endif
 
 /// @ContextPrinter
-Printer::ContextPrinter::ContextPrinter(OpenHelper &stream)
-	: m_openHelper{stream}, astPrinter{stream}, typePrinter{stream, astPrinter}
+ContextPrinter::ContextPrinter(Printer &p)
+	: printer{p}
 {}
 
-void Printer::ContextPrinter::printContext(std::shared_ptr<DeclContext> context)
+std::string ContextPrinter::printContext(std::shared_ptr<DeclContext> context)
 {
+	string ret;
 	for (auto it = context->decl_begin(); it != context->decl_end(); ++it)
 	{
 		switch ((*it)->getKind())
 		{
-			case Decl::Kind::Var:
-				printVar((*it));
-				break;
-			case Decl::Kind::Typedef:
-				printTypedef(*it);
-				break;
-			case Decl::Kind::Record:
-				printRecord(*it);
-				break;
-			case Decl::Kind::Function:
-				printFunction(*it);
-			default:
-				break;
+			case Decl::Kind::Var:		ret += printVar((*it));		break;
+			case Decl::Kind::Typedef:	ret += printTypedef(*it);	break;
+			case Decl::Kind::Record:	ret += printRecord(*it);	break;
+			case Decl::Kind::Function:	ret += printFunction(*it);	break;
+			default:					ret += "";					break;
 		}
 	}
+
+	return ret;
 }
 
-void Printer::ContextPrinter::printVar(std::shared_ptr<Decl> decl)
+std::string ContextPrinter::printVar(std::shared_ptr<Decl> decl)
 {
+	string ret;
 	auto var = dynamic_pointer_cast<VarDecl>(decl);
-	typePrinter.printTypePrefix(var->getType().lock());
-	m_openHelper.getOutputStream() << " " << var->getNameAsString();
-	typePrinter.printTypePostfix(var->getType().lock());
-	m_openHelper.getOutputStream() << ";\n";
+	if(dynamic_pointer_cast<TypedefType>(var->getType().lock()->getTypePtr()))
+		ret += dynamic_pointer_cast<TypedefType>(var->getType().lock()->getTypePtr())->getDecl().lock()->getNameAsString();
+	else
+		ret += printer.typePrinter.printTypePrefix(var->getType().lock());
+	ret += " " + var->getNameAsString();
+	ret += printer.typePrinter.printTypePostfix(var->getType().lock());
+	ret += ";\n";
+
+	return ret;
 }
 
-void Printer::ContextPrinter::printTypedef(std::shared_ptr<Decl> decl)
+std::string ContextPrinter::printTypedef(std::shared_ptr<Decl> decl)
 {
+	string ret;
+
 	auto typedefDecl = dynamic_pointer_cast<TypedefDecl>(decl);
 	auto type = dynamic_pointer_cast<TypedefType>(typedefDecl->getTypeForDecl().lock()->getTypePtr());
-	m_openHelper.getOutputStream() << indent();
-	m_openHelper.getOutputStream() << "typedef ";
-	typePrinter.printTypePrefix(type->getDeclForType().lock());
-	m_openHelper.getOutputStream() << " " << typedefDecl->getNameAsString();
-	typePrinter.printTypePostfix(type->getDeclForType().lock());
-	m_openHelper.getOutputStream() << ";\n";
+
+	ret = "typedef ";
+	ret += printer.typePrinter.printTypePrefix(type->getDeclForType().lock());
+	ret += " " + typedefDecl->getNameAsString();
+	ret += printer.typePrinter.printTypePostfix(type->getDeclForType().lock());
+	ret += ";\n";
+
+	return ret;
 }
 
-void Printer::ContextPrinter::printRecord(std::shared_ptr<Decl> decl)
+std::string ContextPrinter::printRecord(std::shared_ptr<Decl> decl)
 {
+	string ret;
 	auto record = dynamic_pointer_cast<RecordDecl>(decl);
 	if(!record->getIdentifier().lock()->isAnonymous())	// remove anonymous struct decl
 	{
-		typePrinter.printTypePrefix(record->getTypeForDecl().lock());
-		m_openHelper.getOutputStream() << " " << record->getNameAsString();
-		typePrinter.printTypePostfix(record->getTypeForDecl().lock());
-		m_openHelper.getOutputStream() << ";\n";
+		ret = printer.typePrinter.printTypePrefix(record->getTypeForDecl().lock());
+		ret += " " + record->getNameAsString();
+		ret += ";\n";
 	}
+	return ret;
 }
 
-void Printer::ContextPrinter::printFunction(std::shared_ptr<Decl> decl)
+std::string ContextPrinter::printFunction(std::shared_ptr<Decl> decl)
 {
+	string ret;
 	auto fun = dynamic_pointer_cast<FunctionDecl>(decl);
-	typePrinter.printTypePrefix(fun->getType().lock());
-	m_openHelper.getOutputStream() << " " << fun->getNameAsString();
-	typePrinter.printTypePostfix(fun->getType().lock());
+
+	ret = printer.typePrinter.printTypePrefix(fun->getType().lock());
+	ret += " " + fun->getNameAsString();
+	ret += printer.typePrinter.printTypePostfix(fun->getType().lock());
+
 	if(fun->getBody().lock())
 	{
-		m_openHelper.getOutputStream() << "\n";
-		astPrinter.printAST(fun->getBody().lock());
-		m_openHelper.getOutputStream() << "\n";
+		ret += "\n";
+		ret += printer.astPrinter.printAST(fun->getBody().lock());
+		ret += "\n";
 	}
 	else
-		m_openHelper.getOutputStream() << ";\n";
+		ret += ";";
+
+	ret += "\n";
+	return ret;
+}
+
+std::string ContextPrinter::printDecl(std::shared_ptr<Decl> decl)
+{
+	string ret;
+	if(dynamic_pointer_cast<ValueDecl>(decl))
+	{
+		auto d = dynamic_pointer_cast<ValueDecl>(decl);
+		auto type = d->getType().lock();
+
+		if(dynamic_pointer_cast<TypedefType>(type->getTypePtr()))
+			ret += dynamic_pointer_cast<TypedefType>(type->getTypePtr())->getDecl().lock()->getNameAsString();
+		else
+			ret += printer.typePrinter.printTypePrefix(type);
+
+		//ret += printer.typePrinter.printTypePrefix(type);
+		ret += " " + d->getNameAsString();
+		ret += printer.typePrinter.printTypePostfix(type);
+	}
+	else if(dynamic_pointer_cast<TypeDecl>(decl))
+	{
+		auto d = dynamic_pointer_cast<TypeDecl>(decl);
+		auto type = d->getTypeForDecl().lock();
+
+		ret += printer.typePrinter.printTypePrefix(type);
+		ret += " " + d->getNameAsString();
+		ret += printer.typePrinter.printTypePostfix(type);
+	}
+
+	return ret;
+	/*auto decl = dynamic_pointer_cast<TypedefDecl>(declRef->getSingleDecl().lock());
+
+		m_openHelper.getOutputStream() << indent();
+	m_openHelper.getOutputStream() << "typedef ";
+	m_typePrinter.printTypePrefix(type->getDeclForType().lock());
+	m_openHelper.getOutputStream() << " " << decl->getNameAsString();
+	m_typePrinter.printTypePostfix(type->getDeclForType().lock());
+	m_openHelper.getOutputStream() << ";";
+		m_openHelper.getOutputStream() << "\n";*/
 }
 
 /// @TypePrinter
-Printer::TypePrinter::TypePrinter(OpenHelper &stream, ASTPrinter &printer)
-	: m_openHelper{stream}, ast{printer}
+TypePrinter::TypePrinter(Printer &p)
+	: printer{p}
 {}
 
-void Printer::TypePrinter::printTypePrefix(std::shared_ptr<QualType> type)
+std::string TypePrinter::printTypePrefix(std::shared_ptr<QualType> type)
 {
+	string ret = qualifierPrefix(type);
 	switch(type->getTypePtr()->getTypeClass())
 	{
-		case Type::TypeClass::Record:
-			recordPrefix(type);
-			break;
-		case Type::TypeClass::Enum:
-			enumPrefix(type);
-			break;
-		default:
-			m_openHelper.getOutputStream() << type->getTypePrefixAsString();
-			break;
+		case Type::TypeClass::ExtQual:break;
+		case Type::TypeClass::Builtin:					ret += formatBuiltinPrefix(builtinPrefix(type));	break;
+		case Type::TypeClass::FixedWidthInt:break;
+		case Type::TypeClass::Complex:break;
+		case Type::TypeClass::Pointer:					ret += formatPointerPrefix(pointerPrefix(type));	break;
+		case Type::TypeClass::BlockPointer:break;
+		case Type::TypeClass::LValueReference:break;
+		case Type::TypeClass::RValueReference:break;
+		case Type::TypeClass::MemberPointer:break;
+		case Type::TypeClass::ConstantArray:			ret += formatArrayPrefix(arrayPrefix(type));		break;
+		case Type::TypeClass::ConstantArrayWithExpr:	ret += formatArrayPrefix(arrayPrefix(type));		break;
+		case Type::TypeClass::ConstantArrayWithoutExpr:	ret += formatArrayPrefix(arrayPrefix(type));		break;
+		case Type::TypeClass::IncompleteArray:			ret += formatArrayPrefix(arrayPrefix(type));		break;
+		case Type::TypeClass::VariableArray:			ret += formatArrayPrefix(arrayPrefix(type));		break;
+		case Type::TypeClass::DependentSizedArray:		ret += formatArrayPrefix(arrayPrefix(type));		break;
+		case Type::TypeClass::DependentSizedExtVector:break;
+		case Type::TypeClass::Vector:break;
+		case Type::TypeClass::ExtVector:break;
+		case Type::TypeClass::FunctionProto:			ret += formatFunctionPrefix(functionPrefix(type));	break;
+		case Type::TypeClass::FunctionNoProto:			ret += formatFunctionPrefix(functionPrefix(type));	break;
+		case Type::TypeClass::Typedef:					ret += formatTypedefPrefix(typedefPrefix(type));	break;
+		case Type::TypeClass::TypeOfExpr:break;
+		case Type::TypeClass::TypeOf:break;
+		case Type::TypeClass::Decltype:break;
+		case Type::TypeClass::Record:					ret += formatRecodePrefix(recordPrefix(type));		break;
+		case Type::TypeClass::Enum:						ret += formatEnumPrefix(enumPrefix(type));			break;
+		case Type::TypeClass::TemplateTypeParm:break;
+		case Type::TypeClass::TemplateSpecialization:break;
+		case Type::TypeClass::QualifiedName:break;
+		case Type::TypeClass::Typename:break;
 	}
+	return ret;
 }
 
-void Printer::TypePrinter::printTypeInfix(std::shared_ptr<QualType> type)
+std::string TypePrinter::printTypeInfix(std::shared_ptr<QualType> type)
 {
 	if(type->getTypePtr()->getTypeClass() == Type::TypeClass::Pointer)
-		m_openHelper.getOutputStream() << "*";
+		return "*";
+	else
+		return "";
 }
 
-void Printer::TypePrinter::printTypePostfix(std::shared_ptr<QualType> type)
+std::string TypePrinter::printTypePostfix(std::shared_ptr<QualType> type)
 {
 	string ret;
 	switch(type->getTypePtr()->getTypeClass())
@@ -146,11 +254,11 @@ void Printer::TypePrinter::printTypePostfix(std::shared_ptr<QualType> type)
 		case Type::TypeClass::MemberPointer:			break;
 		case Type::TypeClass::ConstantArray:
 		case Type::TypeClass::ConstantArrayWithExpr:
-			arrayWithExprPostfix(type);
+			ret = formatArrayWithExprPostfix(arrayWithExprPostfix(type));
 			break;
 		case Type::TypeClass::ConstantArrayWithoutExpr:
 		case Type::TypeClass::IncompleteArray:
-			arrayWithoutExprPostfix(type);
+			ret =  formatArrayWithoutExprPostfix(arrayWithoutExprPostfix(type));
 			break;
 		case Type::TypeClass::VariableArray:			break;
 		case Type::TypeClass::DependentSizedArray:		break;
@@ -158,10 +266,10 @@ void Printer::TypePrinter::printTypePostfix(std::shared_ptr<QualType> type)
 		case Type::TypeClass::Vector:					break;
 		case Type::TypeClass::ExtVector:				break;
 		case Type::TypeClass::FunctionProto:
-			functionProtoPostfix(type);
+			ret =  formatFunctionProtoPostfix(functionProtoPostfix(type));
 			break;
 		case Type::TypeClass::FunctionNoProto:
-			functionNoProtoPostfix(type);
+			ret =  formatFunctionNoProtoPostfix(functionNoProtoPostfix(type));
 			break;
 		case Type::TypeClass::Typedef:					break;/*No postfix*/
 		case Type::TypeClass::TypeOfExpr:				break;
@@ -178,141 +286,342 @@ void Printer::TypePrinter::printTypePostfix(std::shared_ptr<QualType> type)
 		case Type::TypeClass::QualifiedName:			break;
 		case Type::TypeClass::Typename:					break;
 	}
+	return ret;
 }
 
-void Printer::TypePrinter::recordPrefix(std::shared_ptr<QualType> type)
+std::string TypePrinter::qualifierPrefix(std::shared_ptr<QualType> type)
 {
-	m_openHelper.getOutputStream() << type->getTypePrefixAsString();
-	m_openHelper.getOutputStream() << "\n";
+	string qualifiers;
+	switch(type->getCVRQualifiers())
+	{
+		case QualType::Const | QualType::Restrict | QualType::Volatile:
+			qualifiers = "const restrict volatile ";
+			break;
+		case QualType::Const | QualType::Restrict:
+			qualifiers = "const restrict ";
+			break;
+		case QualType::Const | QualType::Volatile:
+			qualifiers = "const volatile ";
+			break;
+		case QualType::Restrict | QualType::Volatile:
+			qualifiers = "restrict volatile ";
+			break;
+		case QualType::Const:
+			qualifiers = "const ";
+			break;
+		case QualType::Restrict:
+			qualifiers = "restrict ";
+			break;
+		case QualType::Volatile:
+			qualifiers = "volatile ";
+			break;
+		case QualType::None:
+		default:
+			qualifiers = "";
+			break;
+	}
+	return qualifiers;
+}
+
+std::vector<std::string> TypePrinter::builtinPrefix(std::shared_ptr<QualType> type)
+{
+	vector<string> ret;
+	std::string typeName;
+	switch(dynamic_pointer_cast<BuiltinType>(type->getTypePtr())->getKind())
+	{
+		case BuiltinType::Void:			typeName = "void";					break;
+		case BuiltinType::Bool:			typeName = "bool";					break;
+		case BuiltinType::Char_U:		typeName = "unsigned char";			break;
+		case BuiltinType::UChar:		typeName = "unsigned char";			break;
+		case BuiltinType::Char16:		typeName = "void";					break;
+		case BuiltinType::Char32:		typeName = "void";					break;
+		case BuiltinType::UShort:		typeName = "unsigned short";		break;
+		case BuiltinType::UInt:			typeName = "unsigned int";			break;
+		case BuiltinType::ULong:		typeName = "unsigned long";			break;
+		case BuiltinType::ULongLong:	typeName = "unsigned long long";	break;
+		case BuiltinType::UInt128:		typeName = "void";break;
+		case BuiltinType::Char_S:		typeName = "signed char";			break;
+		case BuiltinType::SChar:		typeName = "signed char";			break;
+		case BuiltinType::WChar:		typeName = "void";break;
+		case BuiltinType::Short:		typeName = "short";					break;
+		case BuiltinType::Int:			typeName = "int";					break;
+		case BuiltinType::Long:			typeName = "long";					break;
+		case BuiltinType::LongLong:		typeName = "long long";				break;
+		case BuiltinType::Int128:		typeName = "void";break;
+		case BuiltinType::Float:		typeName = "float";					break;
+		case BuiltinType::Double:		typeName = "double";				break;
+		case BuiltinType::LongDouble:	typeName = "long double";			break;
+		case BuiltinType::NullPtr:		typeName = "void";break;
+		case BuiltinType::Overload:		typeName = "void";break;
+		case BuiltinType::Dependent:	typeName = "void";break;
+		case BuiltinType::UndeducedAuto:typeName = "void";break;
+	}
+	ret.emplace_back(typeName);
+	return ret;
+}
+
+std::vector<std::string> TypePrinter::pointerPrefix(std::shared_ptr<QualType> type)
+{
+	vector<string> ret;
+	ret.emplace_back(printTypePrefix(dynamic_pointer_cast<PointerType>(type->getTypePtr())->getPointeeType().lock()));
+	ret.emplace_back("*");
+	return ret;
+}
+
+std::vector<std::string> TypePrinter::arrayPrefix(std::shared_ptr<QualType> type)
+{
+	vector<string> ret;
+	ret.emplace_back(printTypePrefix(dynamic_pointer_cast<ArrayType>(type->getTypePtr())->getElementType().lock()));
+	return ret;
+}
+
+std::vector<std::string> TypePrinter::functionPrefix(std::shared_ptr<QualType> type)
+{
+	vector<string> ret;
+	ret.emplace_back(printTypePrefix(dynamic_pointer_cast<FunctionType>(type->getTypePtr())->getResultType()));
+	return ret;
+}
+
+std::vector<std::string> TypePrinter::typedefPrefix(std::shared_ptr<QualType> type)
+{
+	vector<string> ret;
+	ret.emplace_back("typedef");
+	ret.emplace_back(printTypePrefix(dynamic_pointer_cast<TypedefType>(type->getTypePtr())->getDeclForType().lock()));
+	return ret;
+}
+
+std::vector<std::string> TypePrinter::recordPrefix(std::shared_ptr<QualType> type)
+{
+	vector<string> ret;
+	ret.emplace_back("struct");
+	ret.emplace_back("{");
+
 	auto recordType = dynamic_pointer_cast<RecordType>(type->getTypePtr());
 	auto decl = dynamic_pointer_cast<RecordDecl>(recordType->getDecl().lock());
-	++indentNum;
 	for(auto it = decl->decl_begin(); it != decl->decl_end(); ++it)
 	{
 		auto d = dynamic_pointer_cast<VarDecl>(*it);
-		m_openHelper.getOutputStream() << indent();
-		printTypePrefix(d->getType().lock());
-		m_openHelper.getOutputStream() << " ";
-		m_openHelper.getOutputStream() << d->getNameAsString();
-		printTypePostfix(d->getType().lock());
-		m_openHelper.getOutputStream() << ";\n";
+		string declInStruct = printTypePrefix(d->getType().lock());
+		declInStruct += " ";
+		declInStruct += d->getNameAsString();
+		declInStruct += printTypePostfix(d->getType().lock());
+		declInStruct += ";";
+		ret.emplace_back(declInStruct);
 	}
-	--indentNum;
-	m_openHelper.getOutputStream() << "}";
+	ret.emplace_back("}");
+
+	return ret;
 }
 
-void Printer::TypePrinter::arrayWithExprPostfix(std::shared_ptr<QualType> type)
+std::vector<std::string> TypePrinter::enumPrefix(std::shared_ptr<QualType> type)
 {
+	vector<string> ret;
+
+	ret.emplace_back("enum");
+	ret.emplace_back("{");
+	auto enumType = dynamic_pointer_cast<EnumType>(type->getTypePtr());
+	auto decl = dynamic_pointer_cast<EnumDecl>(enumType->getDecl().lock());
+	unsigned enumConstantLocation = 0;
+	for(auto it = decl->decl_begin(); it != decl->decl_end(); ++it, ++enumConstantLocation)
+	{
+		auto d = dynamic_pointer_cast<EnumConstantDecl>(*it);
+		ret.emplace_back(d->getNameAsString());
+		if(++it != decl->decl_end())
+			ret.back() += ", ";
+		--it;
+	}
+	ret.emplace_back("}");
+
+	return ret;
+}
+
+std::string TypePrinter::formatBuiltinPrefix(std::vector<std::string> str)
+{
+	return str[0];
+}
+
+std::string TypePrinter::formatPointerPrefix(std::vector<std::string> str)
+{
+	string ret = str[0];
+	for(int i = 1; i < str.size(); ++i)
+		ret += str[i];
+	return ret;
+}
+
+std::string TypePrinter::formatArrayPrefix(std::vector<std::string> str)
+{
+	return str[0];
+}
+
+std::string TypePrinter::formatFunctionPrefix(std::vector<std::string> str)
+{
+	return str[0];
+}
+
+std::string TypePrinter::formatTypedefPrefix(std::vector<std::string> str)
+{
+	return str[0] + " " + str[1];
+}
+
+std::string TypePrinter::formatRecodePrefix(std::vector<std::string> str)
+{
+	string ret = str[0] + " " + str[1] + "\n";
+	printer.forwardIndent();
+	for(int i = 2; i < str.size() - 1; ++i)
+	{
+		ret += printer.indent();
+		ret += str[i] + "\n";
+	}
+	printer.backwardIndent();
+	ret += printer.indent() + str.back();
+	return ret;
+}
+
+std::string TypePrinter::formatEnumPrefix(std::vector<std::string> str)
+{
+	string ret = str[0] + " " + str[1] + "\n";
+	printer.forwardIndent();
+	ret += printer.indent();
+	printer.backwardIndent();
+	for(int i = 2; i < str.size() - 1; ++i)
+		ret += str[i];
+	ret += "\n" + str.back();
+	return ret;
+}
+
+std::vector<std::string> TypePrinter::arrayWithExprPostfix(std::shared_ptr<QualType> type)
+{
+	vector<string> ret;
 	auto arrayType = dynamic_pointer_cast<ConstantArrayWithExprType>(type->getTypePtr());
-	m_openHelper.getOutputStream() << "[";
-	ast.printAST(arrayType->getSizeSpecifier().lock());
-	m_openHelper.getOutputStream() << "]";
+	ret.emplace_back("[" + printer.astPrinter.printAST(arrayType->getSizeSpecifier().lock()) + "]");
+	ret.emplace_back(printTypePostfix(arrayType->getElementType().lock()));
+	return ret;
 }
 
-void Printer::TypePrinter::arrayWithoutExprPostfix(std::shared_ptr<QualType> type)
+std::vector<std::string> TypePrinter::arrayWithoutExprPostfix(std::shared_ptr<QualType> type)
 {
-	printTypePostfix(dynamic_pointer_cast<ArrayType>(type->getTypePtr())->getElementType().lock());
-	m_openHelper.getOutputStream() << "[]";
+	vector<string> ret;
+	ret.emplace_back("[]");
+	ret.emplace_back(printTypePostfix(dynamic_pointer_cast<ArrayType>(type->getTypePtr())->getElementType().lock()));
+	return ret;
 }
 
-void Printer::TypePrinter::functionNoProtoPostfix(std::shared_ptr<QualType> type)
+std::vector<std::string> TypePrinter::functionNoProtoPostfix(std::shared_ptr<QualType> type)
 {
-	m_openHelper.getOutputStream() << "()";
+	vector<string> ret;
+	ret.emplace_back("()");
+	return ret;
 }
 
-void Printer::TypePrinter::functionProtoPostfix(std::shared_ptr<QualType> type)
+std::vector<std::string> TypePrinter::functionProtoPostfix(std::shared_ptr<QualType> type)
 {
-	m_openHelper.getOutputStream() << "(";
+	vector<string> ret;
+	ret.emplace_back("(");
 	auto fun = dynamic_pointer_cast<FunctionType>(type->getTypePtr());
 	auto funDecl = fun->getFunDecl();
 	for(int i = 0; i < funDecl->getNumParams(); ++i)
 	{
 		auto param = funDecl->getParamDecl(i).lock();
-		printTypePrefix(param->getType().lock());
+		string argStr;
+		argStr = printTypePrefix(param->getType().lock());
 		if(param->paramHasName())
-			m_openHelper.getOutputStream() << " " << param->getNameAsString();
-        printTypePostfix(param->getType().lock());
+			argStr += " " + param->getNameAsString();
+		argStr += printTypePostfix(param->getType().lock());
 		if(i != funDecl->getNumParams() - 1)
-			m_openHelper.getOutputStream() << ", ";
+			argStr += ", ";
+		ret.emplace_back(argStr);
 	}
-	m_openHelper.getOutputStream() << ")";
+	ret.emplace_back(")");
+
+	return ret;
 }
 
-void Printer::TypePrinter::enumPrefix(std::shared_ptr<QualType> type)
+std::string TypePrinter::formatArrayWithExprPostfix(std::vector<std::string> str)
 {
-	m_openHelper.getOutputStream() << type->getTypePrefixAsString();
-	m_openHelper.getOutputStream() << "\n";
-	auto enumType = dynamic_pointer_cast<EnumType>(type->getTypePtr());
-	auto decl = dynamic_pointer_cast<EnumDecl>(enumType->getDecl().lock());
-	++indentNum;
-	m_openHelper.getOutputStream() << indent();
-	unsigned enumConstantLocation = 0;
-	for(auto it = decl->decl_begin(); it != decl->decl_end(); ++it, ++enumConstantLocation)
-	{
-		auto d = dynamic_pointer_cast<EnumConstantDecl>(*it);
-		m_openHelper.getOutputStream() << d->getNameAsString();
-		if(++it != decl->decl_end())
-			m_openHelper.getOutputStream() << ", ";
-		--it;
-	}
-	--indentNum;
-	m_openHelper.getOutputStream() << "\n}";
+	string ret;
+	for(auto s : str)
+		ret += s;
+	return ret;
+}
+
+std::string TypePrinter::formatArrayWithoutExprPostfix(std::vector<std::string> str)
+{
+	string ret;
+	for(auto s : str)
+		ret += s;
+	return ret;
+}
+
+std::string TypePrinter::formatFunctionProtoPostfix(std::vector<std::string> str)
+{
+	string ret;
+	ret = str[0];
+	for(int i = 1; i < str.size() - 1; ++i)
+		ret += str[i];
+	ret += str.back();
+	return ret;
+}
+
+std::string TypePrinter::formatFunctionNoProtoPostfix(std::vector<std::string> str)
+{
+	return str[0];
 }
 
 /// @ASTPrinter
-Printer::ASTPrinter::ASTPrinter(OpenHelper &stream)
-	: m_openHelper{stream}, m_typePrinter{stream, *this}, stmtInOneLine{false}, noIntent{false}
+ASTPrinter::ASTPrinter(Printer &p)
+	: printer{p}
 {}
 
-void Printer::ASTPrinter::printAST(std::shared_ptr<Stmt> root)
+std::string ASTPrinter::printAST(std::shared_ptr<Stmt> root)
 {
-    if(root == nullptr)
-        return;
+	string ret;
+    if(!root)
+        return "";
 	switch(root->getStmtClass())
 	{
 		case Stmt::StmtClass::NoStmtClass:break;
-		case Stmt::StmtClass::NullStmtClass:				processNullStmt(root);					break;
-		case Stmt::StmtClass::CompoundStmtClass:			processCompoundStmt(root);				break;
-		case Stmt::StmtClass::CaseStmtClass:				processCaseStmt(root);					break;
-		case Stmt::StmtClass::DefaultStmtClass:				processDefaultStmt(root);				break;
+		case Stmt::StmtClass::NullStmtClass:				ret = processNullStmt(root);				break;
+		case Stmt::StmtClass::CompoundStmtClass:			ret = processCompoundStmt(root);			break;
+		case Stmt::StmtClass::CaseStmtClass:				ret = processCaseStmt(root);				break;
+		case Stmt::StmtClass::DefaultStmtClass:				ret = processDefaultStmt(root);				break;
 		case Stmt::StmtClass::LabelStmtClass:break;
-		case Stmt::StmtClass::IfStmtClass:					processIfStmt(root);					break;
-		case Stmt::StmtClass::SwitchStmtClass:				processSwitchStmt(root);				break;
-		case Stmt::StmtClass::WhileStmtClass:				processWhileStmt(root);					break;
-		case Stmt::StmtClass::DoStmtClass:					processDoStmt(root);					break;
-		case Stmt::StmtClass::ForStmtClass:					processForStmt(root);					break;
+		case Stmt::StmtClass::IfStmtClass:					ret = processIfStmt(root);					break;
+		case Stmt::StmtClass::SwitchStmtClass:				ret = processSwitchStmt(root);				break;
+		case Stmt::StmtClass::WhileStmtClass:				ret = processWhileStmt(root);				break;
+		case Stmt::StmtClass::DoStmtClass:					ret = processDoStmt(root);					break;
+		case Stmt::StmtClass::ForStmtClass:					ret = processForStmt(root);					break;
 		case Stmt::StmtClass::GotoStmtClass:break;
 		case Stmt::StmtClass::IndirectGotoStmtClass:break;
-		case Stmt::StmtClass::ContinueStmtClass:			processContinueStmt(root);				break;
-		case Stmt::StmtClass::BreakStmtClass:				processBreakStmt(root);					break;
-		case Stmt::StmtClass::ReturnStmtClass:				processReturnStmt(root);				break;
-		case Stmt::StmtClass::DeclStmtClass:				processDeclStmt(root);					break;
+		case Stmt::StmtClass::ContinueStmtClass:			ret = processContinueStmt(root);			break;
+		case Stmt::StmtClass::BreakStmtClass:				ret = processBreakStmt(root);				break;
+		case Stmt::StmtClass::ReturnStmtClass:				ret = processReturnStmt(root);				break;
+		case Stmt::StmtClass::DeclStmtClass:				ret = processDeclStmt(root);				break;
 		case Stmt::StmtClass::SwitchCaseClass:break;
 		case Stmt::StmtClass::AsmStmtClass:break;
-		case Stmt::StmtClass::CommentStmtClass:             processCommentStmt(root);                  break;
+		case Stmt::StmtClass::CommentStmtClass:             ret = processCommentStmt(root);				break;
 		case Stmt::StmtClass::CXXCatchStmtClass:break;
 		case Stmt::StmtClass::CXXTryStmtClass:break;
 		case Stmt::StmtClass::ExprClass:break;
 		case Stmt::StmtClass::PredefinedExprClass:break;
-		case Stmt::StmtClass::DeclRefExprClass:				processRefExpr(root);					break;
-		case Stmt::StmtClass::IntegerLiteralClass:			processIntergerLiteral(root);			break;
-		case Stmt::StmtClass::FloatingLiteralClass:			processFloatingLiteral(root);			break;
+		case Stmt::StmtClass::DeclRefExprClass:				ret = processRefExpr(root);					break;
+		case Stmt::StmtClass::IntegerLiteralClass:			ret = processIntergerLiteral(root);			break;
+		case Stmt::StmtClass::FloatingLiteralClass:			ret = processFloatingLiteral(root);			break;
 		case Stmt::StmtClass::ImaginaryLiteralClass:break;
-		case Stmt::StmtClass::StringLiteralClass:			processStringLiteral(root);				break;
-		case Stmt::StmtClass::CharacterLiteralClass:		processCharacterLiteral(root);			break;
-		case Stmt::StmtClass::ParenExprClass:				processParenExpr(root);					break;
-		case Stmt::StmtClass::UnaryOperatorClass:			processUnaryOperator(root);				break;
-		case Stmt::StmtClass::SizeOfAlignOfExprClass:		processSizeOfAlignOfExpr(root);			break;
-		case Stmt::StmtClass::ArraySubscriptExprClass:		processArraySubscriptExpr(root);		break;
-		case Stmt::StmtClass::CallExprClass:				processCallExpr(root);					break;
-		case Stmt::StmtClass::MemberExprClass:	break;
+		case Stmt::StmtClass::StringLiteralClass:			ret = processStringLiteral(root);			break;
+		case Stmt::StmtClass::CharacterLiteralClass:		ret = processCharacterLiteral(root);		break;
+		case Stmt::StmtClass::ParenExprClass:				ret = processParenExpr(root);				break;
+		case Stmt::StmtClass::UnaryOperatorClass:			ret = processUnaryOperator(root);			break;
+		case Stmt::StmtClass::SizeOfAlignOfExprClass:		ret = processSizeOfAlignOfExpr(root);		break;
+		case Stmt::StmtClass::ArraySubscriptExprClass:		ret = processArraySubscriptExpr(root);			break;
+		case Stmt::StmtClass::CallExprClass:				ret = processCallExpr(root);				break;
+		case Stmt::StmtClass::MemberExprClass:				ret = processMemberExpr(root);				break;
 		case Stmt::StmtClass::CastExprClass:break;
-		case Stmt::StmtClass::BinaryOperatorClass:			processBinaryOperator(root);			break;
-		case Stmt::StmtClass::CompoundAssignOperatorClass:	processCompoundAssignOperator(root);	break;
-		case Stmt::StmtClass::ConditionalOperatorClass:		processConditionalOperator(root);		break;
+		case Stmt::StmtClass::BinaryOperatorClass:			ret = processBinaryOperator(root);			break;
+		case Stmt::StmtClass::CompoundAssignOperatorClass:	ret = processCompoundAssignOperator(root);	break;
+		case Stmt::StmtClass::ConditionalOperatorClass:		ret = processConditionalOperator(root);		break;
 		case Stmt::StmtClass::ImplicitCastExprClass:break;
 		case Stmt::StmtClass::ExplicitCastExprClass:break;
-		case Stmt::StmtClass::CStyleCastExprClass:			processCStyleCastExpr(root);			break;
+		case Stmt::StmtClass::CStyleCastExprClass:			ret = processCStyleCastExpr(root);			break;
 		case Stmt::StmtClass::CompoundLiteralExprClass:break;
 		case Stmt::StmtClass::ExtVectorElementExprClass:break;
 		case Stmt::StmtClass::InitListExprClass:break;
@@ -358,245 +667,274 @@ void Printer::ASTPrinter::printAST(std::shared_ptr<Stmt> root)
 		case Stmt::StmtClass::BlockExprClass:break;
 		case Stmt::StmtClass::BlockDeclRefExprClass:break;
 	}
+	return ret;
 }
 
-void Printer::ASTPrinter::processCallExpr(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::formatExprAsStmt(std::string str, std::shared_ptr<Stmt> s)
 {
+	return dynamic_pointer_cast<Expr>(s) ? str + ";" : str;
+}
+
+std::string ASTPrinter::processCallExpr(std::shared_ptr<Stmt> &s)
+{
+	string ret;
+
 	auto call = dynamic_pointer_cast<CallExpr>(s);
-	printAST(call->getCallee());
-	m_openHelper.getOutputStream() << "(";
+	ret = printAST(call->getCallee()) + "(";
 	auto args = call->getArgs();
 	// TODO: use child_begin/child_end instead
 	unsigned argPosition = 0;
 	for(auto it = ++args.begin(); it != args.end(); ++it, ++argPosition)
 	{
-		printAST(*it);
+		ret += printAST(*it);
 		// skip last ', '
 		if(argPosition != call->getNumArgs() - 1)
-			m_openHelper.getOutputStream() << ", ";
+			ret += ", ";
 	}
-	m_openHelper.getOutputStream() << ")";
+	ret += ")";
+
+	return ret;
 }
 
-void Printer::ASTPrinter::formatExprAsStmt(std::shared_ptr<Stmt> s)
+std::string ASTPrinter::processNullStmt(std::shared_ptr<Stmt> &s)
 {
-	if(dynamic_pointer_cast<Expr>(s) && !noIntent)
-		m_openHelper.getOutputStream() << indent();
-	printAST(s);
-	// if is a expr
-	if(dynamic_pointer_cast<Expr>(s))
-	{
-		if(stmtInOneLine)
-			m_openHelper.getOutputStream() << ";";
-		else
-			m_openHelper.getOutputStream() << ";\n";
-	}
+	return ";";
 }
 
-void Printer::ASTPrinter::processNullStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processCompoundStmt(std::shared_ptr<Stmt> &s)
 {
-	if(noIntent)
-		m_openHelper.getOutputStream() << ";";
-	else
-		m_openHelper.getOutputStream() << indent() << ";";
-	if(!stmtInOneLine)
-		m_openHelper.getOutputStream() << "\n";
-}
+	// TODO: update regex to remove "case" and "default:" in string
+	regex caseRegex("case\\s.*:");
+	regex defaultRegex("default:");
 
-void Printer::ASTPrinter::processCompoundStmt(std::shared_ptr<Stmt> &s)
-{
-	if(noIntent)
-		m_openHelper.getOutputStream() << "{\n";
-	else
-		m_openHelper.getOutputStream() << indent() << "{\n";
-	++indentNum;
+	bool inSwitch = false;
+	string ret;
+	printer.forwardIndent();
+	ret += printer.oneIndentLessIndent() + "{\n";
 	for(auto stmt = s->child_begin(); stmt != s->child_end(); ++stmt)
-		formatExprAsStmt(*stmt);
-	--indentNum;
-	if(noIntent)
-		m_openHelper.getOutputStream() << "}\n";
-	else
-		m_openHelper.getOutputStream() << indent() << "}\n";
+	{
+		string str = formatExprAsStmt(printAST(*stmt), *stmt);
+		// do not decorate self
+		if(CompoundStmt::classof(*stmt))
+			ret += str + "\n";
+		else
+		{
+			// is switch
+			if (std::regex_match(str, caseRegex) || std::regex_match(str, defaultRegex))
+				inSwitch = true;
+			// format switch
+			if (inSwitch)
+			{
+				if (std::regex_match(str, caseRegex) || std::regex_match(str, defaultRegex))
+					ret += printer.indent() + str + "\n";
+				else
+					ret += printer.indent() + printer.indent() + str + "\n";
+			} else // others
+				ret += printer.indent() + str + "\n";
+		}
+	}
+	printer.backwardIndent();
+	ret += printer.indent() + "}";
+
+	return ret;
 }
 
-void Printer::ASTPrinter::processUnaryOperator(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processUnaryOperator(std::shared_ptr<Stmt> &s)
 {
+	string ret;
 	auto unary = dynamic_pointer_cast<UnaryOperator>(s);
 	auto subExpr = unary->getSubExpr().lock();
 	switch (unary->getOpcode())
 	{
-		case UnaryOperator::PostInc: printAST(subExpr);
-			m_openHelper.getOutputStream() << "++";
+		case UnaryOperator::PostInc:
+			ret = printAST(subExpr);
+			ret += "++";
 			break;
-		case UnaryOperator::PostDec: printAST(subExpr);
-			m_openHelper.getOutputStream() << "--";
+		case UnaryOperator::PostDec:
+			ret = printAST(subExpr);
+			ret += "--";
 			break;
 		case UnaryOperator::PreInc:
-			m_openHelper.getOutputStream() << "++";
-			printAST(subExpr);
+			ret = "++";
+			ret += printAST(subExpr);
 			break;
 		case UnaryOperator::PreDec:
-			m_openHelper.getOutputStream() << "--";
-			printAST(subExpr);
+			ret = "--";
+			ret += printAST(subExpr);
 			break;
 		case UnaryOperator::AddrOf:
-			m_openHelper.getOutputStream() << "&";
-			printAST(subExpr);
+			ret = "&";
+			ret += printAST(subExpr);
 			break;
 		case UnaryOperator::Deref:
-			m_openHelper.getOutputStream() << "*";
-			printAST(subExpr);
+			ret = "*";
+			ret += printAST(subExpr);
 			break;
 		case UnaryOperator::Plus:
-			m_openHelper.getOutputStream() << "+";
-			printAST(subExpr);
+			ret = "+";
+			ret += printAST(subExpr);
 			break;
 		case UnaryOperator::Minus:
-			m_openHelper.getOutputStream() << "-";
-			printAST(subExpr);
+			ret = "-";
+			ret += printAST(subExpr);
 			break;
 		case UnaryOperator::Not:
-			m_openHelper.getOutputStream() << "~";
-			printAST(subExpr);
+			ret = "~";
+			ret += printAST(subExpr);
 			break;
 		case UnaryOperator::LNot:
-			m_openHelper.getOutputStream() << "!";
-			printAST(subExpr);
+			ret = "!";
+			ret += printAST(subExpr);
 			break;
 		case UnaryOperator::Real:break;
 		case UnaryOperator::Imag:break;
 		case UnaryOperator::Extension:break;
 		case UnaryOperator::OffsetOf:break;
 	}
+	return ret;
 }
 
-void Printer::ASTPrinter::processIntergerLiteral(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processIntergerLiteral(std::shared_ptr<Stmt> &s)
 {
 	auto integer = dynamic_pointer_cast<IntegerLiteral>(s);
-	m_openHelper.getOutputStream() << to_string(integer->getValue());
+	return to_string(integer->getValue());
 }
 
-void Printer::ASTPrinter::processFloatingLiteral(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processFloatingLiteral(std::shared_ptr<Stmt> &s)
 {
 	auto floating = dynamic_pointer_cast<FloatingLiteral>(s);
-	m_openHelper.getOutputStream() << toString(floating->getValue());
+	return toString(floating->getValue());
 }
 
-void Printer::ASTPrinter::processBinaryOperator(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processBinaryOperator(std::shared_ptr<Stmt> &s)
 {
+	string ret;
+
 	auto binary = dynamic_pointer_cast<BinaryOperator>(s);
-	printAST(binary->getLHS().lock());
+	ret = printAST(binary->getLHS().lock());
 	switch (binary->getOpcode())
 	{
-		case BinaryOperator::PtrMemD:	m_openHelper.getOutputStream() << ".";	break;
-		case BinaryOperator::PtrMemI:	m_openHelper.getOutputStream() << "->";	break;
-		case BinaryOperator::Mul:		m_openHelper.getOutputStream() << "*";	break;
-		case BinaryOperator::Div:		m_openHelper.getOutputStream() << "/";	break;
-		case BinaryOperator::Rem:		m_openHelper.getOutputStream() << "%";	break;
-		case BinaryOperator::Add:		m_openHelper.getOutputStream() << "+";	break;
-		case BinaryOperator::Sub:		m_openHelper.getOutputStream() << "-";	break;
-		case BinaryOperator::Shl:		m_openHelper.getOutputStream() << "<<";	break;
-		case BinaryOperator::Shr:		m_openHelper.getOutputStream() << ">>";	break;
-		case BinaryOperator::LT:		m_openHelper.getOutputStream() << "<";	break;
-		case BinaryOperator::GT:		m_openHelper.getOutputStream() << ">";	break;
-		case BinaryOperator::LE:		m_openHelper.getOutputStream() << "<=";	break;
-		case BinaryOperator::GE:		m_openHelper.getOutputStream() << ">=";	break;
-		case BinaryOperator::EQ:		m_openHelper.getOutputStream() << "==";	break;
-		case BinaryOperator::NE:		m_openHelper.getOutputStream() << "!=";	break;
-		case BinaryOperator::And:		m_openHelper.getOutputStream() << "&";	break;
-		case BinaryOperator::Xor:		m_openHelper.getOutputStream() << "^";	break;
-		case BinaryOperator::Or:		m_openHelper.getOutputStream() << "|";	break;
-		case BinaryOperator::LAnd:		m_openHelper.getOutputStream() << "&&";	break;
-		case BinaryOperator::LOr:		m_openHelper.getOutputStream() << "||";	break;
-		case BinaryOperator::Comma:		m_openHelper.getOutputStream() << ",";	break;
+		case BinaryOperator::PtrMemD:	ret += ".";	break;
+		case BinaryOperator::PtrMemI:	ret += "->";break;
+		case BinaryOperator::Mul:		ret += "*";	break;
+		case BinaryOperator::Div:		ret += "/";	break;
+		case BinaryOperator::Rem:		ret += "%";	break;
+		case BinaryOperator::Add:		ret += "+";	break;
+		case BinaryOperator::Sub:		ret += "-";	break;
+		case BinaryOperator::Shl:		ret += "<<";break;
+		case BinaryOperator::Shr:		ret += ">>";break;
+		case BinaryOperator::LT:		ret += "<";	break;
+		case BinaryOperator::GT:		ret += ">";	break;
+		case BinaryOperator::LE:		ret += "<=";break;
+		case BinaryOperator::GE:		ret += ">=";break;
+		case BinaryOperator::EQ:		ret += "==";break;
+		case BinaryOperator::NE:		ret += "!=";break;
+		case BinaryOperator::And:		ret += "&";	break;
+		case BinaryOperator::Xor:		ret += "^";	break;
+		case BinaryOperator::Or:		ret += "|";	break;
+		case BinaryOperator::LAnd:		ret += "&&";break;
+		case BinaryOperator::LOr:		ret += "||";break;
+		case BinaryOperator::Comma:		ret += ",";	break;
 	}
-	printAST(binary->getRHS().lock());
+	ret += printAST(binary->getRHS().lock());
+
+	return ret;
 }
 
-void Printer::ASTPrinter::processCompoundAssignOperator(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processCompoundAssignOperator(std::shared_ptr<Stmt> &s)
 {
+	string ret;
+
 	auto binary = dynamic_pointer_cast<BinaryOperator>(s);
-	printAST(binary->getLHS().lock());
+	ret = printAST(binary->getLHS().lock());
 	switch (binary->getOpcode())
 	{
-		case BinaryOperator::Assign:	m_openHelper.getOutputStream() << "=";	break;
-		case BinaryOperator::MulAssign:	m_openHelper.getOutputStream() << "*=";	break;
-		case BinaryOperator::DivAssign:	m_openHelper.getOutputStream() << "/=";	break;
-		case BinaryOperator::RemAssign:	m_openHelper.getOutputStream() << "%=";	break;
-		case BinaryOperator::AddAssign:	m_openHelper.getOutputStream() << "+=";	break;
-		case BinaryOperator::SubAssign:	m_openHelper.getOutputStream() << "-=";	break;
-		case BinaryOperator::ShlAssign:	m_openHelper.getOutputStream() << "<<=";break;
-		case BinaryOperator::ShrAssign:	m_openHelper.getOutputStream() << ">>=";break;
-		case BinaryOperator::AndAssign:	m_openHelper.getOutputStream() << "&=";	break;
-		case BinaryOperator::XorAssign:	m_openHelper.getOutputStream() << "^=";	break;
-		case BinaryOperator::OrAssign:	m_openHelper.getOutputStream() << "|=";	break;
+		case BinaryOperator::Assign:	ret += "=";		break;
+		case BinaryOperator::MulAssign:	ret += "*=";	break;
+		case BinaryOperator::DivAssign:	ret += "/=";	break;
+		case BinaryOperator::RemAssign:	ret += "%=";	break;
+		case BinaryOperator::AddAssign:	ret += "+=";	break;
+		case BinaryOperator::SubAssign:	ret += "-=";	break;
+		case BinaryOperator::ShlAssign:	ret += "<<=";	break;
+		case BinaryOperator::ShrAssign:	ret += ">>=";	break;
+		case BinaryOperator::AndAssign:	ret += "&=";	break;
+		case BinaryOperator::XorAssign:	ret += "^=";	break;
+		case BinaryOperator::OrAssign:	ret += "|=";	break;
 	}
-	printAST(binary->getRHS().lock());
+	ret += printAST(binary->getRHS().lock());
+	return ret;
 }
 
-void Printer::ASTPrinter::processConditionalOperator(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processConditionalOperator(std::shared_ptr<Stmt> &s)
 {
+	string ret;
 	auto condition = dynamic_pointer_cast<ConditionalOperator>(s);
-	printAST(condition->getCond().lock());
-	m_openHelper.getOutputStream() << "?";
-	printAST(condition->getLHS().lock());
-	m_openHelper.getOutputStream() << ":";
-	printAST(condition->getRHS().lock());
+	ret = printAST(condition->getCond().lock());
+	ret += "?";
+	ret += printAST(condition->getLHS().lock());
+	ret += ":";
+	ret += printAST(condition->getRHS().lock());
+	return ret;
 }
 
-void Printer::ASTPrinter::processContinueStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processContinueStmt(std::shared_ptr<Stmt> &s)
 {
-	m_openHelper.getOutputStream() << indent() << "continue;\n";
+	return "continue;";
 }
 
-void Printer::ASTPrinter::processBreakStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processBreakStmt(std::shared_ptr<Stmt> &s)
 {
-	m_openHelper.getOutputStream() << indent() << "break;\n";
+	return "break;";
 }
 
-void Printer::ASTPrinter::processReturnStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processReturnStmt(std::shared_ptr<Stmt> &s)
 {
-	auto ret = dynamic_pointer_cast<ReturnStmt>(s);
-	m_openHelper.getOutputStream() << indent() << "return ";
-	if(ret->getRetValue().lock())
-		printAST(ret->getRetValue().lock());
-	m_openHelper.getOutputStream() << ";\n";
+	string ret = "return ";
+	auto retStmt = dynamic_pointer_cast<ReturnStmt>(s);
+	if(retStmt->getRetValue().lock())
+		ret += printAST(retStmt->getRetValue().lock());
+	ret += ";";
+	return ret;
 }
 
-void Printer::ASTPrinter::processParenExpr(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processParenExpr(std::shared_ptr<Stmt> &s)
 {
+	string ret;
 	auto paren = dynamic_pointer_cast<ParenExpr>(s);
-	m_openHelper.getOutputStream() << "(";
-	printAST(paren->getSubExpr().lock());
-	m_openHelper.getOutputStream() << ")";
+	ret = "(";
+	ret += printAST(paren->getSubExpr().lock());
+	ret += ")";
+	return ret;
 }
 
-void Printer::ASTPrinter::processSizeOfAlignOfExpr(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processSizeOfAlignOfExpr(std::shared_ptr<Stmt> &s)
 {
-	m_openHelper.getOutputStream() << "sizeof ";
+	string ret = "sizeof ";
 	auto sizeofExp = dynamic_pointer_cast<SizeOfAlignOfExpr>(s);
 	if(sizeofExp->isArgumentType())
 		;		// TODO: sizeof type
 	else
-		printAST(sizeofExp->getArgumentExpr().lock());
+		ret += printAST(sizeofExp->getArgumentExpr().lock());
+	return ret;
 }
 
-void Printer::ASTPrinter::processArraySubscriptExpr(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processArraySubscriptExpr(std::shared_ptr<Stmt> &s)
 {
 	auto arr = dynamic_pointer_cast<ArraySubscriptExpr>(s);
-	printAST(arr->getLHS().lock());
-	m_openHelper.getOutputStream() << "[";
-	printAST(arr->getRHS().lock());
-	m_openHelper.getOutputStream() << "]";
+	string ret = printAST(arr->getLHS().lock());
+	ret += "[";
+	ret += printAST(arr->getRHS().lock());
+	ret += "]";
+	return ret;
 }
 
-void Printer::ASTPrinter::processStringLiteral(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processStringLiteral(std::shared_ptr<Stmt> &s)
 {
 	auto literal = dynamic_pointer_cast<StringLiteral>(s);
-	m_openHelper.getOutputStream() << string(literal->getStrData());
+	return string(literal->getStrData());
 }
 
-void Printer::ASTPrinter::processCharacterLiteral(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processCharacterLiteral(std::shared_ptr<Stmt> &s)
 {
 	auto character = dynamic_pointer_cast<CharacterLiteral>(s);
 	string output;
@@ -615,254 +953,232 @@ void Printer::ASTPrinter::processCharacterLiteral(std::shared_ptr<Stmt> &s)
 		case '\0':	output = "\\0";	break;
 		default:	output = static_cast<char>(character->getValue());	break;
 	}
-	m_openHelper.getOutputStream() << "'" << output << "'";
+	return "'" + output + "'";
 }
 
-void Printer::ASTPrinter::processWhileStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processWhileStmt(std::shared_ptr<Stmt> &s)
 {
 	auto whileStmt = dynamic_pointer_cast<WhileStmt>(s);
-	m_openHelper.getOutputStream() << indent() << "while (";
-	printAST(whileStmt->getCond().lock());
-	m_openHelper.getOutputStream() << ")\n";
-	formatExprAsStmt(whileStmt->getBody().lock());
-}
-
-void Printer::ASTPrinter::processIfStmt(std::shared_ptr<Stmt> &s, bool isElseCond)
-{
-	auto ifStmt = dynamic_pointer_cast<IfStmt>(s);
-	if(isElseCond)
-		m_openHelper.getOutputStream() << "if (";
-	else
-		m_openHelper.getOutputStream() << indent() << "if (";
-	printAST(ifStmt->getCond().lock());
-	m_openHelper.getOutputStream() << ")\n";
-	auto thenBlock = ifStmt->getThen().lock();
-	if(CompoundStmt::classof(thenBlock))
-		printAST(thenBlock);
+	string ret = "while (";
+	ret += printAST(whileStmt->getCond().lock());
+	ret += ")\n";
+	auto body = whileStmt->getBody().lock();
+	if(CompoundStmt::classof(body))
+		ret += printAST(body);
 	else
 	{
-		indentNum++;
-		formatExprAsStmt(thenBlock);
-		indentNum--;
+		printer.forwardIndent();
+		ret += printer.indent() + formatExprAsStmt(printAST(body), body);
+		printer.backwardIndent();
+	}
+	return ret;
+}
+
+std::string ASTPrinter::processIfStmt(std::shared_ptr<Stmt> &s)
+{
+	auto ifStmt = dynamic_pointer_cast<IfStmt>(s);
+	string ret = "if (";
+	ret += printAST(ifStmt->getCond().lock());
+	ret += ")\n";
+	auto thenBlock = ifStmt->getThen().lock();
+	if(CompoundStmt::classof(thenBlock))
+		ret += printAST(thenBlock);
+	else
+	{
+		printer.forwardIndent();
+		ret += printer.indent() + formatExprAsStmt(printAST(thenBlock), thenBlock);
+		printer.backwardIndent();
 	}
 
 	auto elseBlock = ifStmt->getElse().lock();
 	if(elseBlock)
 	{
-		m_openHelper.getOutputStream() << indent() << "else ";
+		ret += "\n" + printer.indent() + "else ";
 		if(IfStmt::classof(elseBlock))
-			processIfStmt(elseBlock, true);
+			ret += processIfStmt(elseBlock);
+		else if(CompoundStmt::classof(elseBlock))
+			ret += "\n" + printAST(elseBlock);
 		else
-		{
-			m_openHelper.getOutputStream() << "\n";
-			printAST(elseBlock);
-		}
+			ret += printer.indent() + formatExprAsStmt(printAST(elseBlock), elseBlock);
 	}
+	return ret;
 }
 
-void Printer::ASTPrinter::processDoStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processDoStmt(std::shared_ptr<Stmt> &s)
 {
 	auto doStmt = dynamic_pointer_cast<DoStmt>(s);
-	m_openHelper.getOutputStream() << indent() << "do\n";
-	formatExprAsStmt(doStmt->getBody().lock());
-	m_openHelper.getOutputStream() << "while (";
-	printAST(doStmt->getCond().lock());
-	m_openHelper.getOutputStream() << ")\n";
-}
-
-void Printer::ASTPrinter::processForStmt(std::shared_ptr<Stmt> &s)
-{
-	auto forStmt = dynamic_pointer_cast<ForStmt>(s);
-	m_openHelper.getOutputStream() << indent() << "for (";
-	stmtInOneLine = true;
-	noIntent = true;
-	formatExprAsStmt(forStmt->getInit().lock());
-	formatExprAsStmt(forStmt->getCond().lock());
-	stmtInOneLine = false;
-	noIntent = false;
-	if(forStmt->getInc().lock())
-		printAST(forStmt->getInc().lock());
-	m_openHelper.getOutputStream() << ")\n";
-	if(CompoundStmt::classof(forStmt->getBody().lock()))
-		formatExprAsStmt(forStmt->getBody().lock());
+	string ret = "do\n";
+	auto body = doStmt->getBody().lock();
+	if(CompoundStmt::classof(body))
+		ret += printAST(body) + " ";
 	else
 	{
-		++indentNum;
-		formatExprAsStmt(forStmt->getBody().lock());
-		--indentNum;
+		printer.forwardIndent();
+		ret += printer.indent() + formatExprAsStmt(printAST(body), body) + "\n";
+		printer.backwardIndent();
 	}
+	ret += "while (";
+	ret += printAST(doStmt->getCond().lock());
+	ret += ")";
+	return ret;
 }
 
-void Printer::ASTPrinter::processCaseStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processForStmt(std::shared_ptr<Stmt> &s)
+{
+	auto forStmt = dynamic_pointer_cast<ForStmt>(s);
+	string ret = "for (";
+	ret += formatExprAsStmt(printAST(forStmt->getInit().lock()), forStmt->getInit().lock());
+	ret += formatExprAsStmt(printAST(forStmt->getCond().lock()), forStmt->getCond().lock());
+	if(forStmt->getInc().lock())
+		ret += printAST(forStmt->getInc().lock());
+	ret += ")\n";
+	auto body = forStmt->getBody().lock();
+	if(CompoundStmt::classof(forStmt->getBody().lock()))
+		ret += printAST(body);
+	else
+	{
+		printer.forwardIndent();
+		ret += printer.indent() + formatExprAsStmt(printAST(body), body);
+		printer.backwardIndent();
+	}
+	return ret;
+}
+
+std::string ASTPrinter::processCaseStmt(std::shared_ptr<Stmt> &s)
 {
 	auto caseStmt = dynamic_pointer_cast<CaseStmt>(s);
-	m_openHelper.getOutputStream() << indent() << "case ";
-	printAST(caseStmt->getLHS().lock());
-	m_openHelper.getOutputStream() << ":\n";
-	/*if(caseStmt->getSubStmt())
-	{
-		++m_indentNum;
-		printAST(caseStmt->getSubStmt());
-		--m_indentNum;
-	}*/
+	string ret = "case ";
+	ret += printAST(caseStmt->getLHS().lock());
+	ret += ":";
+	return ret;
 }
 
-void Printer::ASTPrinter::processRefExpr(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processRefExpr(std::shared_ptr<Stmt> &s)
 {
 	auto ref = dynamic_pointer_cast<DeclRefExpr>(s);
-	m_openHelper.getOutputStream() << ref->getDecl().lock()->getNameAsString();
+	return ref->getDecl().lock()->getNameAsString();
 }
 
-void Printer::ASTPrinter::processSwitchStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processSwitchStmt(std::shared_ptr<Stmt> &s)
 {
 	auto switchStmt = dynamic_pointer_cast<SwitchStmt>(s);
-	m_openHelper.getOutputStream() << indent() << "switch(";
-	printAST(switchStmt->getCond().lock());
-	m_openHelper.getOutputStream() << ")\n";
-	printAST(switchStmt->getBody().lock());
+	string ret = "switch(";
+	ret += printAST(switchStmt->getCond().lock());
+	ret += ")\n";
+	ret += printAST(switchStmt->getBody().lock());
+	return ret;
 }
 
-void Printer::ASTPrinter::processDefaultStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processDefaultStmt(std::shared_ptr<Stmt> &s)
 {
 	auto defaultStmt = dynamic_pointer_cast<DefaultStmt>(s);
-	m_openHelper.getOutputStream() << indent() << "default:\n";
+	return "default:";
 }
 
-void Printer::ASTPrinter::processCStyleCastExpr(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processCStyleCastExpr(std::shared_ptr<Stmt> &s)
 {
 	auto caseExpr = dynamic_pointer_cast<CStyleCastExpr>(s);
 	auto type = caseExpr->getType().lock();
-	m_openHelper.getOutputStream() << "(";
-	m_typePrinter.printTypePrefix(type);
-	m_openHelper.getOutputStream() << ")";
-	printAST(caseExpr->getSubExpr().lock());
+	string ret = "(";
+	ret += printer.typePrinter.printTypePrefix(type);
+	ret += ")";
+	ret += printAST(caseExpr->getSubExpr().lock());
+	return ret;
 }
 
 // TODO: move type print into TypePinter
-void Printer::ASTPrinter::processDeclStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processDeclStmt(std::shared_ptr<Stmt> &s)
 {
 	auto declStmt = dynamic_pointer_cast<DeclStmt>(s);
 	auto declRef = declStmt->getDeclGroup().lock();
+	string ret;
 	if(!declRef)
 	{
 		/*m_openHelper.getOutputStream() << ";";*/
 	}
 	else if(declRef->isSingleDecl())
 	{
-		// normal(struct/variable...)
+		// variables
 		if(dynamic_pointer_cast<VarDecl>(declRef->getSingleDecl().lock()))
 		{
+			// print type and name
 			auto decl = dynamic_pointer_cast<VarDecl>(declRef->getSingleDecl().lock());
-			auto type = decl->getType().lock();
-			if(!noIntent)
-				m_openHelper.getOutputStream() << indent();
-			m_typePrinter.printTypePrefix(type);
-			m_openHelper.getOutputStream() << " " << decl->getNameAsString();
-			m_typePrinter.printTypePostfix(type);
-			if(decl->getInitExpr().lock())
-			{
-				m_openHelper.getOutputStream() << " = ";
-				printAST(decl->getInitExpr().lock());
-			}
-			m_openHelper.getOutputStream() << ";";
-			if (!stmtInOneLine)
-				m_openHelper.getOutputStream() << "\n";
+			ret += printer.contextPrinter.printDecl(decl);
+			if(decl->getInitExpr().lock())	// has init expr
+				ret += " = " + printAST(decl->getInitExpr().lock());
 		}
-		else if(dynamic_pointer_cast<FunctionDecl>(declRef->getSingleDecl().lock()))
-		{
-			auto decl = dynamic_pointer_cast<FunctionDecl>(declRef->getSingleDecl().lock());
-			auto type = decl->getType().lock();
-			if(!noIntent)
-				m_openHelper.getOutputStream() << indent();
-			m_typePrinter.printTypePrefix(type);
-			m_openHelper.getOutputStream() << " " << decl->getNameAsString();
-			m_typePrinter.printTypePostfix(type);
-			m_openHelper.getOutputStream() << ";";
-			if (!stmtInOneLine)
-				m_openHelper.getOutputStream() << "\n";
-		}
-		else if(dynamic_pointer_cast<TypedefDecl>(declRef->getSingleDecl().lock()))	// typedef
-		{
-			auto decl = dynamic_pointer_cast<TypedefDecl>(declRef->getSingleDecl().lock());
-			auto type = dynamic_pointer_cast<TypedefType>(decl->getTypeForDecl().lock()->getTypePtr());
-			if(!noIntent)
-				m_openHelper.getOutputStream() << indent();
-			m_openHelper.getOutputStream() << "typedef ";
-			m_typePrinter.printTypePrefix(type->getDeclForType().lock());
-			m_openHelper.getOutputStream() << " " << decl->getNameAsString();
-			m_typePrinter.printTypePostfix(type->getDeclForType().lock());
-			m_openHelper.getOutputStream() << ";";
-			if (!stmtInOneLine)
-				m_openHelper.getOutputStream() << "\n";
-		}
+		else
+			ret += printer.contextPrinter.printDecl(declRef->getSingleDecl().lock());
 	}
 	else if(declRef->isDeclGroup())
 	{
 		auto decls = declRef->getDeclGroup().lock();
-		// normal(struct/variable...)
+		// variable
 		if(dynamic_pointer_cast<VarDecl>((*decls)[0]))
 		{
 			auto type = dynamic_pointer_cast<VarDecl>((*decls)[0])->getType().lock();
-			if(!noIntent)
-				m_openHelper.getOutputStream() << indent();
-			m_typePrinter.printTypePrefix(type);
-			m_openHelper.getOutputStream() << " ";
-			for (unsigned i = 0; i < decls->size(); ++i)
+
+			// print first decl
+			ret += printer.contextPrinter.printDecl((*decls)[0]);
+			if(dynamic_pointer_cast<VarDecl>((*decls)[0])->getInitExpr().lock())	// has init expr
+				ret += " = " + printAST(dynamic_pointer_cast<VarDecl>((*decls)[0])->getInitExpr().lock());
+			ret += ", ";
+
+			for (unsigned i = 1; i < decls->size(); ++i)
 			{
 				auto varDecl = dynamic_pointer_cast<VarDecl>((*decls)[i]);
 				type = varDecl->getType().lock();
-				// skip first type infix
-				if (i != 0)
-					m_typePrinter.printTypeInfix(type);
-				m_openHelper.getOutputStream() << varDecl->getNameAsString();
-				m_typePrinter.printTypePostfix(type);
-				if(varDecl->getInitExpr().lock())
-				{
-					m_openHelper.getOutputStream() << " = ";
-					printAST(varDecl->getInitExpr().lock());
-				}
+				// in fix and post fix
+				ret += printer.typePrinter.printTypeInfix(type);
+				ret += varDecl->getNameAsString();
+				ret += printer.typePrinter.printTypePostfix(type);
+				if(varDecl->getInitExpr().lock())	// init expr
+					ret += " = " + printAST(varDecl->getInitExpr().lock());
 				// skip last ','
 				if (i + 1 != decls->size())
-					m_openHelper.getOutputStream() << ", ";
+					ret += ", ";
 			}
-			if (stmtInOneLine)
-				m_openHelper.getOutputStream() << ";";
-			else
-				m_openHelper.getOutputStream() << ";\n";
 		}
 		else	// typedef
 		{
 			auto type = dynamic_pointer_cast<TypedefType>(
 					dynamic_pointer_cast<TypedefDecl>((*decls)[0])->getTypeForDecl().lock()->getTypePtr()
 			);
-			if(!noIntent)
-				m_openHelper.getOutputStream() << indent();
-			m_openHelper.getOutputStream() << "typedef ";
-			m_typePrinter.printTypePrefix(type->getDeclForType().lock());
-			m_openHelper.getOutputStream() << " ";
-			for (unsigned i = 0; i < decls->size(); ++i)
+
+			// print first decl
+			ret += printer.contextPrinter.printDecl((*decls)[0]);
+			ret += ", ";
+
+			for (unsigned i = 1; i < decls->size(); ++i)
 			{
 				type = dynamic_pointer_cast<TypedefType>(
 						dynamic_pointer_cast<TypedefDecl>((*decls)[i])->getTypeForDecl().lock()->getTypePtr()
 				);
-				// skip first
-				if (i != 0)
-					m_typePrinter.printTypeInfix(type->getDeclForType().lock());
-				m_openHelper.getOutputStream() << dynamic_pointer_cast<TypedefDecl>((*decls)[i])->getNameAsString();
-				m_typePrinter.printTypePostfix(type->getDeclForType().lock());
+				ret += printer.typePrinter.printTypeInfix(type->getDeclForType().lock());
+				ret += dynamic_pointer_cast<TypedefDecl>((*decls)[i])->getNameAsString();
+				ret += printer.typePrinter.printTypePostfix(type->getDeclForType().lock());
 				if (i + 1 != decls->size())
-					m_openHelper.getOutputStream() << ", ";
+					ret += ", ";
 			}
-			if (stmtInOneLine)
-				m_openHelper.getOutputStream() << ";";
-			else
-				m_openHelper.getOutputStream() << ";\n";
 		}
 	}
+	ret += ";";
+
+	return ret;
 }
 
-void Printer::ASTPrinter::processCommentStmt(std::shared_ptr<Stmt> &s)
+std::string ASTPrinter::processCommentStmt(std::shared_ptr<Stmt> &s)
 {
     auto ptr = dynamic_pointer_cast<CommentStmt>(s);
-    m_openHelper.getOutputStream() <<indent()<< ptr->getComment() << "\n";
+    return ptr->getComment();
 }
+
+std::string ASTPrinter::processMemberExpr(std::shared_ptr<Stmt> &s)
+{
+	auto member = dynamic_pointer_cast<MemberExpr>(s);
+	string ret = printAST(member->getBase().lock());
+	ret += member->isArrow() ? "->" : ".";
+	ret += member->getMemberDecl().lock()->getNameAsString();
+	return ret;
+}
+

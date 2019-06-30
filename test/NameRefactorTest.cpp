@@ -23,13 +23,13 @@ class NameRefactorTest : public testing::Test {
 protected:
 	void SetUp() override {}
 	void TearDown() override {
-		Printer::resetPrinter();
+		printer.resetPrinter();
 		output.clear();
 		adapter.clean();
 	}
 
 	void reset() {
-		Printer::resetPrinter();
+		printer.resetPrinter();
 		output.clear();
 		adapter.clean();
 	}
@@ -41,7 +41,7 @@ protected:
 	Driver driver{openHelper, adapter};
 	StringStreamOpenHelper printHelper;
 	NameRefactor nameRefactor;
-	Printer::ContextPrinter printer{printHelper};
+	Printer printer{printHelper};
 	std::string output;
 };
 
@@ -51,7 +51,7 @@ TEST_F(NameRefactorTest, TypedefRenameTest)
 "typedef int abc;";
 	driver.parse();
 	nameRefactor.rename(declContext.getContextRoot());
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "typedef int Abc;\n"
@@ -65,7 +65,7 @@ TEST_F(NameRefactorTest, TypedefUserDefTypeRenameTest)
 "typedef struct { int a; } abc;";
 	driver.parse();
 	nameRefactor.rename(declContext.getContextRoot());
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "typedef struct {\n"
@@ -83,7 +83,7 @@ TEST_F(NameRefactorTest, EnumRenameTest)
 "} a;";
 	driver.parse();
 	nameRefactor.rename(declContext.getContextRoot());
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "enum {\n"
@@ -99,7 +99,7 @@ TEST_F(NameRefactorTest, VarRenameTest)
 "int AbC;";
 	driver.parse();
 	nameRefactor.rename(declContext.getContextRoot());
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "int abc;\n"
@@ -113,7 +113,7 @@ TEST_F(NameRefactorTest, ConstantVarRenameTest)
 "const int DEF;";
 	driver.parse();
 	nameRefactor.rename(declContext.getContextRoot());
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "const int k_def;\n"
@@ -127,7 +127,7 @@ TEST_F(NameRefactorTest, FunctionRenameTest)
 "int abc();";
 	driver.parse();
 	nameRefactor.rename(declContext.getContextRoot());
-	printer.printContext(declContext.getContextRoot());
+	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "int Abc();\n"

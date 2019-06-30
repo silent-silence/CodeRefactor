@@ -22,11 +22,11 @@ public:
 
 	const char *what() const noexcept override
 	{
-		return m_msg;
+		return m_msg.data();
 	}
 
 private:
-	const char *m_msg;
+	const std::string m_msg;
 };
 
 /// @brief Throw this when create a symbol name which already token in table
@@ -43,11 +43,11 @@ public:
 
 	const char *what() const noexcept override
 	{
-		return m_msg;
+		return m_msg.data();
 	}
 
 private:
-	const char *m_msg;
+	const std::string m_msg;
 };
 
 #endif //CODEREFACTOR_SYMBOLERROR_HPP

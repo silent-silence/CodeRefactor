@@ -585,7 +585,7 @@ void YaccAdapter::makeFunctionNoProtoType()
 			)
 	);
 	m_typeStack.push(type);
-	m_declContextStack.pop();
+	// do not pop context here！！m_declContextStack.pop()
 }
 
 void YaccAdapter::makeFunctionProtoType(int paramNum)
@@ -917,7 +917,7 @@ bool YaccAdapter::isTypeSpecifierNotIllegal()
 	else
 // end define
 
-	unsigned specifiers = m_typeSpecifier.top().first;
+	unsigned specifiers = m_typeSpecifier.top().first & (~CONST) & (~VOLATILE);
 	unsigned jumpTable = ~static_cast<unsigned>(0);
 	while(specifiers != 0)
 	{

@@ -18,18 +18,17 @@
 using std::make_shared;				using std::shared_ptr;
 using std::fstream;					using std::string;
 using std::dynamic_pointer_cast;	using std::weak_ptr;
-using Printer::ASTPrinter;
 
 class BasicParseTest : public testing::Test {
 protected:
 	void SetUp() override {}
 	void TearDown() override {
-		Printer::resetPrinter();
+		printer.resetPrinter();
 		adapter.clean();
 	}
 
 	void reset() {
-		Printer::resetPrinter();
+		printer.resetPrinter();
 		adapter.clean();
 	}
 
@@ -39,7 +38,7 @@ protected:
 	YaccAdapter adapter{astContext, declContext, openHelper};
 	Driver driver{openHelper, adapter};
 	StringStreamOpenHelper printerOutput;
-	ASTPrinter printer{printerOutput};
+	Printer printer{printerOutput};
 };
 
 TEST_F(BasicParseTest, LiteralExpression)

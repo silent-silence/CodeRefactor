@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <list>
 #include "Basic/SourceLocation.h"
-#include "DeclIterator.h"
+#include "Iterator/DeclIterator.h"
 
 class DeclContext;
 class NamedDecl;

@@ -6,9 +6,8 @@
 #include "Decl/DeclContextHolder.h"
 
 class Driver;
-namespace Printer {
-	class ContextPrinter;
-}
+class Printer;
+
 class Refactor;
 class OpenHelper;
 class YaccAdapter;
@@ -19,10 +18,17 @@ class CodeRefactor
 {
 public:
     CodeRefactor();
-    CodeRefactor(std::string input);
-    void run();
-    void show();
-    void show(std::string output);
+    //CodeRefactor(std::string input);
+    void run(std::string code);
+    std::string show();
+	//std::string show(std::string output);
+    void setMCIf_SCMIf(bool value);
+    void setSCMIf_MCIf(bool value);
+    void setMIf_Switch(bool value);
+    void setSwitch_MIf(bool value);
+    void setFor_While(bool value);
+    void setWhile_For(bool value);
+
 private:
     void config();
 
@@ -34,7 +40,7 @@ private:
     bool While_For;
 
     std::shared_ptr<Driver> driver_;
-    std::shared_ptr<Printer::ContextPrinter> printer_;
+    std::shared_ptr<Printer> printer_;
     std::shared_ptr<Refactor> refactor_;
 	std::shared_ptr<NameRefactor> nameRefactor;
 	std::shared_ptr<YaccAdapter> adapter_;

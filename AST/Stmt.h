@@ -5,7 +5,7 @@
 #include <memory>
 #include <list>
 #include "Basic/SourceLocation.h"
-#include "StmtIterator.h"
+#include "Iterator/StmtIterator.h"
 
 class DeclGroupRef;
 
@@ -83,8 +83,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt>T);
     static bool classof(const std::weak_ptr<DeclStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
 	/// @brief Save names that declared in the stmt
 	std::shared_ptr<DeclGroupRef> m_dg;
@@ -105,8 +105,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt>T);
     static bool classof(const std::weak_ptr<NullStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     SourceLocation SemiLoc;
 };
@@ -137,8 +137,8 @@ public:
     body_iterator body_begin() { return Body.begin(); }
     body_iterator body_end() { return Body.end(); }
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 
 private:
     std::list<std::shared_ptr<Stmt>> Body;
@@ -188,8 +188,8 @@ public:
     static bool classof(const std::weak_ptr<CaseStmt>);
 
     // Iterators
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 
 private:
 	/// @brief
@@ -221,8 +221,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt>T);
     static bool classof(const std::weak_ptr<DefaultStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 
 private:
 	/// @brief Next stmt after default
@@ -255,8 +255,8 @@ public:
 	static bool classof(const std::weak_ptr<Stmt>T);
 	static bool classof(const std::weak_ptr<SwitchStmt>);
 
-	virtual child_iterator child_begin();
-	virtual child_iterator child_end();
+	child_iterator child_begin() override;
+	child_iterator child_end() override;
 private:
 	enum { COND, BODY, END_EXPR };
 	std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -285,8 +285,8 @@ public:
     static bool classof(const std::weak_ptr<LabelStmt>);
 
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     std::shared_ptr<Stmt> SubStmt;
     SourceLocation IdentLoc;
@@ -318,8 +318,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt>T);
     static bool classof(const std::weak_ptr<IfStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     enum { COND, THEN, ELSE, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -346,8 +346,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<WhileStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -382,8 +382,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<DoStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     enum { COND, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -426,8 +426,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<ForStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     enum { INIT, COND, INC, BODY, END_EXPR };
     std::array<std::shared_ptr<Stmt>, END_EXPR> SubExprs;
@@ -454,8 +454,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<GotoStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     std::shared_ptr<LabelStmt> Label;
     SourceLocation GotoLoc;
@@ -480,8 +480,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<IndirectGotoStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     SourceLocation GotoLoc;
     SourceLocation StarLoc;
@@ -501,8 +501,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<ContinueStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     SourceLocation ContinueLoc;
 };
@@ -520,8 +520,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<BreakStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     SourceLocation BreakLoc;
 };
@@ -542,8 +542,8 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<ReturnStmt>);
 
-    virtual child_iterator child_begin();
-    virtual child_iterator child_end();
+    child_iterator child_begin() override;
+    child_iterator child_end() override;
 private:
     std::shared_ptr<Stmt> RetExpr;
     SourceLocation RetLoc;
@@ -600,8 +600,8 @@ public:
 
     std::string getComment() const;
 
-    virtual child_iterator child_begin(){return child_iterator(std::make_shared<PtrIterator>(nullptr));}
-    virtual child_iterator child_end(){return child_iterator(std::make_shared<PtrIterator>(nullptr));}
+	child_iterator child_begin() override;
+    child_iterator child_end() override;
 
 private:
     SourceLocation CommentLoc;

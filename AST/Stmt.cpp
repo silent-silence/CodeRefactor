@@ -66,12 +66,12 @@ bool DeclStmt::classof(const std::weak_ptr<DeclStmt>)
 
 Stmt::child_iterator DeclStmt::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_shared<EmptyIterator>());
 }
 
 Stmt::child_iterator DeclStmt::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_shared<EmptyIterator>());
 }
 
 NullStmt::NullStmt(SourceLocation L) : Stmt(StmtClass::NullStmtClass), SemiLoc(L) {}
@@ -100,12 +100,12 @@ bool NullStmt::classof(const std::weak_ptr<NullStmt>)
 
 Stmt::child_iterator NullStmt::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_shared<EmptyIterator>());
 }
 
 Stmt::child_iterator NullStmt::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_shared<EmptyIterator>());
 }
 
 CompoundStmt::CompoundStmt(std::list<std::shared_ptr<Stmt>> StmtStart,
@@ -351,12 +351,12 @@ bool DefaultStmt::classof(const std::weak_ptr<DefaultStmt>)
 
 Stmt::child_iterator DefaultStmt::child_begin()
 {
-    return child_iterator(std::make_shared<PtrIterator>(SubStmt));
+    return child_iterator(std::make_shared<PtrIterator>(PtrIterator::PtrPosition::begin, SubStmt));
 }
 
 Stmt::child_iterator DefaultStmt::child_end()
 {
-     return child_iterator(std::make_shared<PtrIterator>(nullptr));
+     return child_iterator(std::make_shared<PtrIterator>(PtrIterator::PtrPosition::end, SubStmt));
 }
 
 LabelStmt::LabelStmt(SourceLocation IL, std::shared_ptr<Stmt> substmt)
@@ -399,12 +399,12 @@ bool LabelStmt::classof(const std::weak_ptr<LabelStmt>)
 
 Stmt::child_iterator LabelStmt::child_begin()
 {
-    return child_iterator(std::make_shared<PtrIterator>(SubStmt));
+    return child_iterator(std::make_shared<PtrIterator>(PtrIterator::PtrPosition::begin, SubStmt));
 }
 
 Stmt::child_iterator LabelStmt::child_end()
 {
-   return child_iterator(std::make_shared<PtrIterator>(nullptr));
+   return child_iterator(std::make_shared<PtrIterator>(PtrIterator::PtrPosition::end, SubStmt));
 }
 
 SwitchStmt::SwitchStmt(SourceLocation SL, std::shared_ptr<Expr> cond)
@@ -477,7 +477,7 @@ bool SwitchStmt::classof(const std::weak_ptr<SwitchStmt>)
 Stmt::child_iterator SwitchStmt::child_begin()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -487,7 +487,7 @@ Stmt::child_iterator SwitchStmt::child_begin()
 Stmt::child_iterator SwitchStmt::child_end()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -547,7 +547,7 @@ bool WhileStmt::classof(const std::weak_ptr<WhileStmt>)
 Stmt::child_iterator WhileStmt::child_begin()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -557,7 +557,7 @@ Stmt::child_iterator WhileStmt::child_begin()
 Stmt::child_iterator WhileStmt::child_end()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -640,7 +640,7 @@ bool DoStmt::classof(const std::weak_ptr<DoStmt>)
 Stmt::child_iterator DoStmt::child_begin()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -650,7 +650,7 @@ Stmt::child_iterator DoStmt::child_begin()
 Stmt::child_iterator DoStmt::child_end()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -755,7 +755,7 @@ bool ForStmt::classof(const std::weak_ptr<ForStmt>)
 Stmt::child_iterator ForStmt::child_begin()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -765,7 +765,7 @@ Stmt::child_iterator ForStmt::child_begin()
 Stmt::child_iterator ForStmt::child_end()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -820,12 +820,12 @@ bool GotoStmt::classof(const std::weak_ptr<GotoStmt>)
 
 Stmt::child_iterator GotoStmt::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_shared<EmptyIterator>());
 }
 
 Stmt::child_iterator GotoStmt::child_end()
 {
-  return child_iterator(nullptr);
+  return child_iterator(std::make_shared<EmptyIterator>());
 }
 
 IndirectGotoStmt::IndirectGotoStmt(SourceLocation gotoLoc, SourceLocation starLoc, std::shared_ptr<Expr> target)
@@ -874,12 +874,12 @@ bool IndirectGotoStmt::classof(const std::weak_ptr<IndirectGotoStmt>)
 
 Stmt::child_iterator IndirectGotoStmt::child_begin()
 {
-    return child_iterator(std::make_shared<PtrIterator>(Target));
+    return child_iterator(std::make_shared<PtrIterator>(PtrIterator::PtrPosition::begin, Target));
 }
 
 Stmt::child_iterator IndirectGotoStmt::child_end()
 {
-    return child_iterator(std::make_shared<PtrIterator>(nullptr));
+    return child_iterator(std::make_shared<PtrIterator>(PtrIterator::PtrPosition::end, Target));
 }
 
 ContinueStmt::ContinueStmt(SourceLocation CL)
@@ -910,12 +910,12 @@ bool ContinueStmt::classof(const std::weak_ptr<ContinueStmt>)
 
 Stmt::child_iterator ContinueStmt::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_shared<EmptyIterator>());
 }
 
 Stmt::child_iterator ContinueStmt::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_shared<EmptyIterator>());
 }
 
 BreakStmt::BreakStmt(SourceLocation BL)
@@ -946,12 +946,12 @@ bool BreakStmt::classof(const std::weak_ptr<BreakStmt>)
 
 Stmt::child_iterator BreakStmt::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_shared<EmptyIterator>());
 }
 
 Stmt::child_iterator BreakStmt::child_end()
 {
-  return child_iterator(nullptr);
+  return child_iterator(std::make_shared<EmptyIterator>());
 }
 
 ReturnStmt::ReturnStmt(SourceLocation RL, std::shared_ptr<Expr> E)
@@ -994,12 +994,12 @@ bool ReturnStmt::classof(const std::weak_ptr<ReturnStmt>)
 
 Stmt::child_iterator ReturnStmt::child_begin()
 {
-    return child_iterator(std::make_shared<PtrIterator>(RetExpr));
+    return child_iterator(std::make_shared<PtrIterator>(PtrIterator::PtrPosition::begin, RetExpr));
 }
 
 Stmt::child_iterator ReturnStmt::child_end()
 {
-    return child_iterator(std::make_shared<PtrIterator>(nullptr));
+    return child_iterator(std::make_shared<PtrIterator>(PtrIterator::PtrPosition::end, RetExpr));
 }
 
 AsmStmt::AsmStmt(SourceLocation asmloc, bool issimple, bool isvolatile,
@@ -1129,7 +1129,7 @@ bool IfStmt::classof(const std::weak_ptr<IfStmt>)
 Stmt::child_iterator IfStmt::child_begin()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -1139,7 +1139,7 @@ Stmt::child_iterator IfStmt::child_begin()
 Stmt::child_iterator IfStmt::child_end()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -1177,4 +1177,14 @@ bool CommentStmt::classof(const std::weak_ptr<CommentStmt>)
 std::string CommentStmt::getComment() const
 {
     return Comment;
+}
+
+Stmt::child_iterator CommentStmt::child_end()
+{
+	return child_iterator(std::make_shared<EmptyIterator>());
+}
+
+Stmt::child_iterator CommentStmt::child_begin()
+{
+	return child_iterator(std::make_shared<EmptyIterator>());
 }

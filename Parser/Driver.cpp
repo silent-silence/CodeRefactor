@@ -7,6 +7,7 @@
 #include "YaccAdapter.h"
 #include "Basic/SourceLocation.h"
 #include "AST/ASTContext.h"
+#include "Errors/SyntaxError.hpp"
 
 Driver::Driver(OpenHelper &opener, YaccAdapter &adapter)
 	: m_opener{opener}, trace_scanning{false}, trace_parsing{false}, m_adapter{adapter}, m_scanner{*this}
@@ -24,12 +25,16 @@ int Driver::parse()
 
 void Driver::error(const yy::location& l, const std::string& m)
 {
-	std::cerr << l << ": " << m << std::endl;
+	std::ostringstream stream;
+	stream << l;
+	throw SyntaxError(stream.str() + ":" + m);
+	//std::cerr << l << ": " << m << std::endl;
 }
 
 void Driver::error(const std::string& m)
 {
-	std::cerr << m << std::endl;
+	throw SyntaxError(m);
+	//std::cerr << m << std::endl;
 }
 
 Scanner& Driver::getSacnner()

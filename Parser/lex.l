@@ -11,8 +11,6 @@
 
 	static yy::location loc;
 	#define YY_USER_ACTION  loc.columns(yyleng);
-
-	#define YY_NO_UNISTD_H
 %}
 
 %option noyywrap nounput batch noinput

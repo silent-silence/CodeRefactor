@@ -22,11 +22,11 @@ public:
 
 	const char *what() const noexcept override
 	{
-		return m_msg;
+		return m_msg.data();
 	}
 
 private:
-	const char *m_msg;
+	const std::string m_msg;
 };
 
 

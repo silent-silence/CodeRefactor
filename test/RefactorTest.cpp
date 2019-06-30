@@ -16,19 +16,19 @@
 #include "Errors/TypeError.hpp"
 #include "ASTOperation/Printer.h"
 
-using std::string;			using Printer::ASTPrinter;
+using std::string;
 
 class RefactorTest : public testing::Test {
 protected:
 	void SetUp() override {}
 	void TearDown() override {
-		Printer::resetPrinter();
+		printer.resetPrinter();
 		output.clear();
 		adapter.clean();
 	}
 
 	void reset() {
-		Printer::resetPrinter();
+		printer.resetPrinter();
 		output.clear();
 		adapter.clean();
 	}
@@ -38,9 +38,9 @@ protected:
 	DeclContextHolder declContext;
 	YaccAdapter adapter{astContext, declContext, openHelper};
 	Driver driver{openHelper, adapter};
-	Refactor refactor{openHelper};
+	Refactor refactor;
 	StdioOpenHelper printerOutput;
-	ASTPrinter printer{printerOutput};
+	Printer printer{printerOutput};
 	string output;
 };
 

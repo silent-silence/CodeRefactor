@@ -96,12 +96,12 @@ DeclRefExpr::DeclRefExpr(Stmt::StmtClass SC, shared_ptr<NamedDecl> d,
 
 Stmt::child_iterator DeclRefExpr::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 Stmt::child_iterator DeclRefExpr::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 bool DeclRefExpr::classof(const weak_ptr<Stmt> T) {
@@ -147,12 +147,12 @@ PredefinedExpr::PredefinedExpr(EmptyShell Empty)
 
 Stmt::child_iterator PredefinedExpr::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 Stmt::child_iterator PredefinedExpr::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 bool PredefinedExpr::classof(const weak_ptr<Stmt> T)
@@ -202,12 +202,12 @@ IntegerLiteral::IntegerLiteral(EmptyShell Empty)
 
 Stmt::child_iterator IntegerLiteral::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 Stmt::child_iterator IntegerLiteral::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 bool IntegerLiteral::classof(const weak_ptr<Stmt> T)
@@ -256,12 +256,12 @@ CharacterLiteral::CharacterLiteral(EmptyShell Empty)
 
 Stmt::child_iterator CharacterLiteral::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 Stmt::child_iterator CharacterLiteral::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 bool CharacterLiteral::classof(const weak_ptr<Stmt> T)
@@ -320,12 +320,12 @@ FloatingLiteral::FloatingLiteral(EmptyShell Empty)
 
 Stmt::child_iterator FloatingLiteral::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 Stmt::child_iterator FloatingLiteral::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 bool FloatingLiteral::classof(const weak_ptr<Stmt> T)
@@ -383,12 +383,12 @@ ImaginaryLiteral::ImaginaryLiteral(EmptyShell Empty)
 
 Stmt::child_iterator ImaginaryLiteral::child_begin()
 {
-    return child_iterator(std::make_shared<PtrIterator>(Val));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::begin, Val));
 }
 
 Stmt::child_iterator ImaginaryLiteral::child_end()
 {
-    return child_iterator(std::make_shared<PtrIterator>(nullptr));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::end, Val));
 }
 
 bool ImaginaryLiteral::classof(const weak_ptr<Stmt> T)
@@ -439,12 +439,12 @@ shared_ptr<StringLiteral> StringLiteral::Create(
 
 Stmt::child_iterator StringLiteral::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 Stmt::child_iterator StringLiteral::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 bool StringLiteral::classof(const weak_ptr<Stmt> T)
@@ -478,12 +478,12 @@ ParenExpr::ParenExpr(EmptyShell Empty)
 
 Stmt::child_iterator ParenExpr::child_begin()
 {
-    return child_iterator(std::make_shared<PtrIterator>(Val));;
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::begin, Val));
 }
 
 Stmt::child_iterator ParenExpr::child_end()
 {
-    return child_iterator(std::make_shared<PtrIterator>(nullptr));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::end, Val));
 }
 
 bool ParenExpr::classof(const weak_ptr<Stmt> T)
@@ -544,12 +544,12 @@ UnaryOperator::UnaryOperator(EmptyShell Empty)
 
 Stmt::child_iterator UnaryOperator::child_begin()
 {
-    return child_iterator(std::make_shared<PtrIterator>(Val));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::begin, Val));
 }
 
 Stmt::child_iterator UnaryOperator::child_end()
 {
-    return child_iterator(std::make_shared<PtrIterator>(nullptr));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::end, Val));
 }
 
 bool UnaryOperator::classof(const weak_ptr<Stmt> T)
@@ -644,18 +644,18 @@ ArraySubscriptExpr::ArraySubscriptExpr(EmptyShell Shell)
 
 Stmt::child_iterator ArraySubscriptExpr::child_begin()
 {
-    return child_iterator(
-                std::make_shared<
-                ArrayIterator<
-                std::array<
-                std::shared_ptr<Stmt>,
-                END_EXPR>::iterator>>(SubExprs.begin()));
+	return child_iterator(
+			std::make_unique<
+					ArrayIterator<
+							std::array<std::shared_ptr<Stmt>, END_EXPR>::iterator
+					>
+			>(SubExprs.begin()));
 }
 
 Stmt::child_iterator ArraySubscriptExpr::child_end()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -734,12 +734,12 @@ CallExpr::CallExpr(StmtClass SC, EmptyShell Empty)
 
 Stmt::child_iterator CallExpr::child_begin()
 {
-    return child_iterator(std::make_shared<ListIterator>(SubExprs.begin()));
+    return child_iterator(std::make_unique<ListIterator>(SubExprs.begin()));
 }
 
 Stmt::child_iterator CallExpr::child_end()
 {
-    return child_iterator(std::make_shared<ListIterator>(SubExprs.end()));
+    return child_iterator(std::make_unique<ListIterator>(SubExprs.end()));
 }
 
 bool CallExpr::classof(const weak_ptr<Stmt> T)
@@ -834,12 +834,12 @@ MemberExpr::MemberExpr(EmptyShell Empty)
 
 Stmt::child_iterator MemberExpr::child_begin()
 {
-    return child_iterator(make_shared<PtrIterator>(Base));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::begin, Base));
 }
 
 Stmt::child_iterator MemberExpr::child_end()
 {
-    return child_iterator(make_shared<PtrIterator>(nullptr));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::end, Base));
 }
 
 bool MemberExpr::classof(const weak_ptr<Stmt> T)
@@ -908,12 +908,12 @@ CompoundLiteralExpr::CompoundLiteralExpr(EmptyShell Empty)
 
 Stmt::child_iterator CompoundLiteralExpr::child_begin()
 {
-    return child_iterator(make_shared<PtrIterator>(Init));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::begin, Init));
 }
 
 Stmt::child_iterator CompoundLiteralExpr::child_end()
 {
-    return child_iterator(make_shared<PtrIterator>(nullptr));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::end, Init));
 }
 
 bool CompoundLiteralExpr::classof(const weak_ptr<Stmt> T)
@@ -963,12 +963,12 @@ void CompoundLiteralExpr::setLParenLoc(SourceLocation L)
 
 Stmt::child_iterator CastExpr::child_begin()
 {
-    return child_iterator(make_shared<PtrIterator>(Op));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::begin, Op));
 }
 
 Stmt::child_iterator CastExpr::child_end()
 {
-    return child_iterator(make_shared<PtrIterator>(nullptr));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::end, Op));
 }
 
 CastExpr::CastExpr(StmtClass SC, shared_ptr<QualType> ty,
@@ -1243,7 +1243,7 @@ bool BinaryOperator::classof(const weak_ptr<BinaryOperator>)
 Stmt::child_iterator BinaryOperator::child_begin()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<std::shared_ptr<Stmt>,
                 END_EXPR>::iterator>>(SubExprs.begin()));
@@ -1252,7 +1252,7 @@ Stmt::child_iterator BinaryOperator::child_begin()
 Stmt::child_iterator BinaryOperator::child_end()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<std::shared_ptr<Stmt>,
                 END_EXPR>::iterator>>(SubExprs.end()));
@@ -1390,7 +1390,7 @@ bool ConditionalOperator::classof(const weak_ptr<ConditionalOperator>)
 Stmt::child_iterator ConditionalOperator::child_begin()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -1400,7 +1400,7 @@ Stmt::child_iterator ConditionalOperator::child_begin()
 Stmt::child_iterator ConditionalOperator::child_end()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -1456,12 +1456,12 @@ bool AddrLabelExpr::classof(const weak_ptr<AddrLabelExpr>)
 
 Stmt::child_iterator AddrLabelExpr::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 Stmt::child_iterator AddrLabelExpr::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 StmtExpr::StmtExpr(shared_ptr<CompoundStmt> substmt, shared_ptr<QualType> T,
@@ -1518,12 +1518,12 @@ bool StmtExpr::classof(const weak_ptr<StmtExpr>)
 
 Stmt::child_iterator StmtExpr::child_begin()
 {
-    return child_iterator(std::make_shared<PtrIterator>(SubStmt));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::begin, SubStmt));
 }
 
 Stmt::child_iterator StmtExpr::child_end()
 {
-    return child_iterator(std::make_shared<PtrIterator>(nullptr));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::end, SubStmt));
 }
 
 TypesCompatibleExpr::TypesCompatibleExpr(shared_ptr<QualType> ReturnType, SourceLocation BLoc,
@@ -1586,12 +1586,12 @@ bool TypesCompatibleExpr::classof(const weak_ptr<TypesCompatibleExpr>)
 
 Stmt::child_iterator TypesCompatibleExpr::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 Stmt::child_iterator TypesCompatibleExpr::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 ShuffleVectorExpr::ShuffleVectorExpr(std::list<std::shared_ptr<Expr> > args, unsigned nexpr,
@@ -1607,7 +1607,10 @@ ShuffleVectorExpr::ShuffleVectorExpr(Stmt::EmptyShell Empty)
 
 weak_ptr<Expr> ShuffleVectorExpr::getExpr(unsigned Index)
 {
-    return dynamic_pointer_cast<Expr>(ListIterator(SubExprs.begin())[Index]);
+	auto it = SubExprs.begin();
+	while(Index-- != 0)
+		it++;
+    return dynamic_pointer_cast<Expr>(*it);
 }
 
 SourceLocation ShuffleVectorExpr::getBuiltinLoc() const
@@ -1643,14 +1646,14 @@ bool ShuffleVectorExpr::classof(const weak_ptr<ShuffleVectorExpr>)
 Stmt::child_iterator ShuffleVectorExpr::child_begin()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ListIterator>(SubExprs.begin()));
 }
 
 Stmt::child_iterator ShuffleVectorExpr::child_end()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ListIterator>(SubExprs.end()));
 }
 
@@ -1732,7 +1735,7 @@ bool ChooseExpr::classof(const weak_ptr<ChooseExpr>)
 Stmt::child_iterator ChooseExpr::child_begin()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -1742,7 +1745,7 @@ Stmt::child_iterator ChooseExpr::child_begin()
 Stmt::child_iterator ChooseExpr::child_end()
 {
     return child_iterator(
-                std::make_shared<
+                std::make_unique<
                 ArrayIterator<
                 std::array<
                 std::shared_ptr<Stmt>,
@@ -1778,12 +1781,12 @@ bool GNUNullExpr::classof(const weak_ptr<GNUNullExpr>)
 
 Stmt::child_iterator GNUNullExpr::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 Stmt::child_iterator GNUNullExpr::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 VAArgExpr::VAArgExpr(SourceLocation BLoc, shared_ptr<Expr> e,
@@ -1844,12 +1847,12 @@ bool VAArgExpr::classof(const weak_ptr<VAArgExpr>)
 
 Stmt::child_iterator VAArgExpr::child_begin()
 {
-    return child_iterator(std::make_shared<PtrIterator>(Val));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::begin, Val));
 }
 
 Stmt::child_iterator VAArgExpr::child_end()
 {
-    return child_iterator(std::make_shared<PtrIterator>(nullptr));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::end, Val));
 }
 
 InitListExpr::InitListExpr(SourceLocation lbraceloc,
@@ -1907,12 +1910,12 @@ bool InitListExpr::classof(const weak_ptr<InitListExpr>)
 }
 
 Stmt::child_iterator InitListExpr::child_begin() {
-    return child_iterator(make_shared<ListIterator>(InitExprs.begin()));
+    return child_iterator(std::make_unique<ListIterator>(InitExprs.begin()));
 }
 
 Stmt::child_iterator InitListExpr::child_end()
 {
-    return child_iterator(make_shared<ListIterator>(InitExprs.end()));
+    return child_iterator(std::make_unique<ListIterator>(InitExprs.end()));
 }
 
 ImplicitValueInitExpr::ImplicitValueInitExpr(shared_ptr<QualType> ty)
@@ -1934,12 +1937,12 @@ bool ImplicitValueInitExpr::classof(const weak_ptr<ImplicitValueInitExpr>)
 
 Stmt::child_iterator ImplicitValueInitExpr::child_begin()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 Stmt::child_iterator ImplicitValueInitExpr::child_end()
 {
-    return child_iterator(nullptr);
+    return child_iterator(std::make_unique<EmptyIterator>());
 }
 
 SizeOfAlignOfExpr::SizeOfAlignOfExpr(bool issizeof, shared_ptr<QualType> T,
@@ -1968,16 +1971,16 @@ Stmt::child_iterator SizeOfAlignOfExpr::child_begin(){
     if (isArgumentType()) {
         if (shared_ptr<VariableArrayType> T =
                 dynamic_pointer_cast<VariableArrayType>(getArgumentType().lock()->getTypePtr()))
-            return child_iterator(nullptr);
-        return child_iterator(nullptr);
+            return child_iterator(std::make_unique<EmptyIterator>());
+        return child_iterator(std::make_unique<EmptyIterator>());
     }
-    return child_iterator(std::make_shared<PtrIterator>(Ex));
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::begin, Ex));
 }
 
 Stmt::child_iterator SizeOfAlignOfExpr::child_end(){
     if (isArgumentType())
-        return child_iterator(nullptr);
-    return child_iterator(std::make_shared<PtrIterator>(nullptr));
+        return child_iterator(std::make_unique<EmptyIterator>());
+    return child_iterator(std::make_unique<PtrIterator>(PtrIterator::PtrPosition::end, Ex));
 }
 
 bool SizeOfAlignOfExpr::classof(const weak_ptr<Stmt> T)
@@ -2068,7 +2071,10 @@ ParenListExpr::ParenListExpr(SourceLocation lparenloc,
 
 weak_ptr<Expr> ParenListExpr::getExpr(unsigned Init)
 {
-    return dynamic_pointer_cast<Expr>(ListIterator(Exprs.begin())[Init]);
+	auto it = Exprs.begin();
+	while(Init-- != 0)
+		it++;
+	return dynamic_pointer_cast<Expr>(*it);
 }
 
 SourceLocation ParenListExpr::getLParenLoc() const
@@ -2093,9 +2099,9 @@ bool ParenListExpr::classof(const std::weak_ptr<ParenListExpr>)
 
 Stmt::child_iterator ParenListExpr::child_begin()
 {
-    return child_iterator(std::make_shared<ListIterator>(Exprs.begin()));
+    return child_iterator(std::make_unique<ListIterator>(Exprs.begin()));
 }
 
 Stmt::child_iterator ParenListExpr::child_end(){
-    return child_iterator(std::make_shared<ListIterator>(Exprs.end()));
+    return child_iterator(std::make_unique<ListIterator>(Exprs.end()));
 }

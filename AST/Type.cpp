@@ -46,25 +46,6 @@ bool QualType::isRestrictQualified() const
     return (getCVRQualifiers() & Restrict) != 0;
 }
 
-std::string QualType::getTypePrefixAsString() const
-{
-	string qualifiers;
-	switch(Value.second)
-	{
-		case Const | Restrict | Volatile:	qualifiers = "const restrict volatile ";	break;
-		case Const | Restrict:				qualifiers = "const restrict ";				break;
-		case Const | Volatile:				qualifiers = "const volatile ";				break;
-		case Restrict | Volatile:			qualifiers = "restrict volatile ";			break;
-		case Const:							qualifiers = "const ";						break;
-		case Restrict:						qualifiers = "restrict ";					break;
-		case Volatile:						qualifiers = "volatile ";					break;
-		case None:
-		default:							qualifiers = "";
-	}
-	qualifiers += Value.first->getTypePrefixAsString();
-	return qualifiers;
-}
-
 /// @Type
 Type::Type(Type::TypeClass tc, bool dependent)
 		: Dependent(dependent), TC(tc)
@@ -112,12 +93,6 @@ ExtQualType::ExtQualType(shared_ptr<Type> Base,
       BaseType(Base), AddressSpace(AddrSpace), GCAttrType(gcAttr)
 {}
 
-std::string ExtQualType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
-
 /// @BuiltinType
 std::shared_ptr<QualType> BuiltinType::creator(BuiltinType::Kind k, QualType::TQ tq)
 {
@@ -130,41 +105,6 @@ std::shared_ptr<QualType> BuiltinType::creator(BuiltinType::Kind k, QualType::TQ
 BuiltinType::BuiltinType(Kind k)
     :Type(TypeClass::Builtin, (k==Dependent)), TypeKind(k)
 {}
-
-std::string BuiltinType::getTypePrefixAsString() const
-{
-	std::string typeName;
-	switch(getKind())
-	{
-		case BuiltinType::Void:			typeName = "void";					break;
-		case BuiltinType::Bool:			typeName = "bool";					break;
-		case BuiltinType::Char_U:		typeName = "unsigned char";			break;
-		case BuiltinType::UChar:		typeName = "unsigned char";			break;
-		case BuiltinType::Char16:		typeName = "void";					break;
-		case BuiltinType::Char32:		typeName = "void";					break;
-		case BuiltinType::UShort:		typeName = "unsigned short";		break;
-		case BuiltinType::UInt:			typeName = "unsigned int";			break;
-		case BuiltinType::ULong:		typeName = "unsigned long";			break;
-		case BuiltinType::ULongLong:	typeName = "unsigned long long";	break;
-		case BuiltinType::UInt128:		typeName = "void";break;
-		case BuiltinType::Char_S:		typeName = "signed char";			break;
-		case BuiltinType::SChar:		typeName = "signed char";			break;
-		case BuiltinType::WChar:		typeName = "void";break;
-		case BuiltinType::Short:		typeName = "short";					break;
-		case BuiltinType::Int:			typeName = "int";					break;
-		case BuiltinType::Long:			typeName = "long";					break;
-		case BuiltinType::LongLong:		typeName = "long long";				break;
-		case BuiltinType::Int128:		typeName = "void";break;
-		case BuiltinType::Float:		typeName = "float";					break;
-		case BuiltinType::Double:		typeName = "double";				break;
-		case BuiltinType::LongDouble:	typeName = "long double";			break;
-		case BuiltinType::NullPtr:		typeName = "void";break;
-		case BuiltinType::Overload:		typeName = "void";break;
-		case BuiltinType::Dependent:	typeName = "void";break;
-		case BuiltinType::UndeducedAuto:typeName = "void";break;
-	}
-	return typeName;
-}
 
 /// @FixedWidthIntType
 shared_ptr<QualType> FixedWidthIntType::creator(unsigned W, bool S)
@@ -179,12 +119,6 @@ FixedWidthIntType::FixedWidthIntType(unsigned W,bool S)
     :Type(TypeClass::FixedWidthInt, false), Width(W), Signed(S)
 {}
 
-std::string FixedWidthIntType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
-
 /// @ComplexType
 shared_ptr<QualType> ComplexType::creator(std::shared_ptr<QualType> Element,
                                       std::shared_ptr<QualType> CanonicalPtr)
@@ -198,12 +132,6 @@ ComplexType::ComplexType(std::shared_ptr<QualType> Element)
     : Type(TypeClass::Complex, (*Element)->isDependentType()),
       ElementType(Element)
 {}
-
-std::string ComplexType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
 
 /// @PointerType
 shared_ptr<Type> PointerType::creator(std::shared_ptr<QualType> Pointee, std::shared_ptr<QualType> CanonicalPtr)
@@ -223,11 +151,6 @@ std::weak_ptr<QualType> PointerType::getPointeeType() const
 	return PointeeType;
 }
 
-std::string PointerType::getTypePrefixAsString() const
-{
-	return PointeeType->getTypePrefixAsString() + "*";
-}
-
 /// @BlockPointerType
 shared_ptr<QualType> BlockPointerType::creator(std::shared_ptr<QualType> Pointee,
                                            std::shared_ptr<QualType> CanonicalCls)
@@ -242,23 +165,11 @@ BlockPointerType::BlockPointerType(std::shared_ptr<QualType> Pointee)
       PointeeType(Pointee)
 {}
 
-std::string BlockPointerType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
-
 /// @ReferenceType
 ReferenceType::ReferenceType(TypeClass tc, std::shared_ptr<QualType> Referencee)
     :Type(tc, (*Referencee)->isDependentType()),
       PointeeType(Referencee)
 {}
-
-std::string ReferenceType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
 
 /// @LValueReferenceType
 shared_ptr<QualType> LValueReferenceType::creator(std::shared_ptr<QualType> Referencee, std::shared_ptr<QualType> CanonicalRef)
@@ -300,12 +211,6 @@ MemberPointerType::MemberPointerType(std::shared_ptr<QualType> Pointee,
       PointeeType(Pointee), Class(Cls)
 {}
 
-std::string MemberPointerType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
-
 /// @ArrayType
 ArrayType::ArrayType(TypeClass tc, std::shared_ptr<QualType> et,
                      ArraySizeModifier sm, unsigned tq)
@@ -316,11 +221,6 @@ ArrayType::ArrayType(TypeClass tc, std::shared_ptr<QualType> et,
 std::weak_ptr<QualType> ArrayType::getElementType() const
 {
 	return ElementType;
-}
-
-std::string ArrayType::getTypePrefixAsString() const
-{
-	return ElementType->getTypePrefixAsString();
 }
 
 /// @ConstantArrayType
@@ -461,12 +361,6 @@ DependentSizedExtVectorType::DependentSizedExtVectorType(std::shared_ptr<QualTyp
       loc(loc)
 {}
 
-std::string DependentSizedExtVectorType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
-
 /// @VectorType
 std::shared_ptr<QualType> VectorType::creator(std::shared_ptr<QualType> vecType, unsigned nElements, std::shared_ptr<QualType> canonType)
 {
@@ -485,12 +379,6 @@ VectorType::VectorType(Type::TypeClass tc, std::shared_ptr<QualType> vecType, un
     : Type(tc, (*vecType)->isDependentType()), ElementType(vecType), NumElements(nElements)
 {}
 
-std::string VectorType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
-
 /// @ExtVectorType
 std::shared_ptr<QualType> ExtVectorType::creator(std::shared_ptr<QualType> vecType, unsigned nElements, std::shared_ptr<QualType> canonType)
 {
@@ -500,8 +388,10 @@ std::shared_ptr<QualType> ExtVectorType::creator(std::shared_ptr<QualType> vecTy
 }
 
 ExtVectorType::ExtVectorType(std::shared_ptr<QualType> vecType, unsigned nElements)
-    : VectorType(TypeClass::ExtVector, vecType, nElements) {}
+    : VectorType(TypeClass::ExtVector, vecType, nElements)
+{}
 
+/// @FunctionType
 FunctionType::FunctionType(Type::TypeClass tc,
                            std::shared_ptr<QualType> res,
                            bool SubclassInfo,
@@ -511,11 +401,6 @@ FunctionType::FunctionType(Type::TypeClass tc,
     : Type(tc, Dependent), SubClassData(SubclassInfo), TypeQuals(typeQuals), NoReturn(noReturn), ResultType(res)
 {}
 
-std::string FunctionType::getTypePrefixAsString() const
-{
-	return ResultType->getTypePrefixAsString();
-}
-
 std::shared_ptr<FunctionDecl> FunctionType::getFunDecl() const
 {
 	return m_funDecl;
@@ -524,6 +409,11 @@ std::shared_ptr<FunctionDecl> FunctionType::getFunDecl() const
 void FunctionType::setFunDecl(std::shared_ptr<FunctionDecl> decl)
 {
 	m_funDecl = decl;
+}
+
+std::shared_ptr<QualType> FunctionType::getResultType() const
+{
+	return ResultType;
 }
 
 /// @FunctionNoProtoType
@@ -600,12 +490,6 @@ TypeOfExprType::TypeOfExprType(std::shared_ptr<Expr> E)
     : Type(TypeClass::TypeOfExpr, E->isTypeDependent()), TOExpr(E)
 {}
 
-std::string TypeOfExprType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
-
 /// @DependentTypeOfExprType
 DependentTypeOfExprType::DependentTypeOfExprType(std::shared_ptr<Expr> E)
     : TypeOfExprType(E)
@@ -623,12 +507,6 @@ TypeOfType::TypeOfType(std::shared_ptr<QualType> T)
     : Type(TypeClass::TypeOf, (*T)->isDependentType()), TOType(T) {
 }
 
-std::string TypeOfType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
-
 /// @DecltypeType
 std::shared_ptr<QualType> DecltypeType::creator(std::shared_ptr<Expr> E, std::shared_ptr<QualType> underlyingType, std::shared_ptr<QualType> can)
 {
@@ -642,12 +520,6 @@ DecltypeType::DecltypeType(std::shared_ptr<Expr> E, std::shared_ptr<QualType> un
       UnderlyingType(underlyingType)
 {}
 
-std::string DecltypeType::getTypePrefixAsString() const
-{
-	// TODO
-	return "";
-}
-
 /// @QualifierSet
 QualifierSet::QualifierSet()
     :Mask(0)
@@ -660,18 +532,19 @@ TypedefType::TypedefType(TypeClass tc, std::shared_ptr<QualType> can, std::share
 
 std::shared_ptr<Type> TypedefType::creator(std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl, std::shared_ptr<QualType> declFor)
 {
-	return make_shared<TypedefType>(TypeClass::Typedef, can, decl, declFor);
-}
-
-std::string TypedefType::getTypePrefixAsString() const
-{
-	return Decl->getNameAsString();
-	/*return "typedef " + declForType->getTypePrefixAsString();*/
+	auto ptr = make_shared<TypedefType>(TypeClass::Typedef, can, decl, declFor);
+	ptr->setCanonicalType(can);
+	return ptr;
 }
 
 std::weak_ptr<QualType> TypedefType::getDeclForType() const
 {
 	return declForType;
+}
+
+std::weak_ptr<TypedefDecl> TypedefType::getDecl() const
+{
+	return Decl;
 }
 
 /// @TagType
@@ -700,17 +573,7 @@ std::shared_ptr<Type> RecordType::creator(std::shared_ptr<RecordDecl> D, std::sh
 	return ptr;
 }
 
-std::string RecordType::getTypePrefixAsString() const
-{
-	return "struct {";
-}
-
 /// @EnumType
 EnumType::EnumType(std::shared_ptr<EnumDecl> D, std::shared_ptr<QualType> can)
 	: TagType(TypeClass::Enum, std::dynamic_pointer_cast<TagDecl>(D), can)
 {}
-
-std::string EnumType::getTypePrefixAsString() const
-{
-	return "enum {";
-}

@@ -200,6 +200,8 @@ decl_stmt
 declaration_specifiers
 	: type_specifier					{ ADAPTER.makeType(); }
 	| type_specifier declaration_specifiers
+	| type_qualifier
+        | type_qualifier declaration_specifiers
 	;
 init_declarator_list
 	: init_declarator					{ $$ = 1; }
@@ -476,7 +478,7 @@ multiplicative_expression
 	;
 %%
 
-void yy::Parser::error(const location_type& l,  const std::string& m)
+void yy::Parser::error(const location_type& l, const std::string& m)
 {
     driver.error(l, m);
 }
