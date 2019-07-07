@@ -268,12 +268,12 @@ void YaccAdapter::makeReturnStmt(yy::location &l, bool haveExpr)
 void YaccAdapter::makeCommentStmt(std::string &comment, yy::location &l)
 {
     SourceLocation lp = toSourceLocation(l);
-    m_stmtStack.push(
-                m_ASTContext.createStmt(
-                    Stmt::StmtClass::CommentStmtClass,
-                    comment, lp
-                    )
-                );
+    auto commentStmt = m_ASTContext.createStmt(
+			Stmt::StmtClass::CommentStmtClass,
+			comment, lp
+	);
+    m_stmtStack.push(commentStmt);
+	m_declContextHolder.createComment(m_declContextStack.top(), lp, commentStmt);
 }
 
 void YaccAdapter::makeDeclRefExpr(std::string &name, yy::location &l)
@@ -542,12 +542,17 @@ void YaccAdapter::makeCompoundAssignOperator(int opc, yy::location &location)
 		case token::TOK_OR_ASSIGN:			operatorCode = BinaryOperator::OrAssign;	break;
 	}
 	SourceLocation l = toSourceLocation(location);
+	auto lhs = dynamic_pointer_cast<Expr>(pop_stmt());
+	auto rhs = dynamic_pointer_cast<Expr>(pop_stmt());
+	if(DeclRefExpr::classof(rhs))
+		dynamic_pointer_cast<DeclRefExpr>(rhs)->getDecl().lock()->setIsAssigned(true);
+
 	/// @note Types should be found by ASTContext
 	m_stmtStack.push(
 			m_ASTContext.createStmt(
 					Stmt::StmtClass::CompoundAssignOperatorClass,
-					dynamic_pointer_cast<Expr>(pop_stmt()),
-					dynamic_pointer_cast<Expr>(pop_stmt()),
+					lhs,
+					rhs,
 					operatorCode, l
 			)
 	);

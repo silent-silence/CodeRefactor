@@ -58,10 +58,10 @@ class TypenameType;
 
 class QualType
 {
-	friend class ASTContext;
+    friend class ASTContext;
 public:
     enum TQ : unsigned {
-    	None		= 0,
+        None		= 0,
         Const		= 0x1,
         Restrict	= 0x2,
         Volatile	= 0x4,
@@ -107,7 +107,9 @@ public:
     std::weak_ptr<QualType> getCanonicalType() const;
     void setCanonicalType(const std::weak_ptr<QualType> &value);
 
-	TypeClass getTypeClass() const;
+    TypeClass getTypeClass() const;
+
+    static bool classof(const std::weak_ptr<Type>) { return true; }
 
 protected:
     enum { TypeClassBitSize = 6 };
@@ -117,7 +119,7 @@ private:
 
     std::weak_ptr<QualType> CanonicalType;
     bool Dependent : 1;	// C++ template [temp.dep.type]
-	TypeClass TC/*: TypeClassBitSize*/;
+    TypeClass TC/*: TypeClassBitSize*/;
 };
 
 /// @extends
@@ -135,6 +137,12 @@ public:
                 unsigned AddrSpace,
                 QualType::GCAttrTypes gcAttr);
 
+    std::weak_ptr<Type> getBaseType() const;
+    QualType::GCAttrTypes getObjCGCAttr() const;
+    unsigned getAddressSpace() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<ExtQualType>);
 private:
     std::shared_ptr<Type> BaseType;
     unsigned AddressSpace;
@@ -192,8 +200,10 @@ public:
     BuiltinType(Kind k);
     ~BuiltinType() override = default;
 
-	Kind getKind() const { return TypeKind; }
+    Kind getKind() const;
 
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<BuiltinType>);
 private:
     Kind TypeKind;
 };
@@ -206,6 +216,11 @@ public:
 
     FixedWidthIntType(unsigned W,bool S);
 
+    unsigned getWidth() const;
+    bool isSigned() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<FixedWidthIntType>);
 private:
     unsigned Width;
     bool Signed;
@@ -216,10 +231,13 @@ class ComplexType : public Type
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> Element,
-                                         std::shared_ptr<QualType> CanonicalPtr);
+                                             std::shared_ptr<QualType> CanonicalPtr);
 
     explicit ComplexType(std::shared_ptr<QualType> Element);
+    std::weak_ptr<QualType> getElementType() const;
 
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<ComplexType>);
 private:
     std::shared_ptr<QualType> ElementType;
 };
@@ -235,6 +253,8 @@ public:
 
     std::weak_ptr<QualType> getPointeeType() const;
 
+    static bool classof(const std::weak_ptr<Type>T);
+    static bool classof(const std::weak_ptr<PointerType>);
 private:
     std::shared_ptr<QualType> PointeeType;
 };
@@ -245,9 +265,12 @@ class BlockPointerType : public Type
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> Pointee,
-                                         std::shared_ptr<QualType> CanonicalCls);
+                                             std::shared_ptr<QualType> CanonicalCls);
     BlockPointerType(std::shared_ptr<QualType> Pointee);
+    std::weak_ptr<QualType> getPointeeType() const;
 
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<BlockPointerType>);
 private:
     std::shared_ptr<QualType> PointeeType;
 };
@@ -258,7 +281,10 @@ class ReferenceType : public Type
 {
 protected:
     ReferenceType(TypeClass tc, std::shared_ptr<QualType> Referencee);
+    std::weak_ptr<QualType> getPointeeType() const;
 
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<ReferenceType>);
 private:
     std::shared_ptr<QualType> PointeeType;
 };
@@ -269,8 +295,11 @@ class LValueReferenceType : public ReferenceType
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> Referencee,
-                                         std::shared_ptr<QualType> CanonicalRef);
+                                             std::shared_ptr<QualType> CanonicalRef);
     LValueReferenceType(std::shared_ptr<QualType> Referencee);
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<LValueReferenceType>);
 };
 
 /// @C++
@@ -279,8 +308,11 @@ class RValueReferenceType : public ReferenceType
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> Referencee,
-                                         std::shared_ptr<QualType> CanonicalRef);
+                                             std::shared_ptr<QualType> CanonicalRef);
     RValueReferenceType(std::shared_ptr<QualType> Referencee);
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<RValueReferenceType>);
 };
 
 /// @C++
@@ -290,12 +322,16 @@ class MemberPointerType : public Type
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> Pointee,
-                                         const std::shared_ptr<Type>Cls,
-                                         std::shared_ptr<QualType> CanonicalPtr);
-
+                                             const std::shared_ptr<Type>Cls,
+                                             std::shared_ptr<QualType> CanonicalPtr);
     MemberPointerType(std::shared_ptr<QualType> Pointee,
                       const std::shared_ptr<Type>Cls);
 
+    std::weak_ptr<QualType> getPointeeType() const;
+    const std::weak_ptr<Type> getClass() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<MemberPointerType>);
 private:
     std::shared_ptr<QualType> PointeeType;
     const std::shared_ptr<Type> Class;
@@ -309,14 +345,17 @@ public:
         Normal, Static, Star
     };
 
-	std::weak_ptr<QualType> getElementType() const;
+    std::weak_ptr<QualType> getElementType() const;
+    ArraySizeModifier getSizeModifier() const;
+    unsigned getIndexTypeQualifier() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<ArrayType>);
 protected:
     ArrayType(TypeClass tc,
               std::shared_ptr<QualType> et,
               ArraySizeModifier sm,
               unsigned tq);
-
-
 private:
     std::shared_ptr<QualType> ElementType;
     unsigned SizeModifier : 2;
@@ -329,10 +368,14 @@ class ConstantArrayType : public ArrayType
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> et, std::shared_ptr<QualType> can, int size,
-                                         ArraySizeModifier sm, unsigned tq);
+                                             ArraySizeModifier sm, unsigned tq);
     ConstantArrayType(std::shared_ptr<QualType> et, int size,
                       ArraySizeModifier sm, unsigned tq);
 
+    const int &getSize() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<ConstantArrayType>);
 protected:
     ConstantArrayType(TypeClass tc, std::shared_ptr<QualType> et,
                       int size, ArraySizeModifier sm, unsigned tq);
@@ -352,9 +395,10 @@ public:
     ConstantArrayWithExprType(std::shared_ptr<QualType> et,
                               int size, std::shared_ptr<Expr>e,
                               ArraySizeModifier sm, unsigned tq);
-
     std::weak_ptr<Expr> getSizeSpecifier() const;
 
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<ConstantArrayWithExprType>);
 private:
     std::shared_ptr<Expr> SizeExpr;
 };
@@ -367,11 +411,13 @@ class ConstantArrayWithoutExprType : public ConstantArrayType
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> et, std::shared_ptr<QualType> can,
-                                         int size,
-                                         ArraySizeModifier sm, unsigned tq);
+                                             int size,
+                                             ArraySizeModifier sm, unsigned tq);
     ConstantArrayWithoutExprType(std::shared_ptr<QualType> et,
                                  int size,
                                  ArraySizeModifier sm, unsigned tq);
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<ConstantArrayWithoutExprType>);
 };
 
 /// @brief This class represents C arrays with an unspecified size
@@ -383,6 +429,9 @@ public:
                                          ArraySizeModifier sm, unsigned tq);
     IncompleteArrayType(std::shared_ptr<QualType> et,
                         ArraySizeModifier sm, unsigned tq);
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<IncompleteArrayType>);
 };
 
 /// @brief This class represents C arrays with a specified size
@@ -392,12 +441,15 @@ class VariableArrayType : public ArrayType
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> et, std::shared_ptr<QualType> can,
-                                         std::shared_ptr<Expr>e,
-                                         ArraySizeModifier sm, unsigned tq);
-
+                                             std::shared_ptr<Expr>e,
+                                             ArraySizeModifier sm, unsigned tq);
     VariableArrayType(std::shared_ptr<QualType> et, std::shared_ptr<Expr>e,
                       ArraySizeModifier sm, unsigned tq);
 
+    std::weak_ptr<Expr> getSizeExpr() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<VariableArrayType>);
 private:
     std::shared_ptr<Stmt> SizeExpr;
 };
@@ -416,15 +468,17 @@ class DependentSizedArrayType : public ArrayType
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> et,
-                                         std::shared_ptr<QualType> can,
-                                         std::shared_ptr<Expr>e,
-                                         ArraySizeModifier sm,
-                                         unsigned tq);
-
+                                             std::shared_ptr<QualType> can,
+                                             std::shared_ptr<Expr>e,
+                                             ArraySizeModifier sm,
+                                             unsigned tq);
     DependentSizedArrayType(std::shared_ptr<QualType> et,
                             std::shared_ptr<Expr>e,
                             ArraySizeModifier sm, unsigned tq);
 
+    std::weak_ptr<Expr> getSizeExpr() const;
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<DependentSizedArrayType>);
 private:
     std::shared_ptr<Stmt> SizeExpr;
     std::shared_ptr<QualType> ElementType;
@@ -444,14 +498,19 @@ class DependentSizedExtVectorType : public Type
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> ElementType,
-                                         std::shared_ptr<QualType> can,
-                                         std::shared_ptr<Expr> SizeExpr,
-                                         SourceLocation loc);
-
+                                             std::shared_ptr<QualType> can,
+                                             std::shared_ptr<Expr> SizeExpr,
+                                             SourceLocation loc);
     DependentSizedExtVectorType(std::shared_ptr<QualType> ElementType,
                                 std::shared_ptr<Expr> SizeExpr,
                                 SourceLocation loc);
 
+    std::weak_ptr<Expr> getSizeExpr() const;
+    std::weak_ptr<QualType> getElementType() const;
+    SourceLocation getAttributeLoc() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<DependentSizedExtVectorType>);
 private:
     std::shared_ptr<Expr> SizeExpr;
     std::shared_ptr<QualType> ElementType;
@@ -464,11 +523,16 @@ class VectorType : public Type
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> vecType,
-                                         unsigned nElements,
-                                         std::shared_ptr<QualType> canonType);
+                                             unsigned nElements,
+                                             std::shared_ptr<QualType> canonType);
     VectorType(std::shared_ptr<QualType> vecType,
                unsigned nElements);
 
+    std::weak_ptr<QualType> getElementType() const;
+    unsigned getNumElements() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<VectorType>);
 protected:
     VectorType(TypeClass tc,
                std::shared_ptr<QualType> vecType,
@@ -484,26 +548,30 @@ class ExtVectorType : public VectorType
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> vecType,
-                                         unsigned nElements,
-                                         std::shared_ptr<QualType> canonType);
+                                             unsigned nElements,
+                                             std::shared_ptr<QualType> canonType);
     ExtVectorType(std::shared_ptr<QualType> vecType, unsigned nElements);
 
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<ExtVectorType>);
 };
 
 /// @brief Function Declarators
 class FunctionType : public Type
 {
 public:
-	void setFunDecl(std::shared_ptr<FunctionDecl> decl);
-	std::shared_ptr<FunctionDecl> getFunDecl() const;
+    void setFunDecl(std::shared_ptr<FunctionDecl> decl);
+    std::shared_ptr<FunctionDecl> getFunDecl() const;
 
-	std::shared_ptr<QualType> getResultType() const;
+    std::weak_ptr<QualType> getResultType() const;
+    bool getNoReturnAttr() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<FunctionType>);
 protected:
     FunctionType(TypeClass tc, std::shared_ptr<QualType> res, bool SubclassInfo,
                  unsigned typeQuals, bool Dependent,
                  bool noReturn = false);
-
-
 private:
     bool SubClassData : 1;
     unsigned TypeQuals : 3;
@@ -521,6 +589,9 @@ public:
                                          std::shared_ptr<QualType> Canonical,
                                          bool NoReturn = false);
     FunctionNoProtoType(std::shared_ptr<QualType> Result, bool NoReturn = false);
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<FunctionNoProtoType>);
 };
 
 /// @brief Represents a prototype with argument type info
@@ -542,6 +613,13 @@ public:
 
     void setArgs(std::vector<std::shared_ptr<QualType>> ArgArray);
 
+    unsigned getNumArgs() const;
+    bool hasExceptionSpec() const;
+    bool hasAnyExceptionSpec() const;
+    unsigned getNumExceptions() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<FunctionProtoType>);
 private:
     static bool hasAnyDependentType(const std::vector<std::shared_ptr<QualType>> ArgArray);
 
@@ -555,9 +633,9 @@ private:
 /// @brief typedef
 class TypedefType : public Type
 {
-	friend class ASTContext;
+    friend class ASTContext;
 public:
-	static std::shared_ptr<Type> creator(std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl, std::shared_ptr<QualType> declFor);
+    static std::shared_ptr<Type> creator(std::shared_ptr<QualType> can, std::shared_ptr<TypedefDecl> decl, std::shared_ptr<QualType> declFor);
 
     /*TypedefType(TypeClass tc, TypedefDecl *D, QualType can)
         : Type(tc, can, can->isDependentType()), Decl(D) {
@@ -568,8 +646,10 @@ public:
     std::weak_ptr<QualType> getDeclForType() const;
     std::weak_ptr<TypedefDecl> getDecl() const;
 
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<TypedefType>);
 private:
-	std::shared_ptr<QualType> declForType;
+    std::shared_ptr<QualType> declForType;
     std::shared_ptr<TypedefDecl> Decl;
 };
 
@@ -579,9 +659,13 @@ class TypeOfExprType : public Type
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<Expr> E,
-                                         std::shared_ptr<QualType> can = std::make_shared<QualType>());
+                                             std::shared_ptr<QualType> can = std::make_shared<QualType>());
     TypeOfExprType(std::shared_ptr<Expr> E);
 
+    std::weak_ptr<Expr> getUnderlyingExpr() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<TypeOfExprType>);
 private:
     std::shared_ptr<Expr> TOExpr;
 };
@@ -601,6 +685,10 @@ public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<QualType> T, QualType can);
     TypeOfType(std::shared_ptr<QualType> T);
 
+    std::weak_ptr<QualType> getUnderlyingType() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<TypeOfType>);
 private:
     std::shared_ptr<QualType> TOType;
 };
@@ -611,11 +699,16 @@ class DecltypeType : public Type
 {
 public:
     static std::shared_ptr<QualType> creator(std::shared_ptr<Expr> E,
-                                         std::shared_ptr<QualType> underlyingType,
-                                         std::shared_ptr<QualType> can=std::make_shared<QualType>());
+                                             std::shared_ptr<QualType> underlyingType,
+                                             std::shared_ptr<QualType> can=std::make_shared<QualType>());
     DecltypeType(std::shared_ptr<Expr> E,
                  std::shared_ptr<QualType> underlyingType);
 
+    std::weak_ptr<Expr> getUnderlyingExpr() const;
+    std::weak_ptr<QualType> getUnderlyingType() const;
+
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<DecltypeType>);
 private:
     std::shared_ptr<Expr> E;
     std::shared_ptr<QualType> UnderlyingType;
@@ -633,32 +726,43 @@ private:
 class TagType : public Type
 {
 public:
-	TagType(TypeClass TC, std::shared_ptr<TagDecl> D, std::shared_ptr<QualType> can);
-	~TagType() override = 0;
+    TagType(TypeClass TC, std::shared_ptr<TagDecl> D, std::shared_ptr<QualType> can);
+    ~TagType() override = 0;
 
-	std::weak_ptr<TagDecl> getDecl() const;
+    std::weak_ptr<TagDecl> getDecl() const;
 
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<TagType>);
+    static bool classof(const std::weak_ptr<RecordType>);
+    static bool classof(const std::weak_ptr<EnumType>);
 private:
-	std::shared_ptr<TagDecl> decl;
+    std::shared_ptr<TagDecl> decl;
 };
 
 /// @brief structs/unions/classes
 class RecordType : public TagType
 {
 public:
-	RecordType(std::shared_ptr<RecordDecl> D, std::shared_ptr<QualType> can);
-	static std::shared_ptr<Type> creator(std::shared_ptr<RecordDecl> D, std::shared_ptr<QualType> can);
-	~RecordType() override = default;
+    RecordType(std::shared_ptr<RecordDecl> D, std::shared_ptr<QualType> can);
+    static std::shared_ptr<Type> creator(std::shared_ptr<RecordDecl> D, std::shared_ptr<QualType> can);
+    ~RecordType() override = default;
     //    explicit RecordType(TypeClass TC, std::shared_ptr<RecordDecl> D)
     //        : TagType(TC, std::dynamic_pointer_cast<TagDecl>(D), QualType()) { }
+
+    bool hasConstFields() const;
+    unsigned getAddressSpace() const;
+
+    static bool classof(const std::weak_ptr<TagType> T);
+    static bool classof(const std::weak_ptr<Type> T);
+    static bool classof(const std::weak_ptr<RecordType>);
 };
 
 /// @brief enum
 class EnumType : public TagType
 {
 public:
-	EnumType(std::shared_ptr<EnumDecl> D, std::shared_ptr<QualType> can);
-	~EnumType() override = default;
+    EnumType(std::shared_ptr<EnumDecl> D, std::shared_ptr<QualType> can);
+    ~EnumType() override = default;
 };
 
 /// @C++

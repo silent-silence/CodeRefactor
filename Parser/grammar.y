@@ -128,7 +128,7 @@ statement
 	| comment_stmt
 	;
 comment_stmt
-    : COMMENT							{ ADAPTER.makeCommentStmt($1, @1); }
+	: COMMENT						{ ADAPTER.makeCommentStmt($1, @1); }
 	;
 null_stmt
 	: ";"							{ ADAPTER.makeNullStmt(@1); }

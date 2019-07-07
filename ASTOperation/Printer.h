@@ -142,6 +142,7 @@ private:
 	std::string printTypedef(std::shared_ptr<Decl> decl);
 	std::string printRecord(std::shared_ptr<Decl> decl);
 	std::string printFunction(std::shared_ptr<Decl> decl);
+	std::string printComment(std::shared_ptr<Decl> decl);
 
 	Printer &printer;
 };

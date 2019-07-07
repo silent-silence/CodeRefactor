@@ -97,6 +97,7 @@ public:
 	static bool classof(const std::weak_ptr<DeclRefExpr>);
 
 	std::weak_ptr<NamedDecl>getDecl();
+    const std::weak_ptr<NamedDecl>getDecl() const;
 	void setDecl(std::shared_ptr<NamedDecl>NewD);
 
 	SourceLocation getLocation() const;
@@ -249,6 +250,7 @@ public:
     static bool classof(const std::weak_ptr<ImaginaryLiteral>);
 
     std::weak_ptr<Expr>getSubExpr();
+    const std::weak_ptr<Expr>getSubExpr() const;
     void setSubExpr(std::shared_ptr<Expr>E);
 
 private:
@@ -308,8 +310,10 @@ public:
     static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<ParenExpr>);
 
+    const std::weak_ptr<Expr>getSubExpr() const;
     std::weak_ptr<Expr>getSubExpr();
     void setSubExpr(std::shared_ptr<Expr>E);
+
     SourceLocation getLParen() const;
     void setLParen(SourceLocation Loc);
 
@@ -469,8 +473,8 @@ public:
 
     const std::list<std::shared_ptr<Stmt>> getArgs() const;
 	std::list<std::shared_ptr<Stmt>> getArgs();
-	const std::shared_ptr<Expr> getCallee() const;
-	std::shared_ptr<Expr> getCallee();
+    const std::weak_ptr<Expr> getCallee() const;
+    std::weak_ptr<Expr> getCallee();
     void setCallee(std::shared_ptr<Expr>F);
 
     unsigned getNumArgs() const;
@@ -588,6 +592,7 @@ public:
 	void setCastKind(CastKind K);
 
 	std::weak_ptr<Expr>getSubExpr();
+    const std::weak_ptr<Expr>getSubExpr() const;
 	void setSubExpr(std::shared_ptr<Expr>E);
 
 protected:
@@ -873,6 +878,7 @@ public:
 
     std::weak_ptr<Expr> getExpr(unsigned Index);
     const std::weak_ptr<Expr> getExpr(unsigned Index) const;
+    void setExprs(ASTContext &C, std::weak_ptr<Expr*> Exprs, unsigned NumExprs);
 
     SourceLocation getBuiltinLoc() const;
     void setBuiltinLoc(SourceLocation L);

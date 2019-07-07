@@ -13,13 +13,14 @@
 #include "AST/ASTContext.h"
 #include "Decl/DeclContextHolder.h"
 #include "Errors/TypeError.hpp"
+#include "Errors/NullPointerError.h"
 #include "ASTOperation/Printer.h"
 
 using std::make_shared;				using std::shared_ptr;
 using std::fstream;					using std::string;
 using std::dynamic_pointer_cast;	using std::weak_ptr;
 
-class ASTStructurePrintTest : public testing::Test {
+class PrintTest : public testing::Test {
 protected:
 	void SetUp() override {}
 	void TearDown() override {
@@ -44,7 +45,7 @@ protected:
 	string output;
 };
 
-TEST_F(ASTStructurePrintTest, LiteralExpression)
+TEST_F(PrintTest, LiteralExpression)
 {
 	openHelper << "12;";
 	driver.parse();
@@ -63,7 +64,7 @@ TEST_F(ASTStructurePrintTest, LiteralExpression)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, UnaryExpression)
+TEST_F(PrintTest, UnaryExpression)
 {
 	openHelper << "1++;";
 	driver.parse();
@@ -90,7 +91,7 @@ TEST_F(ASTStructurePrintTest, UnaryExpression)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, AssignExpression)
+TEST_F(PrintTest, AssignExpression)
 {
 	openHelper << "1=1;";
 	driver.parse();
@@ -101,7 +102,7 @@ TEST_F(ASTStructurePrintTest, AssignExpression)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, BinaryExpression)
+TEST_F(PrintTest, BinaryExpression)
 {
 	openHelper << "1*1;";
 	driver.parse();
@@ -120,7 +121,7 @@ TEST_F(ASTStructurePrintTest, BinaryExpression)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, ConditionalExpression)
+TEST_F(PrintTest, ConditionalExpression)
 {
 	openHelper << "1?1:1;";
 	driver.parse();
@@ -131,7 +132,7 @@ TEST_F(ASTStructurePrintTest, ConditionalExpression)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, StringLiteralExpression)
+TEST_F(PrintTest, StringLiteralExpression)
 {
 	std::string input = "\"string\";";
 	openHelper << input;
@@ -152,7 +153,7 @@ TEST_F(ASTStructurePrintTest, StringLiteralExpression)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, CompoundStmt)
+TEST_F(PrintTest, CompoundStmt)
 {
 	openHelper << "{ 123; }";
 	driver.parse();
@@ -239,7 +240,7 @@ TEST_F(ASTStructurePrintTest, CompoundStmt)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, SimpleStmts)
+TEST_F(PrintTest, SimpleStmts)
 {
 	openHelper << ";";
 	driver.parse();
@@ -282,7 +283,7 @@ TEST_F(ASTStructurePrintTest, SimpleStmts)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, ParenExprTest)
+TEST_F(PrintTest, ParenExprTest)
 {
 	openHelper << "(123);";
 	driver.parse();
@@ -293,7 +294,7 @@ TEST_F(ASTStructurePrintTest, ParenExprTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, SizeofTest)
+TEST_F(PrintTest, SizeofTest)
 {
 	openHelper << "sizeof(int);";
 	driver.parse();
@@ -317,7 +318,7 @@ TEST_F(ASTStructurePrintTest, SizeofTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, CastTest)
+TEST_F(PrintTest, CastTest)
 {
 	openHelper << "(int)43;";
 	driver.parse();
@@ -328,7 +329,7 @@ TEST_F(ASTStructurePrintTest, CastTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, ArraySubscriptTest)
+TEST_F(PrintTest, ArraySubscriptTest)
 {
 	openHelper << "12[43];";
 	driver.parse();
@@ -352,7 +353,7 @@ TEST_F(ASTStructurePrintTest, ArraySubscriptTest)
 	EXPECT_TRUE(dynamic_pointer_cast<ArraySubscriptExpr>(astContext.getRoot().lock()));*/
 }
 
-TEST_F(ASTStructurePrintTest, IfTest)
+TEST_F(PrintTest, IfTest)
 {
 	openHelper <<
 "if(1)"
@@ -506,7 +507,7 @@ TEST_F(ASTStructurePrintTest, IfTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, ForTest)
+TEST_F(PrintTest, ForTest)
 {
 	openHelper << "for(;;) ;";
 	driver.parse();
@@ -587,7 +588,7 @@ TEST_F(ASTStructurePrintTest, ForTest)
 	adapter.clean();*/
 }
 
-TEST_F(ASTStructurePrintTest, WhileTest)
+TEST_F(PrintTest, WhileTest)
 {
 	openHelper << "while(1) {}";
 	driver.parse();
@@ -598,7 +599,7 @@ TEST_F(ASTStructurePrintTest, WhileTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, DoWhileTest)
+TEST_F(PrintTest, DoWhileTest)
 {
 	openHelper << "do 12; while(1)";
 	driver.parse();
@@ -626,7 +627,7 @@ TEST_F(ASTStructurePrintTest, DoWhileTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, CaseTest)
+TEST_F(PrintTest, CaseTest)
 {
 	openHelper << "case 1:";
 	driver.parse();
@@ -639,7 +640,7 @@ TEST_F(ASTStructurePrintTest, CaseTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, DefaultTest)
+TEST_F(PrintTest, DefaultTest)
 {
 	openHelper << "default:";
 	driver.parse();
@@ -652,7 +653,7 @@ TEST_F(ASTStructurePrintTest, DefaultTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, SwitchTest)
+TEST_F(PrintTest, SwitchTest)
 {
 	openHelper << "switch(1) {}";
 	driver.parse();
@@ -692,7 +693,7 @@ TEST_F(ASTStructurePrintTest, SwitchTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, SimpleDeclStmtTest)
+TEST_F(PrintTest, SimpleDeclStmtTest)
 {
 	openHelper << "int a;";
 	driver.parse();
@@ -715,7 +716,7 @@ TEST_F(ASTStructurePrintTest, SimpleDeclStmtTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, ArrayDeclStmtTest)
+TEST_F(PrintTest, ArrayDeclStmtTest)
 {
 	openHelper << "int a[];";
 	driver.parse();
@@ -742,7 +743,7 @@ TEST_F(ASTStructurePrintTest, ArrayDeclStmtTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, PointerDeclStmtTest)
+TEST_F(PrintTest, PointerDeclStmtTest)
 {
 	openHelper << "int *a;";
 	driver.parse();
@@ -767,9 +768,16 @@ TEST_F(ASTStructurePrintTest, PointerDeclStmtTest)
 	printerOutput >> output;
 	EXPECT_EQ(output, string("int*** e;"));
 	reset();
+
+	openHelper <<
+"int *f;"
+"int *g = f;";
+	driver.parse();
+	EXPECT_THROW(printer.print(astContext.getRoot().lock()), NullPointerError);
+	reset();
 }
 
-TEST_F(ASTStructurePrintTest, StructDeclTest)
+TEST_F(PrintTest, StructDeclTest)
 {
 	openHelper <<
 "struct {"
@@ -813,7 +821,7 @@ TEST_F(ASTStructurePrintTest, StructDeclTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, FunctionDeclTest)
+TEST_F(PrintTest, FunctionDeclTest)
 {
 	openHelper <<
 "int main();";
@@ -860,7 +868,7 @@ TEST_F(ASTStructurePrintTest, FunctionDeclTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, TypedefDeclTest)
+TEST_F(PrintTest, TypedefDeclTest)
 {
 	openHelper <<
 "typedef int a;";
@@ -885,7 +893,7 @@ TEST_F(ASTStructurePrintTest, TypedefDeclTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, VarDeclWithInitTest)
+TEST_F(PrintTest, VarDeclWithInitTest)
 {
 	openHelper <<
 "int a = 1;";
@@ -921,7 +929,7 @@ TEST_F(ASTStructurePrintTest, VarDeclWithInitTest)
 	reset();
 }
 
-TEST_F(ASTStructurePrintTest, EnumDeclWithInitTest)
+TEST_F(PrintTest, EnumDeclWithInitTest)
 {
 	openHelper <<
 "enum {"
@@ -935,6 +943,23 @@ TEST_F(ASTStructurePrintTest, EnumDeclWithInitTest)
 "enum {\n"
 "  a, b, c\n"
 "} d;"
+	));
+	reset();
+}
+
+TEST_F(PrintTest, CommentTest)
+{
+	openHelper <<
+"//comment 1\n"
+"int a;"
+"/* comment 2 */";
+	driver.parse();
+	printer.print(declContext.getContextRoot());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"//comment 1\n"
+"int a;\n"
+"/* comment 2 */\n"
 	));
 	reset();
 }

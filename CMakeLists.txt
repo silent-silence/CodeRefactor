@@ -79,5 +79,5 @@ else()
             ${DIR_Parser}
             ${DIR_Iterator}
             ${DIR_Operation}
-            ${DIR_OpenHelper} Errors/SyntaxError.hpp)
+            ${DIR_OpenHelper} Errors/SyntaxError.hpp Errors/NullPointerError.h)
 endif()

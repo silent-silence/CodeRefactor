@@ -9,6 +9,7 @@
 #include "Decl/DeclGroup.h"
 #include "Decl/DeclBase.h"
 #include "Basic/IdentifierTable.h"
+#include "Errors/NullPointerError.h"
 #include <regex>
 
 using std::string;					using std::dynamic_pointer_cast;
@@ -74,6 +75,7 @@ std::string ContextPrinter::printContext(std::shared_ptr<DeclContext> context)
 			case Decl::Kind::Typedef:	ret += printTypedef(*it);	break;
 			case Decl::Kind::Record:	ret += printRecord(*it);	break;
 			case Decl::Kind::Function:	ret += printFunction(*it);	break;
+			case Decl::Kind::Comment:	ret += printComment(*it);	break;
 			default:					ret += "";					break;
 		}
 	}
@@ -184,6 +186,11 @@ std::string ContextPrinter::printDecl(std::shared_ptr<Decl> decl)
 	m_typePrinter.printTypePostfix(type->getDeclForType().lock());
 	m_openHelper.getOutputStream() << ";";
 		m_openHelper.getOutputStream() << "\n";*/
+}
+
+std::string ContextPrinter::printComment(std::shared_ptr<Decl> decl)
+{
+	return printer.astPrinter.printAST(dynamic_pointer_cast<CommentDecl>(decl)->getComment().lock()) + "\n";
 }
 
 /// @TypePrinter
@@ -378,7 +385,7 @@ std::vector<std::string> TypePrinter::arrayPrefix(std::shared_ptr<QualType> type
 std::vector<std::string> TypePrinter::functionPrefix(std::shared_ptr<QualType> type)
 {
 	vector<string> ret;
-	ret.emplace_back(printTypePrefix(dynamic_pointer_cast<FunctionType>(type->getTypePtr())->getResultType()));
+    ret.emplace_back(printTypePrefix(dynamic_pointer_cast<FunctionType>(type->getTypePtr())->getResultType().lock()));
 	return ret;
 }
 
@@ -680,7 +687,7 @@ std::string ASTPrinter::processCallExpr(std::shared_ptr<Stmt> &s)
 	string ret;
 
 	auto call = dynamic_pointer_cast<CallExpr>(s);
-	ret = printAST(call->getCallee()) + "(";
+	ret = printAST(call->getCallee().lock()) + "(";
 	auto args = call->getArgs();
 	// TODO: use child_begin/child_end instead
 	unsigned argPosition = 0;
@@ -1056,6 +1063,10 @@ std::string ASTPrinter::processCaseStmt(std::shared_ptr<Stmt> &s)
 std::string ASTPrinter::processRefExpr(std::shared_ptr<Stmt> &s)
 {
 	auto ref = dynamic_pointer_cast<DeclRefExpr>(s);
+	// is pointer and not assigned
+	if (ref->getType().lock()->getTypePtr()->getTypeClass() == Type::TypeClass::Pointer
+		&& !ref->getDecl().lock()->isAssigned())
+		throw NullPointerError("NULL pointer for " + ref->getDecl().lock()->getNameAsString());
 	return ref->getDecl().lock()->getNameAsString();
 }
 

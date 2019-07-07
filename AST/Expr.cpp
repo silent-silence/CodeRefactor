@@ -117,6 +117,11 @@ bool DeclRefExpr::classof(const weak_ptr<DeclRefExpr>)
 
 weak_ptr<NamedDecl> DeclRefExpr::getDecl() { return D; }
 
+const std::weak_ptr<NamedDecl> DeclRefExpr::getDecl() const
+{
+    return D;
+}
+
 void DeclRefExpr::setDecl(shared_ptr<NamedDecl> NewD)
 {
     D = NewD;
@@ -406,6 +411,11 @@ weak_ptr<Expr> ImaginaryLiteral::getSubExpr()
     return dynamic_pointer_cast<Expr>(Val);
 }
 
+const std::weak_ptr<Expr> ImaginaryLiteral::getSubExpr() const
+{
+    return dynamic_pointer_cast<Expr>(Val);
+}
+
 void ImaginaryLiteral::setSubExpr(shared_ptr<Expr> E)
 {
     Val = E;
@@ -494,6 +504,11 @@ bool ParenExpr::classof(const weak_ptr<Stmt> T)
 bool ParenExpr::classof(const weak_ptr<ParenExpr>)
 {
     return true;
+}
+
+const std::weak_ptr<Expr> ParenExpr::getSubExpr() const
+{
+    return dynamic_pointer_cast<Expr>(Val);
 }
 
 weak_ptr<Expr> ParenExpr::getSubExpr()
@@ -811,12 +826,12 @@ CallExpr::CallExpr(Stmt::StmtClass SC, shared_ptr<Expr> fn,
     RParenLoc = rparenloc;
 }
 
-const std::shared_ptr<Expr> CallExpr::getCallee() const
+const std::weak_ptr<Expr> CallExpr::getCallee() const
 {
 	return dynamic_pointer_cast<Expr>(SubExprs.front());
 }
 
-std::shared_ptr<Expr> CallExpr::getCallee()
+std::weak_ptr<Expr> CallExpr::getCallee()
 {
 	return dynamic_pointer_cast<Expr>(SubExprs.front());
 }
@@ -1007,6 +1022,11 @@ void CastExpr::setCastKind(CastExpr::CastKind K)
 }
 
 weak_ptr<Expr> CastExpr::getSubExpr()
+{
+    return dynamic_pointer_cast<Expr>(Op);
+}
+
+const std::weak_ptr<Expr> CastExpr::getSubExpr() const
 {
     return dynamic_pointer_cast<Expr>(Op);
 }

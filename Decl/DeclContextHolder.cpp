@@ -145,5 +145,16 @@ std::shared_ptr<Decl> DeclContextHolder::createParmVar(std::shared_ptr<DeclConte
 			Decl::Kind::ParmVar, context, location, make_shared<IdentifierInfo>(name), type, VarDecl::StorageClass::None
 	);
 	context->addDecl(parm);
+	parm->setIsAssigned(true);
 	return parm;
+}
+
+std::shared_ptr<Decl> DeclContextHolder::createComment(std::shared_ptr<DeclContext> &context, SourceLocation &location,
+													   std::shared_ptr<Stmt> comment)
+{
+	auto commentDecl = make_shared<CommentDecl>(
+			Decl::Kind::Comment, context, location, comment
+	);
+	context->addDecl(commentDecl);
+	return commentDecl;
 }

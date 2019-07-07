@@ -30,6 +30,19 @@ public:
 	const std::weak_ptr<DeclContext> getParent() const override;
 };
 
+class CommentDecl : public Decl {
+public:
+	CommentDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
+			std::weak_ptr<Stmt> comment);
+	~CommentDecl() override = default;
+
+	std::weak_ptr<Stmt> getComment() const;
+
+private:
+	std::weak_ptr<Stmt> m_comment;
+};
+
+/// @abstract
 /// @brief Represent a declaration with a name.
 class NamedDecl : public Decl {
 public:
@@ -41,8 +54,12 @@ public:
 	std::string getNameAsString() const;
 	std::weak_ptr<IdentifierInfo> getIdentifier() const;
 
+	bool isAssigned() const;
+	void setIsAssigned(bool assigned);
+
 private:
 	DeclName m_name;
+	bool m_isAssignedValue;
 };
 
 /// @abstract
@@ -56,6 +73,7 @@ public:
 
 	std::weak_ptr<QualType> getType() const;
 	void setType(std::shared_ptr<QualType> newType);
+
 
 private:
 	std::shared_ptr<QualType> m_declType;

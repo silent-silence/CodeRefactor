@@ -21,10 +21,21 @@ const std::weak_ptr<DeclContext> TranslationUnitDecl::getParent() const
 	return getDeclContext();
 }
 
+/// @CommentDecl
+CommentDecl::CommentDecl(Decl::Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
+						 std::weak_ptr<Stmt> comment)
+	: Decl(declKind, context, location), m_comment{comment}
+{}
+
+std::weak_ptr<Stmt> CommentDecl::getComment() const
+{
+	return m_comment;
+}
+
 /// @NamedDecl
 NamedDecl::NamedDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
 		DeclName name)
-	: Decl(declKind, context, location), m_name{name}
+	: Decl(declKind, context, location), m_name{name}, m_isAssignedValue{false}
 {}
 
 NamedDecl::~NamedDecl()
@@ -45,10 +56,19 @@ std::weak_ptr<IdentifierInfo> NamedDecl::getIdentifier() const
 	return m_name.getAsIdentifierInfo();
 }
 
+bool NamedDecl::isAssigned() const
+{
+	return m_isAssignedValue;
+}
+
+void NamedDecl::setIsAssigned(bool assigned)
+{
+	m_isAssignedValue = assigned;
+}
+
 /// @ValueDecl
 ValueDecl::ValueDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
-		DeclName name,
-		std::shared_ptr<QualType> type)
+		DeclName name, std::shared_ptr<QualType> type)
 	: NamedDecl{declKind, context, location, name}, m_declType{type}
 {}
 

@@ -1,4 +1,4 @@
-#ifndef AST_STMT_H
+﻿#ifndef AST_STMT_H
 #define AST_STMT_H
 
 #include <array>
@@ -78,7 +78,9 @@ public:
     void setStartLoc(SourceLocation L);
     void setEndLoc(SourceLocation L) ;
 
+    const std::weak_ptr<DeclGroupRef> getDeclGroup() const;
     std::weak_ptr<DeclGroupRef> getDeclGroup();
+    void setDeclGroup(std::shared_ptr<DeclGroupRef> DGR);
 
     static bool classof(const std::weak_ptr<Stmt>T);
     static bool classof(const std::weak_ptr<DeclStmt>);
@@ -129,7 +131,7 @@ public:
     void setLBracLoc(SourceLocation L);
     void setRBracLoc(SourceLocation L);
 
-    static bool classof(const std::weak_ptr<Stmt>T);
+    static bool classof(const std::weak_ptr<Stmt> T);
     static bool classof(const std::weak_ptr<CompoundStmt>);
 
     typedef std::list<std::shared_ptr<Stmt>>::iterator body_iterator;
@@ -149,8 +151,8 @@ private:
 class SwitchCase : public Stmt
 {
 public:
+    const std::weak_ptr<SwitchCase> getNextSwitchCase() const;
     std::weak_ptr<SwitchCase> getNextSwitchCase();
-
     void setNextSwitchCase(std::shared_ptr<SwitchCase> SC);
 
     static bool classof(const std::weak_ptr<Stmt>T);
@@ -179,6 +181,10 @@ public:
     std::weak_ptr<Expr>getLHS();
     std::weak_ptr<Expr>getRHS();
     std::weak_ptr<Stmt>getSubStmt();
+
+    const std::weak_ptr<Expr>getLHS() const;
+    const std::weak_ptr<Expr>getRHS() const;
+    const std::weak_ptr<Stmt>getSubStmt() const;
 
     void setSubStmt(std::shared_ptr<Stmt>S);
     void setLHS(std::shared_ptr<Expr>Val);
@@ -211,6 +217,8 @@ public:
     explicit DefaultStmt(EmptyShell);
 
     std::weak_ptr<Stmt>getSubStmt();
+    const std::weak_ptr<Stmt>getSubStmt() const;
+
     SourceLocation getDefaultLoc() const;
     SourceLocation getColonLoc() const;
 
@@ -237,6 +245,10 @@ class SwitchStmt : public Stmt
 public:
 	SwitchStmt(SourceLocation SL, std::shared_ptr<Expr> cond);
 	explicit SwitchStmt(EmptyShell Empty);
+
+    const std::weak_ptr<Expr>getCond() const;
+    const std::weak_ptr<Stmt>getBody() const;
+    const std::weak_ptr<SwitchCase>getSwitchCaseList() const;
 
 	std::weak_ptr<Expr>getCond();
 	std::weak_ptr<Stmt>getBody();
@@ -301,6 +313,10 @@ public:
            SourceLocation EL = SourceLocation(), std::shared_ptr<Stmt> elsev= nullptr);
     explicit IfStmt(EmptyShell Empty);
 
+    const std::weak_ptr<Expr>getCond() const;
+    const std::weak_ptr<Stmt>getThen() const;
+    const std::weak_ptr<Stmt>getElse() const;
+
     std::weak_ptr<Expr>getCond();
     std::weak_ptr<Stmt>getThen();
     std::weak_ptr<Stmt>getElse();
@@ -334,6 +350,9 @@ public:
     WhileStmt(std::shared_ptr<Expr> cond, std::shared_ptr<Stmt> body, SourceLocation WL);
     explicit WhileStmt(EmptyShell Empty);
 
+    const std::weak_ptr<Expr> getCond() const;
+    const std::weak_ptr<Stmt> getBody() const;
+
     std::weak_ptr<Expr> getCond();
     std::weak_ptr<Stmt> getBody();
 
@@ -364,6 +383,9 @@ public:
            SourceLocation WL,
            SourceLocation RP);
     explicit DoStmt(EmptyShell Empty);
+
+    const std::weak_ptr<Expr> getCond() const;
+    const std::weak_ptr<Stmt> getBody() const;
 
     std::weak_ptr<Expr> getCond();
 	std::weak_ptr<Stmt> getBody();
@@ -404,6 +426,11 @@ public:
             SourceLocation LP,
             SourceLocation RP);
     explicit ForStmt(EmptyShell Empty);
+
+    const std::weak_ptr<Stmt> getInit() const;
+    const std::weak_ptr<Stmt> getCond() const;
+    const std::weak_ptr<Expr> getInc() const;
+    const std::weak_ptr<Stmt> getBody() const;
 
     std::weak_ptr<Stmt> getInit();
     std::weak_ptr<Stmt> getCond();
@@ -475,6 +502,7 @@ public:
     void setStarLoc(SourceLocation L);
 
     std::weak_ptr<Expr> getTarget();
+    const std::weak_ptr<Expr> getTarget() const;
     void setTarget(std::shared_ptr<Expr> E);
 
     static bool classof(const std::weak_ptr<Stmt> T);
@@ -533,6 +561,7 @@ public:
     ReturnStmt(SourceLocation RL, std::shared_ptr<Expr> E = nullptr);
     explicit ReturnStmt(EmptyShell Empty);
 
+    const std::weak_ptr<Expr> getRetValue() const;
     std::weak_ptr<Expr> getRetValue();
     void setRetValue(std::shared_ptr<Expr> E);
 
