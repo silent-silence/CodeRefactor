@@ -308,4 +308,5 @@ bool Refactor::is_MIf(StmtIterator iter)
     //    if(!IfStmt::classof(*iter))
     //        return false;
     //    auto stmt = TypeConversion<IfStmt>(*iter);
+    return false;
 }

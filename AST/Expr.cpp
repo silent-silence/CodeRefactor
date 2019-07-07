@@ -614,7 +614,7 @@ SourceLocation UnaryOperator::getExprLoc() const
 
 int UnaryOperator::EvaluateAsInt() const
 {
-     auto expr = dynamic_pointer_cast<Expr>(Val);
+    auto expr = dynamic_pointer_cast<Expr>(Val);
     switch (Opc) {
     case PostInc:
         return expr->EvaluateAsInt()+1;
@@ -636,10 +636,10 @@ int UnaryOperator::EvaluateAsInt() const
         return ~(expr->EvaluateAsInt());
     case LNot:
         return !(expr->EvaluateAsInt());
-
     default:
         break;
     }
+    return 0;
 }
 
 ArraySubscriptExpr::ArraySubscriptExpr(shared_ptr<Expr> lhs, shared_ptr<Expr> rhs,
@@ -659,12 +659,12 @@ ArraySubscriptExpr::ArraySubscriptExpr(EmptyShell Shell)
 
 Stmt::child_iterator ArraySubscriptExpr::child_begin()
 {
-	return child_iterator(
-			std::make_unique<
-					ArrayIterator<
-							std::array<std::shared_ptr<Stmt>, END_EXPR>::iterator
-					>
-			>(SubExprs.begin()));
+    return child_iterator(
+                std::make_unique<
+                ArrayIterator<
+                std::array<std::shared_ptr<Stmt>, END_EXPR>::iterator
+                >
+                >(SubExprs.begin()));
 }
 
 Stmt::child_iterator ArraySubscriptExpr::child_end()
@@ -828,12 +828,12 @@ CallExpr::CallExpr(Stmt::StmtClass SC, shared_ptr<Expr> fn,
 
 const std::weak_ptr<Expr> CallExpr::getCallee() const
 {
-	return dynamic_pointer_cast<Expr>(SubExprs.front());
+    return dynamic_pointer_cast<Expr>(SubExprs.front());
 }
 
 std::weak_ptr<Expr> CallExpr::getCallee()
 {
-	return dynamic_pointer_cast<Expr>(SubExprs.front());
+    return dynamic_pointer_cast<Expr>(SubExprs.front());
 }
 
 MemberExpr::MemberExpr(shared_ptr<Expr> base, bool isarrow,
@@ -1247,6 +1247,7 @@ int BinaryOperator::EvaluateAsInt() const
     case LOr:
         return lhs->EvaluateAsInt() || rhs->EvaluateAsInt();
     }
+    return 0;
 }
 
 bool BinaryOperator::classof(const weak_ptr<Stmt> S)
@@ -1627,9 +1628,9 @@ ShuffleVectorExpr::ShuffleVectorExpr(Stmt::EmptyShell Empty)
 
 weak_ptr<Expr> ShuffleVectorExpr::getExpr(unsigned Index)
 {
-	auto it = SubExprs.begin();
-	while(Index-- != 0)
-		it++;
+    auto it = SubExprs.begin();
+    while(Index-- != 0)
+        it++;
     return dynamic_pointer_cast<Expr>(*it);
 }
 
@@ -2091,10 +2092,10 @@ ParenListExpr::ParenListExpr(SourceLocation lparenloc,
 
 weak_ptr<Expr> ParenListExpr::getExpr(unsigned Init)
 {
-	auto it = Exprs.begin();
-	while(Init-- != 0)
-		it++;
-	return dynamic_pointer_cast<Expr>(*it);
+    auto it = Exprs.begin();
+    while(Init-- != 0)
+        it++;
+    return dynamic_pointer_cast<Expr>(*it);
 }
 
 SourceLocation ParenListExpr::getLParenLoc() const

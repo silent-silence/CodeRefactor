@@ -1040,12 +1040,13 @@ unsigned RecordType::getAddressSpace() const
 
 bool RecordType::classof(const weak_ptr<TagType> T)
 {
-
+    return false;
 }
 
 bool RecordType::classof(const weak_ptr<Type> T)
 {
     //return isa<TagType>(T) && classof(cast<TagType>(T));
+    return false;
 }
 
 bool RecordType::classof(const weak_ptr<RecordType>)
