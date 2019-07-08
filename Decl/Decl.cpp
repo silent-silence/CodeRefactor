@@ -414,3 +414,23 @@ bool ParmVarDecl::paramHasName() const
 {
 	return !getIdentifier().lock()->isAnonymous();
 }
+
+/// @GotoDecl
+GotoDecl::GotoDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location, DeclName name)
+		: NamedDecl(declKind, context, location, name)
+{}
+
+GotoDecl::GotoDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location, DeclName name,
+		std::weak_ptr<Stmt> labelStmt)
+	: NamedDecl(declKind, context, location, name), m_labelStmt{labelStmt}
+{}
+
+void GotoDecl::setLabelStmt(std::weak_ptr<Stmt> label)
+{
+	m_labelStmt = label;
+}
+
+std::weak_ptr<Stmt> GotoDecl::getLabelStmt() const
+{
+	return m_labelStmt;
+}

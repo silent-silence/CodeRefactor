@@ -134,14 +134,16 @@ public:
 
 	/// @brief Print all decls in context
 	std::string printContext(std::shared_ptr<DeclContext> context);
-
 	std::string printDecl(std::shared_ptr<Decl> decl);
 
 private:
+	std::string printForwardDecleration(std::shared_ptr<DeclContext> context);
+	std::string printFunctionForwardDecl(std::shared_ptr<Decl> decl);
+
 	std::string printVar(std::shared_ptr<Decl> decl);
 	std::string printTypedef(std::shared_ptr<Decl> decl);
 	std::string printRecord(std::shared_ptr<Decl> decl);
-	std::string printFunction(std::shared_ptr<Decl> decl);
+	std::string printFunction(std::shared_ptr<Decl> decl, bool printMain = false);
 	std::string printComment(std::shared_ptr<Decl> decl);
 
 	Printer &printer;
@@ -159,6 +161,9 @@ public:
 	/// @brief Print decl context or ast
 	void print(std::shared_ptr<DeclContext> context);
 	void print(std::shared_ptr<Stmt> root);
+
+	/// @brief Print settings
+	void detectNullPointer(bool doDetect);
 
 	/// @brief Indent control
 	std::string oneIndentLessIndent();
@@ -179,6 +184,8 @@ private:
 
 	int indentNum;
 	const char indentCharacter = ' ';
+
+	bool m_detectNullPointer;
 };
 
 #endif //CODEREFACTOR_PRINTER_H

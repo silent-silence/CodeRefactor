@@ -153,6 +153,38 @@ TEST_F(PrintTest, StringLiteralExpression)
 	reset();
 }
 
+TEST_F(PrintTest, MemberAccess)
+{
+	openHelper <<
+"{"
+"	struct {"
+"		int a;"
+"		int b;"
+"	} c, *d;"
+"	c.a;"
+"	c.b;"
+"	d->a;"
+"	d->b;"
+"}";
+	driver.parse();
+	EXPECT_TRUE(dynamic_pointer_cast<CompoundStmt>(astContext.getRoot().lock()));
+	printer.print(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"{\n"
+"  struct {\n"
+"    int a;\n"
+"    int b;\n"
+"  } c, *d;\n"
+"  c.a;\n"
+"  c.b;\n"
+"  d->a;\n"
+"  d->b;\n"
+"}"
+));
+	reset();
+}
+
 TEST_F(PrintTest, CompoundStmt)
 {
 	openHelper << "{ 123; }";
@@ -773,6 +805,7 @@ TEST_F(PrintTest, PointerDeclStmtTest)
 "int *f;"
 "int *g = f;";
 	driver.parse();
+	printer.detectNullPointer(true);
 	EXPECT_THROW(printer.print(astContext.getRoot().lock()), NullPointerError);
 	reset();
 }
@@ -963,4 +996,43 @@ TEST_F(PrintTest, CommentTest)
 	));
 	reset();
 }
+
+TEST_F(PrintTest, LabelStmtTest)
+{
+	openHelper <<
+"stmt_label:"
+"	1 + 2;";
+	EXPECT_NO_THROW(driver.parse());
+	EXPECT_EQ(astContext.getRoot().lock()->getStmtClass(), Stmt::StmtClass::LabelStmtClass);
+	EXPECT_EQ(declContext.getContextRoot()->lookup("stmt_label").lock()->getKind(), Decl::Kind::Goto);
+	printer.print(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"stmt_label:\n"
+"  1+2;"
+	));
+	reset();
+}
+
+TEST_F(PrintTest, GotoStmtTest)
+{
+	openHelper <<
+"{"
+"	stmt_label:"
+"		1 + 2;"
+"	goto stmt_label;"
+"}";
+	EXPECT_NO_THROW(driver.parse());
+	printer.print(astContext.getRoot().lock());
+	printerOutput >> output;
+	EXPECT_EQ(output, string(
+"{\n"
+"  stmt_label:\n"
+"    1+2;\n"
+"  goto stmt_label;\n"
+"}"
+	));
+	reset();
+}
+
 #endif

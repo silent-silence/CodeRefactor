@@ -404,9 +404,9 @@ Stmt::child_iterator DefaultStmt::child_end()
      return child_iterator(make_shared<PtrIterator>(PtrIterator::PtrPosition::end, SubStmt));
 }
 
-LabelStmt::LabelStmt(SourceLocation IL, shared_ptr<Stmt> substmt)
-    : Stmt(StmtClass::LabelStmtClass),
-      SubStmt(substmt), IdentLoc(IL) {}
+LabelStmt::LabelStmt(SourceLocation IL, shared_ptr<Stmt> substmt, std::weak_ptr<Decl> label)
+    : Stmt(StmtClass::LabelStmtClass), SubStmt(substmt), IdentLoc(IL), Label(label)
+{}
 
 LabelStmt::LabelStmt(EmptyShell Empty)
     :Stmt (StmtClass::LabelStmtClass,Empty)

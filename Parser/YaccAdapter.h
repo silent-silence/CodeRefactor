@@ -81,14 +81,14 @@ public:
 	void makeCompoundStmt(unsigned stmtNumInBlock, yy::location &l, yy::location &r);
 	void makeCaseStmt(yy::location &l, yy::location &r, yy::location &c);
 	void makeDefaultStmt(yy::location &d, yy::location &e);
-	void makeLabelStmt(yy::location &l);
+	void makeLabelStmt(std::string label, yy::location &l);
 	void makeIfStmt(yy::location &l);
 	void makeIfElseStmt(yy::location &lf, yy::location &le);
 	void makeSwitchStmt(yy::location &l);
 	void makeWhileStmt(yy::location &l);
 	void makeDoStmt(yy::location &d, yy::location &w, yy::location &l);
 	void makeForStmt(yy::location &f, yy::location &l, yy::location &r, bool haveInc);
-	void makeGotoStmt(yy::location &l, yy::location &r);
+	void makeGotoStmt(std::string label, yy::location &l, yy::location &r);
 	void makeIndirectGotoStmt();
 	void makeContinueStmt(yy::location &l);
 	void makeBreakStmt(yy::location &l);

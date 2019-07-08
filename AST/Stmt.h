@@ -11,6 +11,7 @@ class DeclGroupRef;
 
 class Expr;
 class Stmt;
+class Decl;
 class StringLiteral;
 
 class DeclStmt;//
@@ -280,14 +281,12 @@ private:
 class LabelStmt : public Stmt
 {
 public:
-    LabelStmt(SourceLocation IL, std::shared_ptr<Stmt> substmt);
+    LabelStmt(SourceLocation IL, std::shared_ptr<Stmt> substmt, std::weak_ptr<Decl> label);
     explicit LabelStmt(EmptyShell Empty);
 
     SourceLocation getIdentLoc() const;
- //    IdentifierInfo *getID() const { return Label; }
+    std::weak_ptr<Decl> getID() const { return Label; }
     std::weak_ptr<Stmt>getSubStmt();
-
-
 
     void setIdentLoc(SourceLocation L);
 //    void setID(IdentifierInfo *II) { Label = II; }
@@ -302,7 +301,7 @@ public:
 private:
     std::shared_ptr<Stmt> SubStmt;
     SourceLocation IdentLoc;
-    //IdentifierInfo *Label;
+    std::weak_ptr<Decl> Label;
 };
 
 /// @brief Represent a if stmt

@@ -158,3 +158,12 @@ std::shared_ptr<Decl> DeclContextHolder::createComment(std::shared_ptr<DeclConte
 	context->addDecl(commentDecl);
 	return commentDecl;
 }
+
+std::shared_ptr<Decl> DeclContextHolder::createGotoLable(std::shared_ptr<DeclContext> &context, std::string &name, SourceLocation &location)
+{
+	auto label = make_shared<GotoDecl>(
+			Decl::Kind::Goto, context, location, make_shared<IdentifierInfo>(name)
+			);
+	context->addDecl(label);
+	return label;
+}

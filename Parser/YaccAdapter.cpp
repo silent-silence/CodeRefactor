@@ -453,12 +453,24 @@ void YaccAdapter::makeMemberExpr(int opc, yy::location &l, std::string &name)
 
 	// get base and decl
 	shared_ptr<Expr> base = dynamic_pointer_cast<Expr>(pop_stmt());
-	auto baseType = dynamic_pointer_cast<TagType>(base->getType().lock()->getTypePtr());
-	if(!baseType)
+	shared_ptr<NamedDecl> decl;
+
+	// is '->' && base is a pointer && point to a tag
+	if (isArrow &&
+		base->getType().lock()->getTypePtr()->getTypeClass() == Type::TypeClass::Pointer &&
+		dynamic_pointer_cast<TagType>(dynamic_pointer_cast<PointerType>(base->getType().lock()->getTypePtr())->getPointeeType().lock()->getTypePtr()))
+	{
+		auto pointee = dynamic_pointer_cast<TagType>(dynamic_pointer_cast<PointerType>(base->getType().lock()->getTypePtr())->getPointeeType().lock()->getTypePtr());
+		decl = dynamic_pointer_cast<NamedDecl>(pointee->getDecl().lock()->lookup(name).lock());
+	}
+	else if(!isArrow && dynamic_pointer_cast<TagType>(base->getType().lock()->getTypePtr()))// is '.' and base is a tag
+	{
+		auto baseType = dynamic_pointer_cast<TagType>(base->getType().lock()->getTypePtr());
+		decl = dynamic_pointer_cast<NamedDecl>(baseType->getDecl().lock()->lookup(name).lock());
+	}
+	else	// not a pointer || not point to a tag || not a tag
 		throw TypeError("Used member accese on type not a struct or union");
-	shared_ptr<NamedDecl> decl = dynamic_pointer_cast<NamedDecl>(
-			baseType->getDecl().lock()->lookup(name).lock()
-	);
+
 	SourceLocation lp = toSourceLocation(l);
 	/// @note The type of member can be found by ASTContext
 	m_stmtStack.push(
@@ -542,8 +554,8 @@ void YaccAdapter::makeCompoundAssignOperator(int opc, yy::location &location)
 		case token::TOK_OR_ASSIGN:			operatorCode = BinaryOperator::OrAssign;	break;
 	}
 	SourceLocation l = toSourceLocation(location);
-	auto lhs = dynamic_pointer_cast<Expr>(pop_stmt());
 	auto rhs = dynamic_pointer_cast<Expr>(pop_stmt());
+	auto lhs = dynamic_pointer_cast<Expr>(pop_stmt());
 	if(DeclRefExpr::classof(rhs))
 		dynamic_pointer_cast<DeclRefExpr>(rhs)->getDecl().lock()->setIsAssigned(true);
 
@@ -584,11 +596,15 @@ void YaccAdapter::makeFunctionNoProtoType()
 	auto name = m_nameStack.top();
 	m_nameStack.pop();
 	// Sine a function can be definition or declaration, we can not push the func into decl context now
-	m_varDecls.push(
-			m_declContextHolder.createFunction(
-					m_declContextStack.top(), name.first, name.second, type
-			)
-	);
+	shared_ptr<Decl> funDecl;
+	try {	// if the decl not exist
+		funDecl = m_declContextHolder.createFunction(
+				m_declContextStack.top(), name.first, name.second, type
+		);
+	} catch (SymbolAlreadyExist &e) {	// if already exist, just find it
+		funDecl = m_declContextStack.top()->lookup(name.first).lock();
+	}
+	m_varDecls.push(funDecl);
 	m_typeStack.push(type);
 	// do not pop context here！！m_declContextStack.pop()
 }
@@ -774,9 +790,14 @@ void YaccAdapter::enterFunctionParamDecl()
 	auto name = m_nameStack.top();
 	m_nameStack.pop();
 	// Sine a function can be definition or declaration, we can not push the func into decl context now
-	auto funDecl = m_declContextHolder.createFunction(
-			m_declContextStack.top(), name.first, name.second, type
-	);
+	shared_ptr<Decl> funDecl;
+	try {	// if the decl not exist
+		funDecl = m_declContextHolder.createFunction(
+				m_declContextStack.top(), name.first, name.second, type
+		);
+	} catch (SymbolAlreadyExist &) {	// if already exist, just find it
+		funDecl = m_declContextStack.top()->lookup(name.first).lock();
+	}
 	dynamic_pointer_cast<FunctionType>(type->getTypePtr())->setFunDecl(
 			dynamic_pointer_cast<FunctionDecl>(funDecl)
 	);
@@ -827,7 +848,10 @@ void YaccAdapter::makeVariables(bool hasInit)
 			);
 			m_varDecls.push(var);
 			if (hasInit)
+			{
 				dynamic_pointer_cast<VarDecl>(var)->setInitExpr(dynamic_pointer_cast<Expr>(pop_stmt()));
+				dynamic_pointer_cast<VarDecl>(var)->setIsAssigned(true);
+			}
 		}
 	}
 }
@@ -869,11 +893,14 @@ void YaccAdapter::makeFunParam()
 	auto name = m_nameStack.top();
 	m_nameStack.pop();
 	auto funDecl = dynamic_pointer_cast<FunctionDecl>(m_declContextStack.top());
-	funDecl->addArg(
-			dynamic_pointer_cast<ParmVarDecl>(
-					m_declContextHolder.createParmVar(m_declContextStack.top(), name.first, name.second, type)
-			)
-	);
+	shared_ptr<ParmVarDecl> arg;
+	try {
+		arg = dynamic_pointer_cast<ParmVarDecl>(
+				m_declContextHolder.createParmVar(m_declContextStack.top(), name.first, name.second, type)
+		);
+		funDecl->addArg(arg);
+	} catch (SymbolAlreadyExist &)
+	{}
 }
 
 void YaccAdapter::makeUnnamedFunParam(yy::location &l)
@@ -1073,4 +1100,31 @@ bool YaccAdapter::hasTheType(std::string &name)
 		return true;
 	else
 		return false;
+}
+
+void YaccAdapter::makeLabelStmt(std::string label, yy::location &l)
+{
+	SourceLocation lp = toSourceLocation(l);
+	auto labelDecl = m_declContextHolder.createGotoLable(m_declContextStack.top(), label, lp);
+	auto labelStmt = m_ASTContext.createStmt(
+			Stmt::StmtClass::LabelStmtClass,
+			toSourceLocation(l),
+			pop_stmt(),
+			static_cast<std::weak_ptr<Decl>>(labelDecl)
+	);
+	m_stmtStack.push(labelStmt);
+	dynamic_pointer_cast<GotoDecl>(labelDecl)->setLabelStmt(labelStmt);
+}
+
+void YaccAdapter::makeGotoStmt(std::string label, yy::location &l, yy::location &r)
+{
+	auto labelDecl = dynamic_pointer_cast<GotoDecl>(m_declContextStack.top()->lookup(label).lock());
+	m_stmtStack.push(
+			m_ASTContext.createStmt(
+					Stmt::StmtClass::GotoStmtClass,
+					labelDecl->getLabelStmt().lock(),
+					toSourceLocation(l),
+					toSourceLocation(r)
+			)
+	);
 }

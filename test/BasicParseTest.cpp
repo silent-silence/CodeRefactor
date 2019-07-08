@@ -230,7 +230,7 @@ TEST_F(BasicParseTest, MemberExprTest)
 	openHelper <<
 "struct {"
 "	int c;"
-"} d;"
+"} *d;"
 "d->c;";
 	driver.parse();
 	EXPECT_TRUE(dynamic_pointer_cast<MemberExpr>(astContext.getRoot().lock()));
@@ -627,4 +627,27 @@ TEST_F(BasicParseTest, TypedefTest)
 "A a;";
 	EXPECT_NO_THROW(driver.parse());
 }
+
+TEST_F(BasicParseTest, LabelStmtTest)
+{
+	openHelper <<
+"stmt_label:"
+"	1 + 2;";
+	EXPECT_NO_THROW(driver.parse());
+	EXPECT_EQ(astContext.getRoot().lock()->getStmtClass(), Stmt::StmtClass::LabelStmtClass);
+	EXPECT_EQ(declContext.getContextRoot()->lookup("stmt_label").lock()->getKind(), Decl::Kind::Goto);
+}
+
+TEST_F(BasicParseTest, GotoStmtTest)
+{
+	openHelper <<
+"stmt_label:"
+"	1 + 2;"
+"goto stmt_label;";
+	EXPECT_NO_THROW(driver.parse());
+	auto labelDecl = dynamic_pointer_cast<GotoDecl>(declContext.getContextRoot()->lookup("stmt_label").lock());
+	EXPECT_EQ(labelDecl->getKind(), Decl::Kind::Goto);
+	EXPECT_EQ(labelDecl->getLabelStmt().lock(), dynamic_pointer_cast<GotoStmt>(astContext.getRoot().lock())->getLabel().lock());
+}
+
 #endif

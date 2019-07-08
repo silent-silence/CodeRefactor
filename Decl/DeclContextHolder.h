@@ -40,6 +40,7 @@ public:
 	std::shared_ptr<Decl> createFunction(std::shared_ptr<DeclContext> &context, std::string &name, SourceLocation &location, std::shared_ptr<QualType> type);
 	std::shared_ptr<Decl> createParmVar(std::shared_ptr<DeclContext> &context, std::string &name, SourceLocation &location, std::shared_ptr<QualType> type);
 	std::shared_ptr<Decl> createComment(std::shared_ptr<DeclContext> &context, SourceLocation &location, std::shared_ptr<Stmt> comment);
+	std::shared_ptr<Decl> createGotoLable(std::shared_ptr<DeclContext> &context, std::string &name, SourceLocation &location);
 
 private:
 	std::shared_ptr<DeclContext> m_contextRoot;

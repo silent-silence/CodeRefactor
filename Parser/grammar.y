@@ -65,7 +65,7 @@
 %token KEYWORD_FOR	"for"		KEYWORD_SWITCH	"switch"	KEYWORD_CASE	"case"
 %token KEYWORD_CONTINUE	"continue"	KEYWORD_BREAK	"break"		KEYWORD_RETURN	"return"
 %token KEYWORD_DO	"do"		KEYWORD_WHILE	"while"		KEYWORD_IF	"if"
-%token KEYWORD_ELSE	"else"		KEYWORD_DEFAULT	"default"
+%token KEYWORD_ELSE	"else"		KEYWORD_DEFAULT	"default"	KEYWORD_GOTO	"goto"
 
 %token TYPE_BOOL	"bool"		TYPE_CHAR	"char"		TYPE_SHORT	"short"
 %token TYPE_INT		"int"		TYPE_LONG	"long"		TYPE_VOID	"void"
@@ -181,10 +181,10 @@ default_stmt
 	: "default" ":"						{ ADAPTER.makeDefaultStmt(@1, @2); }
 	;
 label_stmt
-	: IDENTIFIER ":" statement				{ /*ADAPTER.makeLabelStmt(@1);*/ }
+	: IDENTIFIER ":" statement				{ ADAPTER.makeLabelStmt($1, @1); }
 	;
 goto_stmt
-	: "goto" IDENTIFIER					{ /*ADAPTER.makeGotoStmt(@1, @2);*/ }
+	: "goto" IDENTIFIER ";"					{ ADAPTER.makeGotoStmt($2, @1, @2); }
 	;
 return_stmt
 	: "return" ";"						{ ADAPTER.makeReturnStmt(@1, false); }

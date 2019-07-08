@@ -1,11 +1,12 @@
 #include "ASTContext.h"
 #include "AST/Expr.h"
+#include "Decl/Decl.h"
 
 using std::get;							using std::string;
 using std::holds_alternative;			using std::list;
 using std::vector;						using std::shared_ptr;
 using std::make_shared;					using std::dynamic_pointer_cast;
-
+using std::weak_ptr;
 
 void ASTContext::updateASTRoot(std::shared_ptr<Stmt> root)
 {
@@ -73,7 +74,8 @@ std::shared_ptr<Stmt> ASTContext::createLabelStmt(std::vector<ASTContext::var_t>
 {
 	return make_shared<LabelStmt>(
 					get<SourceLocation>(value[0]),
-					get<shared_ptr<Stmt>>(value[1])
+					get<shared_ptr<Stmt>>(value[1]),
+					get<weak_ptr<Decl>>(value[2])
 	);
 }
 
@@ -158,13 +160,11 @@ std::shared_ptr<Stmt> ASTContext::createForStmt(std::vector<ASTContext::var_t> &
 
 std::shared_ptr<Stmt> ASTContext::createGotoStmt(std::vector<ASTContext::var_t> &value)
 {
-	// TODO
-	/*queue.push(
-			make_shared<GotoStmt>(
-					pop_stmt<LabelStmt>(),
-					get<SourceLocation>(value[0]),
-					get<SourceLocation>(value[1])));*/
-	return nullptr;
+	return make_shared<GotoStmt>(
+			dynamic_pointer_cast<LabelStmt>(get<shared_ptr<Stmt>>(value[0])),
+			get<SourceLocation>(value[1]),
+			get<SourceLocation>(value[2])
+	);
 }
 
 std::shared_ptr<Stmt> ASTContext::createIndirectGotoStmt(std::vector<ASTContext::var_t> &value)

@@ -25,6 +25,7 @@ CodeRefactor::CodeRefactor()
 	adapter_ = make_shared<YaccAdapter>(context_, context_holder_, *cin_open_helper_);
 	driver_ = make_shared<Driver>(*cin_open_helper_, *adapter_);
 	printer_ = make_shared<Printer>(*cout_open_helper_);
+	printer_->detectNullPointer(true);
     config();
 }
 

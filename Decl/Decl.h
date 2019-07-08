@@ -30,6 +30,7 @@ public:
 	const std::weak_ptr<DeclContext> getParent() const override;
 };
 
+/// @brief Treat comment as a declaration.
 class CommentDecl : public Decl {
 public:
 	CommentDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
@@ -51,14 +52,16 @@ public:
 	~NamedDecl() override = 0;
 
 	DeclName getDeclarationName() const;
-	std::string getNameAsString() const;
 	std::weak_ptr<IdentifierInfo> getIdentifier() const;
+	std::string getNameAsString() const;
 
+	// TODO: move this to values decl
 	bool isAssigned() const;
 	void setIsAssigned(bool assigned);
 
 private:
 	DeclName m_name;
+	// TODO: move this property to values decl
 	bool m_isAssignedValue;
 };
 
@@ -73,7 +76,6 @@ public:
 
 	std::weak_ptr<QualType> getType() const;
 	void setType(std::shared_ptr<QualType> newType);
-
 
 private:
 	std::shared_ptr<QualType> m_declType;
@@ -161,6 +163,7 @@ private:
 	std::weak_ptr<CompoundStmt> m_body;
 };
 
+/// @abstract
 /// @brief Represent a declaration of type.
 class TypeDecl : public NamedDecl {
 public:
@@ -318,4 +321,18 @@ public:
     std::weak_ptr<QualType> getOriginalType() const;
 };
 
+/// @brief Represent a goto label
+class GotoDecl : public NamedDecl {
+public:
+	GotoDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
+			 DeclName name);
+	GotoDecl(Kind declKind, std::weak_ptr<DeclContext> context, SourceLocation location,
+			 DeclName name, std::weak_ptr<Stmt> labelStmt);
+
+	void setLabelStmt(std::weak_ptr<Stmt> label);
+	std::weak_ptr<Stmt> getLabelStmt() const;
+
+private:
+	std::weak_ptr<Stmt> m_labelStmt;
+};
 #endif

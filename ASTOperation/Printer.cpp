@@ -18,7 +18,7 @@ using std::vector;					using std::regex;
 
 /// @Printer
 Printer::Printer(OpenHelper &openHelper)
-	: m_openHelper{openHelper}, typePrinter{*this}, astPrinter{*this}, contextPrinter{*this}, indentNum{0}
+	: m_openHelper{openHelper}, typePrinter{*this}, astPrinter{*this}, contextPrinter{*this}, indentNum{0}, m_detectNullPointer{false}
 {}
 
 void Printer::print(std::shared_ptr<DeclContext> context)
@@ -29,6 +29,11 @@ void Printer::print(std::shared_ptr<DeclContext> context)
 void Printer::print(std::shared_ptr<Stmt> root)
 {
 	m_openHelper.getOutputStream() << astPrinter.printAST(root);
+}
+
+void Printer::detectNullPointer(bool doDetect)
+{
+	m_detectNullPointer = doDetect;
 }
 
 std::string Printer::oneIndentLessIndent()
@@ -67,6 +72,13 @@ ContextPrinter::ContextPrinter(Printer &p)
 std::string ContextPrinter::printContext(std::shared_ptr<DeclContext> context)
 {
 	string ret;
+	// is top level context
+	if(dynamic_pointer_cast<TranslationUnitDecl>(context))
+		ret += printForwardDecleration(context) + "\n";
+
+	if(dynamic_pointer_cast<FunctionDecl>(context->lookup("main").lock()))
+		ret += printFunction(dynamic_pointer_cast<FunctionDecl>(context->lookup("main").lock()), true);
+
 	for (auto it = context->decl_begin(); it != context->decl_end(); ++it)
 	{
 		switch ((*it)->getKind())
@@ -79,6 +91,35 @@ std::string ContextPrinter::printContext(std::shared_ptr<DeclContext> context)
 			default:					ret += "";					break;
 		}
 	}
+
+	return ret;
+}
+
+std::string ContextPrinter::printForwardDecleration(std::shared_ptr<DeclContext> context)
+{
+	string ret;
+	for (auto it = context->decl_begin(); it != context->decl_end(); ++it)
+	{
+		switch ((*it)->getKind())
+		{
+			case Decl::Kind::Function:	ret += printFunctionForwardDecl(*it);	break;
+			default:					ret += "";								break;
+		}
+	}
+	return ret;
+}
+
+std::string ContextPrinter::printFunctionForwardDecl(std::shared_ptr<Decl> decl)
+{
+	string ret;
+
+	auto fun = dynamic_pointer_cast<FunctionDecl>(decl);
+	if(fun->getNameAsString() == "main")
+		return "";
+	ret = printer.typePrinter.printTypePrefix(fun->getType().lock());
+	ret += " " + fun->getNameAsString();
+	ret += printer.typePrinter.printTypePostfix(fun->getType().lock());
+	ret += ";\n";
 
 	return ret;
 }
@@ -127,10 +168,14 @@ std::string ContextPrinter::printRecord(std::shared_ptr<Decl> decl)
 	return ret;
 }
 
-std::string ContextPrinter::printFunction(std::shared_ptr<Decl> decl)
+std::string ContextPrinter::printFunction(std::shared_ptr<Decl> decl, bool printMain)
 {
 	string ret;
 	auto fun = dynamic_pointer_cast<FunctionDecl>(decl);
+
+	// not print main()
+	if(!printMain && fun->getNameAsString() == "main")
+		return "";
 
 	ret = printer.typePrinter.printTypePrefix(fun->getType().lock());
 	ret += " " + fun->getNameAsString();
@@ -591,13 +636,13 @@ std::string ASTPrinter::printAST(std::shared_ptr<Stmt> root)
 		case Stmt::StmtClass::CompoundStmtClass:			ret = processCompoundStmt(root);			break;
 		case Stmt::StmtClass::CaseStmtClass:				ret = processCaseStmt(root);				break;
 		case Stmt::StmtClass::DefaultStmtClass:				ret = processDefaultStmt(root);				break;
-		case Stmt::StmtClass::LabelStmtClass:break;
+		case Stmt::StmtClass::LabelStmtClass:				ret = processLabelStmt(root);				break;
 		case Stmt::StmtClass::IfStmtClass:					ret = processIfStmt(root);					break;
 		case Stmt::StmtClass::SwitchStmtClass:				ret = processSwitchStmt(root);				break;
 		case Stmt::StmtClass::WhileStmtClass:				ret = processWhileStmt(root);				break;
 		case Stmt::StmtClass::DoStmtClass:					ret = processDoStmt(root);					break;
 		case Stmt::StmtClass::ForStmtClass:					ret = processForStmt(root);					break;
-		case Stmt::StmtClass::GotoStmtClass:break;
+		case Stmt::StmtClass::GotoStmtClass:				ret = processGotoStmt(root);				break;
 		case Stmt::StmtClass::IndirectGotoStmtClass:break;
 		case Stmt::StmtClass::ContinueStmtClass:			ret = processContinueStmt(root);			break;
 		case Stmt::StmtClass::BreakStmtClass:				ret = processBreakStmt(root);				break;
@@ -1064,9 +1109,16 @@ std::string ASTPrinter::processRefExpr(std::shared_ptr<Stmt> &s)
 {
 	auto ref = dynamic_pointer_cast<DeclRefExpr>(s);
 	// is pointer and not assigned
-	if (ref->getType().lock()->getTypePtr()->getTypeClass() == Type::TypeClass::Pointer
-		&& !ref->getDecl().lock()->isAssigned())
-		throw NullPointerError("NULL pointer for " + ref->getDecl().lock()->getNameAsString());
+	if (printer.m_detectNullPointer &&
+		ref->getType().lock()->getTypePtr()->getTypeClass() == Type::TypeClass::Pointer &&
+		!ref->getDecl().lock()->isAssigned())
+	{
+		auto decl = ref->getDecl().lock();
+		throw NullPointerError(
+				"NULL pointer for " + decl->getNameAsString() +
+				"(" + to_string(decl->getSourceLocation().line()) + "," +
+				to_string(decl->getSourceLocation().bytes()) + ")");
+	}
 	return ref->getDecl().lock()->getNameAsString();
 }
 
@@ -1193,3 +1245,22 @@ std::string ASTPrinter::processMemberExpr(std::shared_ptr<Stmt> &s)
 	return ret;
 }
 
+std::string ASTPrinter::processLabelStmt(std::shared_ptr<Stmt> &s)
+{
+	string ret;
+	auto label = dynamic_pointer_cast<LabelStmt>(s);
+	ret += dynamic_pointer_cast<GotoDecl>(label->getID().lock())->getNameAsString() + ":\n";
+	printer.forwardIndent();
+	ret += printer.indent();
+	ret += formatExprAsStmt(printAST(label->getSubStmt().lock()), label->getSubStmt().lock());
+	printer.backwardIndent();
+	return ret;
+}
+
+std::string ASTPrinter::processGotoStmt(std::shared_ptr<Stmt> &s)
+{
+	string ret;
+	auto gotoStmt = dynamic_pointer_cast<GotoStmt>(s);
+	ret += "goto " + dynamic_pointer_cast<GotoDecl>(gotoStmt->getLabel().lock()->getID().lock())->getNameAsString() + ";";
+	return ret;
+}

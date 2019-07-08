@@ -59,6 +59,7 @@ multi_comment       (\/\*(.|\n)*?\*\/)
 "if"            { return yy::Parser::make_KEYWORD_IF(loc); }
 "else"          { return yy::Parser::make_KEYWORD_ELSE(loc); }
 "default"       { return yy::Parser::make_KEYWORD_DEFAULT(loc); }
+"goto"          { return yy::Parser::make_KEYWORD_GOTO(loc); }
 
 "sizeof"		{ return yy::Parser::make_SIZEOF(loc); }
 

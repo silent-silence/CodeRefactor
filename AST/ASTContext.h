@@ -21,7 +21,7 @@ public:
 			std::list<std::shared_ptr<Stmt>>, std::list<std::shared_ptr<Expr>>,
 			std::shared_ptr<Expr>, std::shared_ptr<Stmt>, std::shared_ptr<QualType>, std::shared_ptr<NamedDecl>,
 			std::shared_ptr<TypedefDecl>, std::shared_ptr<DeclGroupRef>, std::shared_ptr<Decl>, std::shared_ptr<RecordDecl>,
-			std::vector<std::shared_ptr<QualType>>, std::shared_ptr<EnumDecl>
+			std::vector<std::shared_ptr<QualType>>, std::shared_ptr<EnumDecl>, std::weak_ptr<Decl>
 	> var_t;
 
 	/// @brief Create stmt by type
