@@ -76,8 +76,9 @@ std::string ContextPrinter::printContext(std::shared_ptr<DeclContext> context)
 	if(dynamic_pointer_cast<TranslationUnitDecl>(context))
 		ret += printForwardDecleration(context) + "\n";
 
-	if(dynamic_pointer_cast<FunctionDecl>(context->lookup("main").lock()))
-		ret += printFunction(dynamic_pointer_cast<FunctionDecl>(context->lookup("main").lock()), true);
+	// if need to print main() function first
+	/*if(dynamic_pointer_cast<FunctionDecl>(context->lookup("main").lock()))
+		ret += printFunction(dynamic_pointer_cast<FunctionDecl>(context->lookup("main").lock()), true);*/
 
 	for (auto it = context->decl_begin(); it != context->decl_end(); ++it)
 	{
@@ -168,14 +169,10 @@ std::string ContextPrinter::printRecord(std::shared_ptr<Decl> decl)
 	return ret;
 }
 
-std::string ContextPrinter::printFunction(std::shared_ptr<Decl> decl, bool printMain)
+std::string ContextPrinter::printFunction(std::shared_ptr<Decl> decl)
 {
 	string ret;
 	auto fun = dynamic_pointer_cast<FunctionDecl>(decl);
-
-	// not print main()
-	if(!printMain && fun->getNameAsString() == "main")
-		return "";
 
 	ret = printer.typePrinter.printTypePrefix(fun->getType().lock());
 	ret += " " + fun->getNameAsString();
