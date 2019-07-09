@@ -208,5 +208,6 @@ QString Interface::getLeftText()
 void Interface::setLeftText(const QString &leftText)
 {
     m_leftText = leftText.toStdString();
+    setRightText("");
     emit leftTextChanged();
 }

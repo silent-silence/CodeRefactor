@@ -26,6 +26,7 @@ escape_character (\'\\[0ntvabrf]\')
 
 single_comment      (\/\/.*?)
 multi_comment       (\/\*(.|\n)*?\*\/)
+include_comment     ("#include\<"+({letter}|{letter}\.{letter})+"\>")
 
 %%
 
@@ -76,6 +77,7 @@ multi_comment       (\/\*(.|\n)*?\*\/)
 {integer}		{ return yy::Parser::make_INTEGER_LITERAL(atoi(yytext), loc); }
 {identifier}	{ return m_driver.identifier_or_type_name(yytext, loc); }
 
+{include_comment} |
 {single_comment} |
 {multi_comment}  { return yy::Parser::make_COMMENT(yytext, loc);}
 
