@@ -182,6 +182,14 @@ void DeclContext::renameDecl(std::shared_ptr<Decl> decl, std::string newName)
 	m_decls[storedDecl] = decl;
 }
 
+void DeclContext::moveToTail(std::shared_ptr<Decl> decl)
+{
+	auto it = std::find(m_declsList.begin(), m_declsList.end(), decl);
+	if(it != m_declsList.end())
+		m_declsList.erase(it);
+	m_declsList.emplace_back(decl);
+}
+
 /// @StoredDecl
 unsigned StoredDecl::declId;
 

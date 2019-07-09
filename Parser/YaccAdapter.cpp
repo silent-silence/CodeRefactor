@@ -603,6 +603,7 @@ void YaccAdapter::makeFunctionNoProtoType()
 		);
 	} catch (SymbolAlreadyExist &e) {	// if already exist, just find it
 		funDecl = m_declContextStack.top()->lookup(name.first).lock();
+		m_declContextStack.top()->moveToTail(funDecl);
 	}
 	m_varDecls.push(funDecl);
 	m_typeStack.push(type);
@@ -797,6 +798,7 @@ void YaccAdapter::enterFunctionParamDecl()
 		);
 	} catch (SymbolAlreadyExist &) {	// if already exist, just find it
 		funDecl = m_declContextStack.top()->lookup(name.first).lock();
+		m_declContextStack.top()->moveToTail(funDecl);
 	}
 	dynamic_pointer_cast<FunctionType>(type->getTypePtr())->setFunDecl(
 			dynamic_pointer_cast<FunctionDecl>(funDecl)

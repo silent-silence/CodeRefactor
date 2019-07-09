@@ -151,6 +151,8 @@ public:
 
 	//void makeDeclVisibleInContext(std::shared_ptr<NamedDecl> d);
 
+	void moveToTail(std::shared_ptr<Decl> decl);
+
 private:
 	Decl::Kind m_declKind;
 	std::unordered_map<StoredDecl, std::shared_ptr<Decl>, StoredDeclHash> m_decls;

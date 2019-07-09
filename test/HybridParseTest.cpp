@@ -87,6 +87,9 @@ TEST_F(HybridParseTest, FunctionWithNoParamDeclInContext)
 	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
+"int a();\n"
+"int b();\n"
+"\n"
 "int a()\n"
 "{\n"
 "  int b;\n"
@@ -117,6 +120,9 @@ TEST_F(HybridParseTest, FunctionDeclInContext)
 	printer.print(declContext.getContextRoot());
 	printHelper >> output;
 	EXPECT_EQ(output, string(
+"int a(int b, int c);\n"
+"int b(int c, int d);\n"
+"\n"
 "int a(int b, int c)\n"
 "{\n"
 "  int d;\n"

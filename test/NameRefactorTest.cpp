@@ -131,6 +131,8 @@ TEST_F(NameRefactorTest, FunctionRenameTest)
 	printHelper >> output;
 	EXPECT_EQ(output, string(
 "int Abc();\n"
+"\n"
+"int Abc();\n"
 	));
 	reset();
 }

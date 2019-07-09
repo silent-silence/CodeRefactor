@@ -74,7 +74,7 @@ std::string ContextPrinter::printContext(std::shared_ptr<DeclContext> context)
 	string ret;
 	// is top level context
 	if(dynamic_pointer_cast<TranslationUnitDecl>(context))
-		ret += printForwardDecleration(context) + "\n";
+		ret += printForwardDecleration(context);
 
 	// if need to print main() function first
 	/*if(dynamic_pointer_cast<FunctionDecl>(context->lookup("main").lock()))
@@ -98,15 +98,23 @@ std::string ContextPrinter::printContext(std::shared_ptr<DeclContext> context)
 
 std::string ContextPrinter::printForwardDecleration(std::shared_ptr<DeclContext> context)
 {
+	bool printedForward = false;
 	string ret;
 	for (auto it = context->decl_begin(); it != context->decl_end(); ++it)
 	{
 		switch ((*it)->getKind())
 		{
-			case Decl::Kind::Function:	ret += printFunctionForwardDecl(*it);	break;
-			default:					ret += "";								break;
+			case Decl::Kind::Function:
+				ret += printFunctionForwardDecl(*it);
+				printedForward = true;
+				break;
+			default:
+				ret += "";
+				break;
 		}
 	}
+	if(printedForward)
+		ret += "\n";
 	return ret;
 }
 
