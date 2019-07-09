@@ -397,8 +397,8 @@ std::vector<std::string> TypePrinter::builtinPrefix(std::shared_ptr<QualType> ty
 		case BuiltinType::ULong:		typeName = "unsigned long";			break;
 		case BuiltinType::ULongLong:	typeName = "unsigned long long";	break;
 		case BuiltinType::UInt128:		typeName = "void";break;
-		case BuiltinType::Char_S:		typeName = "signed char";			break;
-		case BuiltinType::SChar:		typeName = "signed char";			break;
+		case BuiltinType::Char_S:		typeName = "char";					break;
+		case BuiltinType::SChar:		typeName = "char";					break;
 		case BuiltinType::WChar:		typeName = "void";break;
 		case BuiltinType::Short:		typeName = "short";					break;
 		case BuiltinType::Int:			typeName = "int";					break;
