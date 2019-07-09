@@ -9,24 +9,20 @@ Dialog {
     contentItem: Rectangle {
         implicitWidth: 400
         implicitHeight: 120
-        Row {
-            id: row
-            anchors.fill: parent
-            Text {
-                id: errorText
-                anchors.verticalCenterOffset: -20
-                anchors.centerIn: parent
-            }
-            Button {
-                text: qsTr("ok")
-                anchors.right: parent.right
-                anchors.rightMargin: 10
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 10
-                onClicked: {
-                    errorDialog.visible = false
-                    errorText.text=""
-                }
+        Text {
+            id: errorText
+            anchors.verticalCenterOffset: -20
+            anchors.centerIn: parent
+        }
+        Button {
+            text: qsTr("ok")
+            anchors.right: parent.right
+            anchors.rightMargin: 10
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 10
+            onClicked: {
+                errorDialog.visible = false
+                errorText.text=""
             }
         }
     }

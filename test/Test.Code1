@@ -1,8 +1,13 @@
+int StrToInt(signed char* buf);
+int Sum(int array[], int len);
+int IntArray(signed char* str, int array[]);
+int SumSplitNumber(signed char* buf);
+
 int StrToInt(signed char* buf)
 {
   signed char* p = buf;
   int num = 0;
-  for (;*p;)
+  while (*p)
   {
     if (*p>='0')
     {
@@ -30,7 +35,7 @@ int IntArray(signed char* str, int array[])
   signed char buf[100];
   int i = 0;
   int len = 0;
-  for (;*p;)
+  while (*p)
   {
     if (*p!=',')
     {

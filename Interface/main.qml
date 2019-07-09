@@ -14,7 +14,7 @@ ApplicationWindow{
 	}
 
 	FileView{
-		id:textDisplayView
+        id:fileView
 		width: parent.width
 		height: 0.9*parent.height
 		anchors.bottom: parent.bottom
@@ -34,18 +34,18 @@ ApplicationWindow{
             codeInterface.inputPath=path
         }
         onSaveAsClicked:{
-            var str=textDisplayView.getRightView()
+            var str=fileView.getRightView()
             if(str===""){
                 errorDialog.showError("文件为空")
             }
             else{
                 codeInterface.outputPath=path
-                codeInterface.writeOutputFileData(str)
+                codeInterface.writeOutputFileData()
             }
         }
         onSaveClicked:{
             codeInterface.outputPath=codeInterface.inputPath
-            codeInterface.writeOutputFileData(textDisplayView.getRightView())
+            codeInterface.writeOutputFileData()
         }
         onMcsifScmif:{
             codeInterface.setMCIf_SCMIf(value)
@@ -71,19 +71,26 @@ ApplicationWindow{
 
     Connections{
         target: codeInterface
-        onInputPathChanged:{
-            textDisplayView.setLeftView(codeInterface.inputPath ,codeInterface.getInputFileData())
+        onLeftTextChanged:{
+            fileView.setLeftView(codeInterface.inputPath ,codeInterface.leftText)
+        }
+        onRightTextChanged:{
+            fileView.setRightView(codeInterface.rightText)
         }
 		onParseError: {
             errorDialog.showError(e)
 		}
+        onTextRefreshData:{
+            fileView.setLeftView(codeInterface.inputPath ,leftText)
+            fileView.setRightView(rightText)
+        }
 	}
 
 	Connections{
-		target: textDisplayView
+        target: fileView
 		onRefactorClicked:{
-			var data=codeInterface.getRefactorData(textDisplayView.getLeftView())
-			textDisplayView.setRightView(data)
+            codeInterface.getRefactorData()
+            codeInterface.refreshData()
 		}
 	}
 

@@ -1,7 +1,7 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.2
+import QtQuick.Dialogs 1.3
 
 Item {
     id:toolView
@@ -168,7 +168,7 @@ Item {
         id: fileDialog
         nameFilters: ["*.*","*.h","*.cpp","*.hpp"]
         title: "选择文件"
-        folder: "/home/archie/CodeProduct/QtQuickApp/src/test"
+        folder: shortcuts.home
         selectExisting: true
         selectFolder: false
         selectMultiple: false

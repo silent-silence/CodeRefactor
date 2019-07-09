@@ -4,6 +4,11 @@ import QtQuick.Controls 2.12
 Item {
     id:textDisplayView
     property string text: ""
+
+    Component.onCompleted: {
+        textContent.text=""
+    }
+
     Rectangle{
         width: 0.98*parent.width
         height: 0.98*parent.height;
@@ -27,15 +32,17 @@ Item {
                     radius: 0.1*width
                     color: "#66000000"
                 }
+                textFormat: TextArea.AutoText
             }
             TextArea {
                 id:textContent
                 anchors.left: parent.left
                 leftPadding:lineNumber.font.weight
-                wrapMode: Text.Wrap
+                wrapMode: TextArea.Wrap
                 padding: parent.padding
                 activeFocusOnPress:false
                 font.pixelSize: 0.02*width
+                textFormat: TextArea.AutoText
             }
         }
     }

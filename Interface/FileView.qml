@@ -47,7 +47,6 @@ Item {
     function setLeftView(path ,data){
         textCodePath.text=path
         textCode.text=data
-        refactorCode.text=""
     }
     function getLeftView(){
         return textCode.text
