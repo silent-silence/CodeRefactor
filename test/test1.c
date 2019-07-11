@@ -20,7 +20,10 @@ int main()
         float b;
         double c;
         char d;
-    } TestStruct;
+	} TestStruct, *StructPointer;
+	StructPointer = &TestStruct;
+	StructPointer->a = 1;
+	TestStruct.a = 1;
     
     //类型重命名
     typedef int TestInt;

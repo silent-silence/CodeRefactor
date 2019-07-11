@@ -44,7 +44,7 @@ TEST_F(HybridParseTest, VarDeclInContext)
 "int a;\n"
 "int b;\n"
 "double c;\n"
-"signed char* d;\n"
+"char* d;\n"
 ));
 }
 

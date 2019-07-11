@@ -556,8 +556,8 @@ void YaccAdapter::makeCompoundAssignOperator(int opc, yy::location &location)
 	SourceLocation l = toSourceLocation(location);
 	auto rhs = dynamic_pointer_cast<Expr>(pop_stmt());
 	auto lhs = dynamic_pointer_cast<Expr>(pop_stmt());
-	if(DeclRefExpr::classof(rhs))
-		dynamic_pointer_cast<DeclRefExpr>(rhs)->getDecl().lock()->setIsAssigned(true);
+	if(DeclRefExpr::classof(lhs))
+		dynamic_pointer_cast<DeclRefExpr>(lhs)->getDecl().lock()->setIsAssigned(true);
 
 	/// @note Types should be found by ASTContext
 	m_stmtStack.push(
@@ -880,7 +880,31 @@ void YaccAdapter::makeEnumContext(std::string &name, yy::location &location)
 
 void YaccAdapter::makeInStructDeclStmt(yy::location &l, yy::location &r)
 {
-	makeDeclStmt(l, r);
+	// make DeclGroupRef
+	shared_ptr<DeclGroupRef> dg;
+	if(m_varDecls.empty())			// There's no variable declared
+		dg = nullptr;
+	else if(m_varDecls.size() == 1)	// Only one variable declared
+		dg = make_shared<DeclGroupRef>(popVarDecl());
+	else							// A group of declaration were made
+	{
+		vector<shared_ptr<Decl>> decls;
+		while(!m_varDecls.empty())
+			decls.push_back(popVarDecl());
+		dg = make_shared<DeclGroupRef>(decls);
+	}
+
+	// make decl stmt
+	/*SourceLocation lp = toSourceLocation(l);
+	SourceLocation rp = toSourceLocation(r);
+	m_stmtStack.push(
+			m_ASTContext.createStmt(Stmt::StmtClass::DeclStmtClass, dg, lp, rp)
+	);*/
+
+	// pop corresponding type specifiers
+	if(!m_typeSpecifier.empty())
+		m_typeSpecifier.pop();
+
 	// ready new type specifier env for struct member
 	m_typeSpecifier.push(make_pair(static_cast<unsigned>(0), static_cast<TypeSpecifier>(0)));
 }
