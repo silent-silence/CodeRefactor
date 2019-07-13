@@ -873,25 +873,25 @@ std::string ASTPrinter::processBinaryOperator(std::shared_ptr<Stmt> &s)
 	{
 		case BinaryOperator::PtrMemD:	ret += ".";	break;
 		case BinaryOperator::PtrMemI:	ret += "->";break;
-		case BinaryOperator::Mul:		ret += "*";	break;
-		case BinaryOperator::Div:		ret += "/";	break;
-		case BinaryOperator::Rem:		ret += "%";	break;
-		case BinaryOperator::Add:		ret += "+";	break;
-		case BinaryOperator::Sub:		ret += "-";	break;
-		case BinaryOperator::Shl:		ret += "<<";break;
-		case BinaryOperator::Shr:		ret += ">>";break;
-		case BinaryOperator::LT:		ret += "<";	break;
-		case BinaryOperator::GT:		ret += ">";	break;
-		case BinaryOperator::LE:		ret += "<=";break;
-		case BinaryOperator::GE:		ret += ">=";break;
-		case BinaryOperator::EQ:		ret += "==";break;
-		case BinaryOperator::NE:		ret += "!=";break;
-		case BinaryOperator::And:		ret += "&";	break;
-		case BinaryOperator::Xor:		ret += "^";	break;
-		case BinaryOperator::Or:		ret += "|";	break;
-		case BinaryOperator::LAnd:		ret += "&&";break;
-		case BinaryOperator::LOr:		ret += "||";break;
-		case BinaryOperator::Comma:		ret += ",";	break;
+		case BinaryOperator::Mul:		ret += " * ";	break;
+		case BinaryOperator::Div:		ret += " / ";	break;
+		case BinaryOperator::Rem:		ret += " % ";	break;
+		case BinaryOperator::Add:		ret += " + ";	break;
+		case BinaryOperator::Sub:		ret += " - ";	break;
+		case BinaryOperator::Shl:		ret += " << ";break;
+		case BinaryOperator::Shr:		ret += " >> ";break;
+		case BinaryOperator::LT:		ret += " <" ;	break;
+		case BinaryOperator::GT:		ret += " > ";	break;
+		case BinaryOperator::LE:		ret += " <= ";break;
+		case BinaryOperator::GE:		ret += " >= ";break;
+		case BinaryOperator::EQ:		ret += " == ";break;
+		case BinaryOperator::NE:		ret += " != ";break;
+		case BinaryOperator::And:		ret += " & ";	break;
+		case BinaryOperator::Xor:		ret += " ^ ";	break;
+		case BinaryOperator::Or:		ret += " | ";	break;
+		case BinaryOperator::LAnd:		ret += " && ";break;
+		case BinaryOperator::LOr:		ret += " || ";break;
+		case BinaryOperator::Comma:		ret += ", ";	break;
 	}
 	ret += printAST(binary->getRHS().lock());
 
@@ -906,17 +906,17 @@ std::string ASTPrinter::processCompoundAssignOperator(std::shared_ptr<Stmt> &s)
 	ret = printAST(binary->getLHS().lock());
 	switch (binary->getOpcode())
 	{
-		case BinaryOperator::Assign:	ret += "=";		break;
-		case BinaryOperator::MulAssign:	ret += "*=";	break;
-		case BinaryOperator::DivAssign:	ret += "/=";	break;
-		case BinaryOperator::RemAssign:	ret += "%=";	break;
-		case BinaryOperator::AddAssign:	ret += "+=";	break;
-		case BinaryOperator::SubAssign:	ret += "-=";	break;
-		case BinaryOperator::ShlAssign:	ret += "<<=";	break;
-		case BinaryOperator::ShrAssign:	ret += ">>=";	break;
-		case BinaryOperator::AndAssign:	ret += "&=";	break;
-		case BinaryOperator::XorAssign:	ret += "^=";	break;
-		case BinaryOperator::OrAssign:	ret += "|=";	break;
+		case BinaryOperator::Assign:	ret += " = ";		break;
+		case BinaryOperator::MulAssign:	ret += " *= ";	break;
+		case BinaryOperator::DivAssign:	ret += " /= ";	break;
+		case BinaryOperator::RemAssign:	ret += " %= ";	break;
+		case BinaryOperator::AddAssign:	ret += " += ";	break;
+		case BinaryOperator::SubAssign:	ret += " -= ";	break;
+		case BinaryOperator::ShlAssign:	ret += " <<= ";	break;
+		case BinaryOperator::ShrAssign:	ret += " >>= ";	break;
+		case BinaryOperator::AndAssign:	ret += " &= ";	break;
+		case BinaryOperator::XorAssign:	ret += " ^= ";	break;
+		case BinaryOperator::OrAssign:	ret += " |= ";	break;
 	}
 	ret += printAST(binary->getRHS().lock());
 	return ret;

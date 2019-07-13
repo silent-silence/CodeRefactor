@@ -1,16 +1,16 @@
-int StrToInt(char *buf);
+int StrToInt(char* buf);
 int sum(int array[], int len);
-int IntArray(char *str, int array[]);
-int SumSplitNumber(char *buf);
+int IntArray(char* str, int array[]);
+int SumSplitNumber(char* buf);
 
 int main()
 {
-    char str[1024]= "12z3,4x56,c789";
-    int result = SumSplitNumber(str);
-    return 0;
+  char str[1024]= "12z3,4x56,c789";
+  int result = SumSplitNumber(str);
+  return 0;
 }
 
-int StrToInt(char *buf)
+int StrToInt(char* buf)
 {
 	char *p = buf;
 	int num = 0;
@@ -31,9 +31,9 @@ int sum(int array[], int len)
 	return s;
 }
 
-int IntArray(char *str, int array[])
+int IntArray(char* str, int array[])
 {
-	char *p = str;
+	char* p = str;
 	char buf[100];
 	int i = 0;
 	int len = 0;
