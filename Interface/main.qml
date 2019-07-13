@@ -67,6 +67,14 @@ ApplicationWindow{
         onWhileFor:{
             codeInterface.setWhile_For(value)
         }
+		onRefactorName: {
+			codeInterface.setRefactorName(value)
+			console.error("refactor name " + value)
+		}
+		onDetectNullPointer: {
+			codeInterface.setDetectNullPointer(value);
+			console.error("NullPointer " + value)
+		}
     }
 
     Connections{

@@ -25,7 +25,6 @@ CodeRefactor::CodeRefactor()
 	adapter_ = make_shared<YaccAdapter>(context_, context_holder_, *cin_open_helper_);
 	driver_ = make_shared<Driver>(*cin_open_helper_, *adapter_);
 	printer_ = make_shared<Printer>(*cout_open_helper_);
-	printer_->detectNullPointer(true);
     config();
 }
 
@@ -41,7 +40,8 @@ void CodeRefactor::run(std::string code)
 {
 	(*dynamic_pointer_cast<StringStreamOpenHelper>(cin_open_helper_)) << code;
     driver_->parse();
-    nameRefactor->rename(context_holder_.getContextRoot());
+    if(doRefactorName)
+    	nameRefactor->rename(context_holder_.getContextRoot());
     for(auto i=context_holder_.getContextRoot()->decl_begin(); i != context_holder_.getContextRoot()->decl_end(); ++i){
         if((*i)->getKind() == Decl::Kind::Function)
         {
@@ -73,6 +73,8 @@ std::string CodeRefactor::show()
 {
     /*cout_open_helper_ = make_shared<StringStreamOpenHelper>();
     printer_ = make_shared<ContextPrinter>(*cout_open_helper_);*/
+
+	printer_->detectNullPointer(doDetectNullPointer);
 	printer_->print(context_holder_.getContextRoot());
 	// output
 	std::string outputString;
@@ -131,5 +133,15 @@ void CodeRefactor::setSCMIf_MCIf(bool value)
 void CodeRefactor::setMCIf_SCMIf(bool value)
 {
     MCIf_SCMIf = value;
+}
+
+void CodeRefactor::setRefactorName(bool refactorName)
+{
+	doRefactorName = refactorName;
+}
+
+void CodeRefactor::setDetectNullPointer(bool detect)
+{
+	doDetectNullPointer = detect;
 }
 

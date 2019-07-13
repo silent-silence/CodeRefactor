@@ -23,6 +23,8 @@ public:
     Q_INVOKABLE void setSwitch_MIf(bool value);
     Q_INVOKABLE void setFor_While(bool value);
     Q_INVOKABLE void setWhile_For(bool value);
+    Q_INVOKABLE void setRefactorName(bool value);
+	Q_INVOKABLE void setDetectNullPointer(bool detect);
 
     explicit Interface(QObject *parent = nullptr);
 
@@ -57,6 +59,8 @@ private:
     bool Switch_MIf;
     bool For_While;
     bool While_For;
+	bool doRefactorName;
+	bool doDetectNullPointer;
 
     std::string m_leftText;
     std::string m_rightText;

@@ -32,6 +32,8 @@ void Interface::getRefactorData()
         c.setMIf_Switch(MIf_Switch);
         c.setSCMIf_MCIf(SCMIf_MCIf);
         c.setSwitch_MIf(Switch_MIf);
+        c.setRefactorName(doRefactorName);
+        c.setDetectNullPointer(doDetectNullPointer);
         c.run(m_leftText);
         setRightText(QString::fromStdString(c.show()));
     } catch (exception &e)
@@ -210,4 +212,14 @@ void Interface::setLeftText(const QString &leftText)
     m_leftText = leftText.toStdString();
     setRightText("");
     emit leftTextChanged();
+}
+
+void Interface::setRefactorName(bool value)
+{
+	doRefactorName = value;
+}
+
+void Interface::setDetectNullPointer(bool detect)
+{
+	doDetectNullPointer = detect;
 }

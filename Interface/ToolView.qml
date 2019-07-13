@@ -16,6 +16,9 @@ Item {
     signal switchMIf(var value);
     signal forWhile(var value);
     signal whileFor(var value);
+	signal refactorName(var value);
+	signal detectNullPointer(var value);
+
     MenuBar {
         anchors.fill:parent
         Menu{
@@ -157,6 +160,28 @@ Item {
                     }
                 }
             }
+
+			MenuItem {
+				CheckBox {
+					id: refactor_name
+					text: qsTr("命名重构")
+					checked: false
+					onCheckStateChanged: {
+						refactorName(checked)
+					}
+				}
+			}
+
+			MenuItem {
+				CheckBox {
+					id: detect_null_pointer
+					text: qsTr("空指针检测")
+					checked: false
+					onCheckStateChanged: {
+						detectNullPointer(checked)
+					}
+				}
+			}
         }
         Menu {
             title: qsTr("&帮助")

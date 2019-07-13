@@ -28,6 +28,8 @@ public:
     void setSwitch_MIf(bool value);
     void setFor_While(bool value);
     void setWhile_For(bool value);
+    void setRefactorName(bool refactorName);
+    void setDetectNullPointer(bool detect);
 
 private:
     void config();
@@ -38,6 +40,8 @@ private:
     bool Switch_MIf;
     bool For_While;
     bool While_For;
+    bool doRefactorName;
+    bool doDetectNullPointer;
 
     std::shared_ptr<Driver> driver_;
     std::shared_ptr<Printer> printer_;
