@@ -1,5 +1,5 @@
-#include "AST/Stmt.h"
-#include "AST/Expr.h"
+#include "Stmt.h"
+#include "Expr.h"
 
 using std::list;
 using std::array;

@@ -31,9 +31,9 @@
 // Parser needs to know about the driver:
 %code
 {
-	#include "Parser/Driver.h"
-	#include "OpenHelper/OpenHelper.h"
-	#include "Parser/YaccAdapter.h"
+    #include "Driver.h"
+    #include "OpenHelper.h"
+    #include "YaccAdapter.h"
 	#define yylex driver.getSacnner().yylex
 	#define ADAPTER yy::Parser::driver.getAdapter()
 }

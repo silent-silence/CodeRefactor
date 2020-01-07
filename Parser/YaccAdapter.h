@@ -8,7 +8,7 @@
 #include <stack>
 #include <memory>
 #include <queue>
-#include "AST/Type.h"
+#include "Type.h"
 #include "parser.hpp"
 
 class Stmt;

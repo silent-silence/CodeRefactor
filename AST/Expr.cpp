@@ -1,5 +1,5 @@
 #include "Expr.h"
-#include "Errors/TypeError.hpp"
+#include "TypeError.hpp"
 
 using std::array;
 using std::vector;

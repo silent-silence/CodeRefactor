@@ -1,9 +1,9 @@
 #ifndef AST_EXPR_H
 #define AST_EXPR_H
 
-#include "AST/Type.h"
-#include "AST/Stmt.h"
-#include "Decl/Decl.h"
+#include "Type.h"
+#include "Stmt.h"
+#include "Decl.h"
 
 class Expr;
 class Stmt;

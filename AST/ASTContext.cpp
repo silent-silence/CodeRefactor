@@ -1,6 +1,6 @@
 #include "ASTContext.h"
-#include "AST/Expr.h"
-#include "Decl/Decl.h"
+#include "Expr.h"
+#include "Decl.h"
 
 using std::get;							using std::string;
 using std::holds_alternative;			using std::list;

@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>FileView.qml</file>
+        <file>ErrorDialog.qml</file>
+        <file>TextDisplayView.qml</file>
+        <file>ToolView.qml</file>
+    </qresource>
+</RCC>

@@ -5,9 +5,9 @@
 #include <variant>
 #include <list>
 #include <vector>
-#include "AST/AST.hpp"
-#include "Decl/Decl.h"
-#include "Decl/DeclGroup.h"
+#include "AST.hpp"
+#include "Decl.h"
+#include "DeclGroup.h"
 
 class ASTContext
 {

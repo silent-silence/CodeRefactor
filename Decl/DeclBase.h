@@ -5,8 +5,8 @@
 #include <string>
 #include <unordered_map>
 #include <list>
-#include "Basic/SourceLocation.h"
-#include "Iterator/DeclIterator.h"
+#include "SourceLocation.h"
+#include "DeclIterator.h"
 
 class DeclContext;
 class NamedDecl;
@@ -21,7 +21,7 @@ public:
     CommonBase##First = Start, CommonBase##Last = End,
 #define LAST_DECL_RANGE(CommonBase, Start, End) \
     CommonBase##First = Start, CommonBase##Last = End
-#include "Decl/DeclNodes.def"
+#include "DeclNodes.def"
 	};
 
 	Decl(Kind declKind, SourceLocation location);

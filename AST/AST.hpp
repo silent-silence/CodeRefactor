@@ -1,8 +1,8 @@
 #ifndef AST_H
 #define AST_H
 
-#include "AST/Expr.h"
-#include "AST/Type.h"
+#include "Expr.h"
+#include "Type.h"
 
 
 #endif // AST_H

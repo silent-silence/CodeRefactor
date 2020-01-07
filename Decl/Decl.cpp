@@ -3,8 +3,8 @@
 //
 
 #include "Decl.h"
-#include "AST/Type.h"
-#include "Basic/IdentifierTable.h"
+#include "Type.h"
+#include "IdentifierTable.h"
 
 /// @TranslationUnitDecl
 TranslationUnitDecl::TranslationUnitDecl()

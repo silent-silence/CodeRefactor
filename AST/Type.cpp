@@ -1,6 +1,6 @@
-#include "AST/Type.h"
-#include "AST/Expr.h"
-#include "AST/ASTContext.h"
+#include "Type.h"
+#include "Expr.h"
+#include "ASTContext.h"
 
 using std::vector;
 using std::move;					using std::string;

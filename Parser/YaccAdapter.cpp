@@ -3,19 +3,20 @@
 //
 
 #include "YaccAdapter.h"
-#include "AST/Stmt.h"
-#include "AST/Type.h"
-#include "AST/ASTContext.h"
-#include "Decl/DeclContextHolder.h"
-#include "OpenHelper/OpenHelper.h"
-#include "AST/Type.h"
-#include "Errors/TypeError.hpp"
-#include "Decl/DeclGroup.h"
-#include "Basic/IdentifierTable.h"
+#include "Stmt.h"
+#include "Type.h"
+#include "ASTContext.h"
+#include "DeclContextHolder.h"
+#include "OpenHelper.h"
+#include "Type.h"
+#include "TypeError.hpp"
+#include "DeclGroup.h"
+#include "IdentifierTable.h"
 #include <vector>
 #include <list>
 #include <iostream>
-#include "Errors/SymbolError.hpp"
+#include <algorithm>
+#include "SymbolError.hpp"
 
 using std::make_shared;					using std::shared_ptr;
 using std::vector;						using std::dynamic_pointer_cast;
@@ -23,6 +24,7 @@ using std::cerr;						using std::endl;
 using std::make_pair;					using std::stack;
 using std::list;						using std::string;
 using std::pair;
+using std::reverse;
 
 typedef yy::Parser::token::yytokentype token;
 
@@ -95,7 +97,7 @@ void YaccAdapter::makeCompoundStmt(unsigned stmtNumInBlock, yy::location &l, yy:
 	for(auto i = 0; i != stmtNumInBlock; i++){
 		stmts.push_back(pop_stmt());
 	}
-	reverse(stmts.begin(), stmts.end());
+    reverse(stmts.begin(), stmts.end());
 	m_stmtStack.push(
 			m_ASTContext.createStmt(Stmt::StmtClass::CompoundStmtClass, stmts, lb, rb)
 	);
