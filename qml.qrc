@@ -1,9 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>Interface/FileView.qml</file>
-        <file>Interface/main.qml</file>
-        <file>Interface/TextDisplayView.qml</file>
-        <file>Interface/ToolView.qml</file>
-        <file>Interface/ErrorDialog.qml</file>
-    </qresource>
-</RCC>
