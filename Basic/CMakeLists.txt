@@ -15,4 +15,4 @@ else()
     set_target_properties(Basic PROPERTIES VERSION 1.0 SOVERSION 1)
 endif()
 
-target_compile_definitions(Basic PRIVATE Basic_LIBRARY)
+target_compile_definitions(Basic INTERFACE Basic_LIBRARY)

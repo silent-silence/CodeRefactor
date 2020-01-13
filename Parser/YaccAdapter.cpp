@@ -3,20 +3,19 @@
 //
 
 #include "YaccAdapter.h"
-#include "Stmt.h"
-#include "Type.h"
-#include "ASTContext.h"
-#include "DeclContextHolder.h"
-#include "OpenHelper.h"
-#include "Type.h"
-#include "TypeError.hpp"
-#include "DeclGroup.h"
-#include "IdentifierTable.h"
+#include "AST/Stmt.h"
+#include "AST/Type.h"
+#include "AST/ASTContext.h"
+#include "Decl/DeclContextHolder.h"
+#include "OpenHelper/OpenHelper.h"
+#include "Errors/TypeError.hpp"
+#include "Decl/DeclGroup.h"
+#include "Basic/IdentifierTable.h"
 #include <vector>
 #include <list>
 #include <iostream>
 #include <algorithm>
-#include "SymbolError.hpp"
+#include "Errors/SymbolError.hpp"
 
 using std::make_shared;					using std::shared_ptr;
 using std::vector;						using std::dynamic_pointer_cast;

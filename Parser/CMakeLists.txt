@@ -24,4 +24,4 @@ else()
     set_target_properties(Parser PROPERTIES VERSION 1.0 SOVERSION 1)
 endif()
 
-target_compile_definitions(Parser PRIVATE Parser_LIBRARY)
+target_compile_definitions(Parser INTERFACE Parser_LIBRARY)

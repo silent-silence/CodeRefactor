@@ -6,8 +6,8 @@
 #include <list>
 #include <vector>
 #include "AST.hpp"
-#include "Decl.h"
-#include "DeclGroup.h"
+#include "Decl/Decl.h"
+#include "Decl/DeclGroup.h"
 
 class ASTContext
 {

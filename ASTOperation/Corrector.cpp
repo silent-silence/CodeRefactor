@@ -1,8 +1,8 @@
 #include "Corrector.h"
-#include "Stmt.h"
-#include "Expr.h"
-#include "OpenHelper.h"
-#include "Decl.h"
+#include "AST/Stmt.h"
+#include "AST/Expr.h"
+#include "OpenHelper/OpenHelper.h"
+#include "Decl/Decl.h"
 
 #include <exception>
 

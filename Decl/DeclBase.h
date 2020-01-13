@@ -5,8 +5,8 @@
 #include <string>
 #include <unordered_map>
 #include <list>
-#include "SourceLocation.h"
-#include "DeclIterator.h"
+#include "Basic/SourceLocation.h"
+#include "Iterator/DeclIterator.h"
 
 class DeclContext;
 class NamedDecl;

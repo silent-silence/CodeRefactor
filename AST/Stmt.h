@@ -4,8 +4,8 @@
 #include <array>
 #include <memory>
 #include <list>
-#include "SourceLocation.h"
-#include "StmtIterator.h"
+#include "Basic/SourceLocation.h"
+#include "Iterator/StmtIterator.h"
 
 class DeclGroupRef;
 

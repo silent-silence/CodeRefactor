@@ -15,4 +15,4 @@ else()
     set_target_properties(ASTOperation PROPERTIES VERSION 1.0 SOVERSION 1)
 endif()
 
-target_compile_definitions(ASTOperation PRIVATE ASTOperation_LIBRARY)
+target_compile_definitions(ASTOperation INTERFACE ASTOperation_LIBRARY)

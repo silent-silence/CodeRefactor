@@ -15,4 +15,4 @@ else()
     set_target_properties(Errors PROPERTIES VERSION 1.0 SOVERSION 1)
 endif()
 
-target_compile_definitions(Errors PRIVATE Errors_LIBRARY)
+target_compile_definitions(Errors INTERFACE Errors_LIBRARY)

@@ -3,13 +3,13 @@
 //
 
 #include "Printer.h"
-#include "Stmt.h"
-#include "Expr.h"
-#include "OpenHelper.h"
-#include "DeclGroup.h"
-#include "DeclBase.h"
-#include "IdentifierTable.h"
-#include "NullPointerError.h"
+#include "AST/Stmt.h"
+#include "AST/Expr.h"
+#include "OpenHelper/OpenHelper.h"
+#include "Decl/DeclGroup.h"
+#include "Decl/DeclBase.h"
+#include "Basic/IdentifierTable.h"
+#include "Errors/NullPointerError.h"
 #include <regex>
 
 using std::string;					using std::dynamic_pointer_cast;

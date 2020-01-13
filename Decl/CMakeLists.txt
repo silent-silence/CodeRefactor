@@ -15,4 +15,4 @@ else()
     set_target_properties(Decl PROPERTIES VERSION 1.0 SOVERSION 1)
 endif()
 
-target_compile_definitions(Decl PRIVATE Decl_LIBRARY)
+target_compile_definitions(Decl INTERFACE Decl_LIBRARY)

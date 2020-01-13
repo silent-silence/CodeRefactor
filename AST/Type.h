@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <vector>
-#include "SourceLocation.h"
+#include "Basic/SourceLocation.h"
 
 class Expr;
 class Stmt;

@@ -15,4 +15,4 @@ else()
     set_target_properties(OpenHelper PROPERTIES VERSION 1.0 SOVERSION 1)
 endif()
 
-target_compile_definitions(OpenHelper PRIVATE OpenHelper_LIBRARY)
+target_compile_definitions(OpenHelper INTERFACE OpenHelper_LIBRARY)

@@ -2,14 +2,14 @@
 // Created by 17271 on 2019/5/22.
 //
 
-#include "SymbolError.hpp"
+#include "Errors/SymbolError.hpp"
 #include "DeclContextHolder.h"
 #include "DeclBase.h"
 #include "Decl.h"
 #include "DeclName.h"
-#include "IdentifierTable.h"
-#include "Stmt.h"
-#include "Expr.h"
+#include "Basic/IdentifierTable.h"
+#include "AST/Stmt.h"
+#include "AST/Expr.h"
 
 using std::make_shared;					using std::weak_ptr;
 using std::shared_ptr;

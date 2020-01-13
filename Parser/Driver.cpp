@@ -2,12 +2,12 @@
 // Created by gaojian on 19-4-6.
 //
 
-#include "OpenHelper.h"
-#include "Driver.h"
-#include "YaccAdapter.h"
-#include "SourceLocation.h"
-#include "ASTContext.h"
-#include "SyntaxError.hpp"
+#include "OpenHelper/OpenHelper.h"
+#include "Parser/Driver.h"
+#include "Parser/YaccAdapter.h"
+#include "Basic/SourceLocation.h"
+#include "AST/ASTContext.h"
+#include "Errors/SyntaxError.hpp"
 
 Driver::Driver(OpenHelper &opener, YaccAdapter &adapter)
 	: m_opener{opener}, trace_scanning{false}, trace_parsing{false}, m_adapter{adapter}, m_scanner{*this}

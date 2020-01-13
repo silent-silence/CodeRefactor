@@ -1,7 +1,7 @@
 %{
 	#include "parser.hpp"
-    #include "Scanner.h"
-    #include "Driver.h"
+    #include "Parser/Scanner.h"
+    #include "Parser/Driver.h"
 	#include <string.h>
 
 	#define YY_NO_UNISTD_H

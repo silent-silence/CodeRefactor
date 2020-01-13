@@ -15,4 +15,4 @@ else()
     set_target_properties(AST PROPERTIES VERSION 1.0 SOVERSION 1)
 endif()
 
-target_compile_definitions(AST PRIVATE AST_LIBRARY)
+target_compile_definitions(AST INTERFACE AST_LIBRARY)

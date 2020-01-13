@@ -15,4 +15,4 @@ else()
     set_target_properties(Iterator PROPERTIES VERSION 1.0 SOVERSION 1)
 endif()
 
-target_compile_definitions(Iterator PRIVATE Iterator_LIBRARY)
+target_compile_definitions(Iterator INTERFACE Iterator_LIBRARY)

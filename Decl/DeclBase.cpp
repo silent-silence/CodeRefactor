@@ -2,10 +2,10 @@
 // Created by gaojian on 19-5-6.
 //
 
-#include "SymbolError.hpp"
+#include "Errors/SymbolError.hpp"
 #include "DeclBase.h"
 #include "Decl.h"
-#include "IdentifierTable.h"
+#include "Basic/IdentifierTable.h"
 #include <functional>
 
 using std::hash;				using std::string;
