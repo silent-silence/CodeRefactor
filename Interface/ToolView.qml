@@ -1,5 +1,5 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
+import QtQuick 2.14
+import QtQuick.Controls 2.14
 import QtQuick.Layouts 1.12
 import QtQuick.Dialogs 1.3
 
@@ -23,7 +23,7 @@ Item {
         anchors.fill:parent
         Menu{
             id:file;
-            title:qsTr("&文件");
+            title:qsTr("文件(&F)");
             MenuItem{
                 text:qsTr("&打开文件");
                 onClicked: {
@@ -68,7 +68,7 @@ Item {
         }
         Menu{
             id:edit;
-            title:qsTr("&重构");
+            title:qsTr("重构(&R)");
             Menu{
                 title:"for/while互转";
                 CheckBox{
@@ -184,7 +184,7 @@ Item {
 			}
         }
         Menu {
-            title: qsTr("&帮助")
+            title: qsTr("帮助(&H)")
             Action { text: qsTr("&About") }
         }
     }

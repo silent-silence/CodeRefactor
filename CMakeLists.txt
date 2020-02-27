@@ -33,7 +33,6 @@ foreach(LIB ${LIBRARIES})
     file(GLOB ${LIB}_SRC ${CMAKE_SOURCE_DIR}/${LIB}/*.cpp ${CMAKE_SOURCE_DIR}/${LIB}/*.qrc)
     add_library(${LIB} SHARED ${${LIB}_SRC} ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS})
     target_link_libraries(${LIB} PRIVATE Qt5::Core Qt5::Quick)
-    message("Target ${LIB} have loaded.")
     target_compile_definitions(${LIB} PRIVATE LIB_LIBRARY)
 endforeach(LIB)
 

@@ -1,15 +1,18 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
+import QtQuick 2.14
+import QtQuick.Window 2.14
+import QtQuick.Controls 2.14
 
 Item {
     id:textDisplayView
     property string text: ""
+    property int font_size: Screen.desktopAvailableHeight*0.015
 
     Component.onCompleted: {
         textContent.text=""
     }
 
     Rectangle{
+        id:rectangle
         width: 0.98*parent.width
         height: 0.98*parent.height;
         anchors.centerIn: parent
@@ -20,12 +23,12 @@ Item {
             padding: 0.01*width
             clip: true
 
-            TextArea {
+            Text {
                 id:lineNumber
                 anchors.left: parent.left
                 padding: parent.padding
-                activeFocusOnPress:false
-                font.pixelSize: 0.02*width
+                //activeFocusOnPress:false
+                font.pixelSize: font_size
                 Rectangle{
                     id:lineNumberBackground
                     height: lineNumber.height
@@ -34,14 +37,14 @@ Item {
                 }
                 textFormat: TextArea.AutoText
             }
-            TextArea {
+            Text {
                 id:textContent
                 anchors.left: parent.left
                 leftPadding:lineNumber.font.weight
                 wrapMode: TextArea.Wrap
                 padding: parent.padding
-                activeFocusOnPress:false
-                font.pixelSize: 0.02*width
+                //activeFocusOnPress:false
+                font.pixelSize: font_size
                 textFormat: TextArea.AutoText
             }
         }

@@ -1,28 +1,30 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
+import QtQuick 2.14
+import QtQuick.Controls 2.14
 import CodeInterface 1.0
 
 ApplicationWindow{
-	id:root
-	visible: true
-	width: 1280
-	height: 720
+    id:root
+    visible: true
+    width: 1280
+    height: 720
 
-	menuBar: ToolView{
-		id: toolView
-		width: parent.width
-	}
 
-	FileView{
+
+    menuBar: ToolView{
+        id: toolView
+        width: parent.width
+    }
+
+    FileView{
         id:fileView
-		width: parent.width
-		height: 0.9*parent.height
-		anchors.bottom: parent.bottom
-	}
+        width: parent.width
+        height: 0.9*parent.height
+        anchors.bottom: parent.bottom
+    }
 
-	Interface{
-		id:codeInterface
-	}
+    Interface{
+        id:codeInterface
+    }
 
     ErrorDialog{
         id: errorDialog
@@ -67,14 +69,14 @@ ApplicationWindow{
         onWhileFor:{
             codeInterface.setWhile_For(value)
         }
-		onRefactorName: {
-			codeInterface.setRefactorName(value)
-			console.error("refactor name " + value)
-		}
-		onDetectNullPointer: {
-			codeInterface.setDetectNullPointer(value);
-			console.error("NullPointer " + value)
-		}
+        onRefactorName: {
+            codeInterface.setRefactorName(value)
+            console.error("refactor name " + value)
+        }
+        onDetectNullPointer: {
+            codeInterface.setDetectNullPointer(value);
+            console.error("NullPointer " + value)
+        }
     }
 
     Connections{
@@ -85,22 +87,22 @@ ApplicationWindow{
         onRightTextChanged:{
             fileView.setRightView(codeInterface.rightText)
         }
-		onParseError: {
+        onParseError: {
             errorDialog.showError(e)
-		}
+        }
         onTextRefreshData:{
             fileView.setLeftView(codeInterface.inputPath ,leftText)
             fileView.setRightView(rightText)
         }
-	}
+    }
 
-	Connections{
+    Connections{
         target: fileView
-		onRefactorClicked:{
+        onRefactorClicked:{
             codeInterface.getRefactorData()
             codeInterface.refreshData()
-		}
-	}
+        }
+    }
 
     DropArea{
         anchors.fill: parent
