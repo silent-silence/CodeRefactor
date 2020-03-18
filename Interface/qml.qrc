@@ -1,9 +1,10 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
-        <file>FileView.qml</file>
         <file>ErrorDialog.qml</file>
-        <file>TextDisplayView.qml</file>
-        <file>ToolView.qml</file>
+        <file>RadioMenu.qml</file>
+        <file>CodeContrast.qml</file>
+        <file>CodeView.qml</file>
+        <file>MenuBarView.qml</file>
     </qresource>
 </RCC>

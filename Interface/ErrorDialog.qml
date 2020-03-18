@@ -4,7 +4,7 @@ import QtQuick.Controls 2.14
 
 Dialog {
     id:errorDialog
-    title: qsTr("错误")
+    title: qsTr("Error")
     visible: false
     contentItem: Rectangle {
         implicitWidth: 400
@@ -15,20 +15,20 @@ Dialog {
             anchors.centerIn: parent
         }
         Button {
-            text: qsTr("ok")
+            text: qsTr("OK")
             anchors.right: parent.right
             anchors.rightMargin: 10
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 10
             onClicked: {
                 errorDialog.visible = false
-                errorText.text=""
+                errorText.text=qsTr("")
             }
         }
     }
     function showError(str){
         errorDialog.visible=true
-        errorText.text=str
+        errorText.text=qsTr(str)
     }
 }
 

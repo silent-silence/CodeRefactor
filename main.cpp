@@ -24,7 +24,7 @@ int main(int argc, char **argv)
    QQmlApplicationEngine engine;
 
    const QUrl url(QStringLiteral("qrc:/main.qml"));
-   qmlRegisterType<Interface>("CodeInterface", 1, 0, "Interface");
+   qmlRegisterType<Interface>("CodeInterface", 1, 0, "Refactor");
 
    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                     &app, [url](QObject *obj, const QUrl &objUrl) {

@@ -1,73 +1,81 @@
 import QtQuick 2.14
+import QtQuick.Window 2.14
 import QtQuick.Controls 2.14
 import CodeInterface 1.0
 
-ApplicationWindow{
-    id:root
+ApplicationWindow {
     visible: true
-    width: 1280
-    height: 720
+    minimumWidth: 960
+    minimumHeight: 540
+    width: Screen.desktopAvailableWidth
+    height: Screen.desktopAvailableHeight
 
-
-
-    menuBar: ToolView{
-        id: toolView
-        width: parent.width
-    }
-
-    FileView{
-        id:fileView
-        width: parent.width
-        height: 0.9*parent.height
-        anchors.bottom: parent.bottom
-    }
-
-    Interface{
-        id:codeInterface
-    }
-
-    ErrorDialog{
-        id: errorDialog
-    }
-
-    Connections{
-        target: toolView
-        onOpenFileClicked:{
-            codeInterface.inputPath=path
+    menuBar: MenuBarView{
+        id: menuBarView
+        onOpenFile: {
+            codeRefactor.inputPath = path
         }
-        onSaveAsClicked:{
-            var str=fileView.getRightView()
+        onSaveAsFile: {
+            var str=codeContrast.codeRight
             if(str===""){
-                errorDialog.showError("文件为空")
+                errorDialog.showError("The file is empty.")
             }
             else{
-                codeInterface.outputPath=path
-                codeInterface.writeOutputFileData()
+                codeRefactor.outputPath=path
+                codeRefactor.writeOutputFileData()
             }
         }
-        onSaveClicked:{
-            codeInterface.outputPath=codeInterface.inputPath
-            codeInterface.writeOutputFileData()
+        onSaveFile: {
+            codeRefactor.outputPath=codeRefactor.inputPath
+            codeRefactor.writeOutputFileData()
         }
-        onMcsifScmif:{
-            codeInterface.setMCIf_SCMIf(value)
+        onLoopRefactor: {
+            switch(value){
+            case 0:
+                codeRefactor.setFor_While(false)
+                codeRefactor.setWhile_For(false)
+                break
+            case 1:
+                codeRefactor.setFor_While(true)
+                break
+            case 2:
+                codeRefactor.setWhile_For(true)
+                break
+            default:
+                break
+            }
         }
-
-        onScmifMcsif:{
-            codeInterface.setSCMIf_MCIf(value)
+        onConditionRefactor: {
+            switch(value){
+            case 0:
+                codeRefactor.setSCMIf_MCIf(false)
+                codeRefactor.setMCIf_SCMIf(false)
+                break
+            case 1:
+                codeRefactor.setMCIf_SCMIf(true)
+                break
+            case 2:
+                codeRefactor.setSCMIf_MCIf(true)
+                break
+            default:
+                break
+            }
         }
-
-        onMifSwitch:{
-            codeInterface.setMIf_Switch(value)
-        }
-        onSwitchMIf:{
-            codeInterface.setSwitch_MIf(value)
-        }
-        onForWhile:{
-            codeInterface.setFor_While(value)
-        }
-        onWhileFor:{
-            codeInterface.setWhile_For(value)
+        onSwitchRefactor: {
+            switch(value){
+            case 0:
+                codeRefactor.setSwitch_MIf(false)
+                codeRefactor.setMIf_Switch(false)
+                break
+            case 1:
+                codeRefactor.setMIf_Switch(true)
+                break
+            case 2:
+                codeRefactor.setSwitch_MIf(true)
+                break
+            default:
+                break
+            }
         }
         onRefactorName: {
             codeInterface.setRefactorName(value)
@@ -79,35 +87,42 @@ ApplicationWindow{
         }
     }
 
-    Connections{
-        target: codeInterface
+    CodeContrast{
+        id: codeContrast
+        anchors.fill: parent
+        onRefactorClicked:{
+            codeRefactor.getRefactorData()
+            codeRefactor.refreshData()
+        }
+    }
+
+    Refactor{
+        id: codeRefactor
         onLeftTextChanged:{
-            fileView.setLeftView(codeInterface.inputPath ,codeInterface.leftText)
+            codeContrast.pathLeft=inputPath
+            codeContrast.codeLeft=leftText
         }
         onRightTextChanged:{
-            fileView.setRightView(codeInterface.rightText)
+            codeContrast.codeRight=rightText
         }
         onParseError: {
             errorDialog.showError(e)
         }
         onTextRefreshData:{
-            fileView.setLeftView(codeInterface.inputPath ,leftText)
-            fileView.setRightView(rightText)
+            codeContrast.codeLeft=leftText
+            codeContrast.pathLeft=inputPath
+            codeContrast.codeRight=rightText
         }
     }
 
-    Connections{
-        target: fileView
-        onRefactorClicked:{
-            codeInterface.getRefactorData()
-            codeInterface.refreshData()
-        }
+    ErrorDialog{
+        id: errorDialog
     }
 
     DropArea{
         anchors.fill: parent
         onDropped: {
-            codeInterface.inputPath=drop.urls[0]
+            codeContrast.inputPath=drop.urls[0]
         }
     }
 }
